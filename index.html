@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse · Intelligence Layer</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0c; --bg-2:#111114; --panel:#16161a; --panel-2:#1c1c22;
+  --border:#26262e; --border-2:#33333d;
+  --text:#f2f2f5; --text-dim:#9a9aa8; --text-faint:#65656f;
+  --gold:#C9A14A; --gold-light:#E5C77E;
+  --pulse:#4ade80; --pulse-glow:rgba(74,222,128,0.4);
+  --maroon:#8B1538;
+  --green:#4ade80; --amber:#fbbf24; --orange:#fb7185;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;}
+.serif{font-family:'Fraunces',serif;}
+
+/* ===== LOGIN GATE ===== */
+#gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px;}
+.gate-box{width:100%;max-width:360px;text-align:center;}
+.gate-logo{font-family:'Fraunces',serif;font-size:38px;font-weight:700;letter-spacing:-1px;margin-bottom:6px;}
+.gate-logo .dot{color:var(--gold);}
+.gate-sub{color:var(--text-faint);font-size:13px;letter-spacing:3px;text-transform:uppercase;margin-bottom:36px;}
+.gate-box input{width:100%;padding:15px 18px;background:var(--panel);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;font-family:'Inter';margin-bottom:12px;}
+.gate-box input:focus{outline:none;border-color:var(--gold);}
+.gate-box button{width:100%;padding:15px;background:var(--gold);color:#1a1a1a;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter';transition:all .2s;}
+.gate-box button:hover{background:var(--gold-light);}
+.gate-err{color:var(--orange);font-size:13px;margin-top:12px;min-height:18px;}
+
+/* ===== APP ===== */
+#app{display:none;max-width:1100px;margin:0 auto;padding:28px 24px 60px;}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:12px;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand .logo{font-family:'Fraunces',serif;font-size:30px;font-weight:700;letter-spacing:-0.5px;}
+.brand .logo .dot{color:var(--gold);}
+.top-right{display:flex;align-items:center;gap:16px;}
+.live{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;}
+.live .beat{width:8px;height:8px;border-radius:50%;background:var(--pulse);box-shadow:0 0 0 0 var(--pulse-glow);animation:beat 2s infinite;}
+.synced{font-size:12px;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;}
+@keyframes beat{0%{box-shadow:0 0 0 0 var(--pulse-glow);}70%{box-shadow:0 0 0 10px rgba(74,222,128,0);}100%{box-shadow:0 0 0 0 rgba(74,222,128,0);}}
+.client-tag{font-size:13px;color:var(--text-faint);margin-bottom:20px;}
+.client-tag strong{color:var(--text-dim);font-weight:600;}
+
+/* tabs */
+.tabs{display:flex;gap:6px;margin-bottom:26px;border-bottom:1px solid var(--border);padding-bottom:0;flex-wrap:wrap;}
+.tab{padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-faint);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter';margin-bottom:-1px;transition:all .18s;}
+.tab.active{color:var(--text);border-bottom-color:var(--gold);}
+.tab.disabled{color:var(--text-faint);opacity:0.45;cursor:not-allowed;display:flex;align-items:center;gap:7px;}
+.tab .soon{font-size:9px;background:var(--panel-2);color:var(--gold);padding:2px 7px;border-radius:50px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;}
+
+/* time filter */
+.filters{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.filters button{padding:8px 16px;background:var(--panel);border:1px solid var(--border);border-radius:50px;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter';transition:all .18s;}
+.filters button.active{background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:700;}
+
+/* stat cards */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px;}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px 22px;position:relative;overflow:hidden;}
+.stat::after{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:radial-gradient(circle,rgba(201,161,74,0.08),transparent 70%);}
+.stat .label{font-size:12px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.stat .num{font-family:'Fraunces',serif;font-size:38px;font-weight:700;line-height:1;}
+.stat .sub{font-size:12px;color:var(--text-dim);margin-top:6px;}
+.stat.accent .num{color:var(--gold);}
+
+/* panels grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:26px;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px 24px;}
+.panel h3{font-size:13px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:18px;}
+
+/* bar rows */
+.bar-row{margin-bottom:14px;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+.bar-head .bl{color:var(--text);}
+.bar-head .bv{color:var(--text-dim);font-variant-numeric:tabular-nums;}
+.bar-track{height:8px;background:var(--bg-2);border-radius:50px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:50px;transition:width .8s ease;}
+
+/* trend chart */
+.trend{display:flex;align-items:flex-end;gap:4px;height:120px;margin-top:8px;}
+.trend .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.trend .bar{width:100%;max-width:32px;background:linear-gradient(180deg,var(--gold),rgba(201,161,74,0.3));border-radius:4px 4px 0 0;min-height:3px;transition:height .8s ease;}
+.trend .day{font-size:10px;color:var(--text-faint);}
+
+/* recent table */
+.recent{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px 24px;}
+.recent h3{font-size:13px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:16px;}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{text-align:left;color:var(--text-faint);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:8px 10px;border-bottom:1px solid var(--border);}
+.tbl td{padding:11px 10px;border-bottom:1px solid var(--bg-2);color:var(--text-dim);}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl .nm{color:var(--text);font-weight:500;}
+.tbl .sc{font-variant-numeric:tabular-nums;font-weight:600;color:var(--text);}
+.zpill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;}
+.z-thriving{background:rgba(74,222,128,0.12);color:var(--green);}
+.z-growth{background:rgba(251,191,36,0.12);color:var(--amber);}
+.z-needs{background:rgba(251,113,133,0.12);color:var(--orange);}
+
+.loading{text-align:center;color:var(--text-faint);padding:60px;font-size:14px;}
+.tease{background:linear-gradient(135deg,rgba(201,161,74,0.08),rgba(201,161,74,0.02));border:1px solid var(--border-2);border-radius:14px;padding:16px 20px;margin-bottom:22px;font-size:14px;color:var(--text-dim);}
+.tease strong{color:var(--gold);font-weight:600;}
+.foot{text-align:center;color:var(--text-faint);font-size:12px;margin-top:40px;}
+.foot .p{color:var(--gold);}
+
+@media (max-width:780px){
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .grid{grid-template-columns:1fr;}
+  .tbl .hide-m{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-logo">Pulse<span class="dot">.</span></div>
+    <div class="gate-sub">Intelligence Layer</div>
+    <input type="password" id="pass" placeholder="Access key" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">Enter →</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="top">
+    <div class="brand">
+      <div class="logo">Pulse<span class="dot">.</span></div>
+    </div>
+    <div class="top-right">
+      <div class="live"><span class="beat"></span> Live</div>
+      <div class="synced" id="lastSync"></div>
+    </div>
+  </div>
+  <div class="client-tag">Client · <strong>Dr. Madhu Sudan</strong></div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="overview" onclick="setTab('overview',this)">Overview</button>
+    <button class="tab" data-tab="assessment" onclick="setTab('assessment',this)">Assessment</button>
+    <button class="tab disabled" disabled>Funnels <span class="soon">Soon</span></button>
+    <button class="tab disabled" disabled>Revenue <span class="soon">Soon</span></button>
+  </div>
+
+  <div class="filters">
+    <button data-range="today" onclick="setRange('today',this)">Today</button>
+    <button data-range="week" class="active" onclick="setRange('week',this)">This Week</button>
+    <button data-range="month" onclick="setRange('month',this)">This Month</button>
+    <button data-range="total" onclick="setRange('total',this)">All Time</button>
+  </div>
+
+  <div id="content"><div class="loading">Reading the pulse…</div></div>
+
+  <div class="foot">Powered by <span class="p">Pulse</span> · Peepoye Network</div>
+</div>
+
+<script>
+let DATA = null;
+let RANGE = 'week';
+let TAB = 'overview';
+
+function setTab(t, btn){
+  TAB = t;
+  document.querySelectorAll('.tab:not(.disabled)').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function login(){
+  const p = document.getElementById('pass').value;
+  fetch('/api/data', { headers: { 'x-pulse-pass': p } })
+    .then(r => { if(!r.ok) throw new Error('bad'); return r.json(); })
+    .then(d => {
+      DATA = d;
+      sessionStorage.setItem('pulse_p', p);
+      document.getElementById('gate').style.display='none';
+      document.getElementById('app').style.display='block';
+      render();
+    })
+    .catch(() => { document.getElementById('gateErr').textContent = 'Wrong access key. Try again.'; });
+}
+
+// auto-login if key stored this session
+window.addEventListener('load', ()=>{
+  const p = sessionStorage.getItem('pulse_p');
+  if(p){
+    fetch('/api/data',{headers:{'x-pulse-pass':p}}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+      DATA=d; document.getElementById('gate').style.display='none'; document.getElementById('app').style.display='block'; render();
+    }).catch(()=>{});
+  }
+});
+
+function setRange(r, btn){
+  RANGE = r;
+  document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function zClass(z){ return z==='Thriving'?'z-thriving':z==='Growth'?'z-growth':'z-needs'; }
+function zColor(z){ return z==='Thriving'?'var(--green)':z==='Growth'?'var(--amber)':'var(--orange)'; }
+
+function render(){
+  if(!DATA) return;
+  const s = DATA.stats;
+  const recent = DATA.recent || [];
+  const rangeCount = s[RANGE] != null ? s[RANGE] : s.total;
+  const rangeLabel = {today:'Today',week:'This Week',month:'This Month',total:'All Time'}[RANGE];
+
+  // zone bars
+  const zones = s.zones || {};
+  const zOrder = ['Thriving','Growth','Needs Attention'];
+  const zMax = Math.max(1, ...Object.values(zones));
+  let zoneBars = zOrder.filter(z=>zones[z]).map(z=>{
+    const v = zones[z]||0;
+    return `<div class="bar-row"><div class="bar-head"><span class="bl">${z}</span><span class="bv">${v}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/zMax*100}%;background:${zColor(z)}"></div></div></div>`;
+  }).join('');
+
+  // concern bars
+  const concerns = s.concerns || {};
+  const cMax = Math.max(1, ...Object.values(concerns));
+  let concernBars = Object.entries(concerns).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+    const label = k||'Not specified';
+    return `<div class="bar-row"><div class="bar-head"><span class="bl">${label}</span><span class="bv">${v}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/cMax*100}%;background:var(--gold)"></div></div></div>`;
+  }).join('');
+
+  // daily trend
+  const daily = s.daily || [];
+  const dMax = Math.max(1, ...daily.map(d=>d.c));
+  let trend = daily.slice(-14).map(d=>{
+    const h = d.c/dMax*100;
+    const dd = d.day.slice(5); // MM-DD
+    return `<div class="col"><div class="bar" style="height:${h}%" title="${d.c} on ${d.day}"></div><div class="day">${dd}</div></div>`;
+  }).join('');
+  if(!trend) trend = '<div class="loading">No data yet</div>';
+
+  // recent rows
+  let rows = recent.slice(0,15).map(r=>`<tr>
+    <td class="nm">${r.name||'—'}</td>
+    <td class="sc">${r.total_score}</td>
+    <td><span class="zpill ${zClass(r.zone)}">${r.zone}</span></td>
+    <td class="hide-m">${r.primary_concern||'—'}</td>
+    <td class="hide-m">${r.weakest_dimension||'—'}</td>
+    <td class="hide-m">${r.created}</td>
+  </tr>`).join('');
+  if(!rows) rows = '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:30px;">No assessments yet</td></tr>';
+
+  document.getElementById('content').innerHTML = `
+    ${TAB==='overview' ? `<div class="tease">📊 Showing <strong>Sexual Wellness Assessment</strong> — your first live funnel. As we launch more funnels and connect revenue, they'll roll up here automatically.</div>` : ''}
+    <div class="stats">
+      <div class="stat accent"><div class="label">${rangeLabel}</div><div class="num">${rangeCount}</div><div class="sub">assessments taken</div></div>
+      <div class="stat"><div class="label">All Time</div><div class="num">${s.total||0}</div><div class="sub">total leads captured</div></div>
+      <div class="stat"><div class="label">Avg Score</div><div class="num">${s.avg_score||0}<span style="font-size:16px;color:var(--text-faint)">/120</span></div><div class="sub">across all takers</div></div>
+      <div class="stat"><div class="label">Today</div><div class="num">${s.today||0}</div><div class="sub">in the last 24h</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="panel"><h3>Zone Breakdown</h3>${zoneBars||'<div style="color:var(--text-faint);font-size:13px">No data yet</div>'}</div>
+      <div class="panel"><h3>Primary Concern</h3>${concernBars||'<div style="color:var(--text-faint);font-size:13px">No data yet</div>'}</div>
+    </div>
+
+    <div class="panel" style="margin-bottom:26px;">
+      <h3>Assessments Over Time</h3>
+      <div class="trend">${trend}</div>
+    </div>
+
+    <div class="recent">
+      <h3>Recent Assessments <span style="color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">· latest 15</span></h3>
+      <table class="tbl">
+        <thead><tr><th>Name</th><th>Score</th><th>Zone</th><th class="hide-m">Concern</th><th class="hide-m">Weakest Area</th><th class="hide-m">When</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
+}
+</script>
+</body>
+</html>
