@@ -16,13 +16,17 @@ export default async function handler(req, res) {
   const headers = { 'apikey': KEY, 'Authorization': `Bearer ${KEY}`, 'Content-Type': 'application/json' };
 
   try {
-    const [statsRes, recentRes] = await Promise.all([
+    const [statsRes, recentRes, revRes, revRecentRes] = await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_stats`, { method: 'POST', headers, body: '{}' }),
-      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_recent`, { method: 'POST', headers, body: '{}' })
+      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_recent`, { method: 'POST', headers, body: '{}' }),
+      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_revenue`, { method: 'POST', headers, body: '{}' }),
+      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_revenue_recent`, { method: 'POST', headers, body: '{}' })
     ]);
     const stats = await statsRes.json();
     const recent = await recentRes.json();
-    return res.status(200).json({ ok: true, stats, recent });
+    const revenue = await revRes.json();
+    const revenue_recent = await revRecentRes.json();
+    return res.status(200).json({ ok: true, stats, recent, revenue, revenue_recent });
   } catch (e) {
     return res.status(500).json({ error: 'fetch_failed', detail: String(e) });
   }

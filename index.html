@@ -145,8 +145,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   <div class="tabs">
     <button class="tab active" data-tab="overview" onclick="setTab('overview',this)">Overview</button>
     <button class="tab" data-tab="assessment" onclick="setTab('assessment',this)">Assessment</button>
+    <button class="tab" data-tab="revenue" onclick="setTab('revenue',this)">Revenue</button>
     <button class="tab disabled" disabled>Funnels <span class="soon">Soon</span></button>
-    <button class="tab disabled" disabled>Revenue <span class="soon">Soon</span></button>
   </div>
 
   <div class="filters">
@@ -208,6 +208,12 @@ function zClass(z){ return z==='Thriving'?'z-thriving':z==='Growth'?'z-growth':'
 function zColor(z){ return z==='Thriving'?'var(--green)':z==='Growth'?'var(--amber)':'var(--orange)'; }
 
 function render(){
+  if(!DATA) return;
+  if(TAB==='revenue'){ renderRevenue(); return; }
+  renderAssessment();
+}
+
+function renderAssessment(){
   if(!DATA) return;
   const s = DATA.stats;
   const recent = DATA.recent || [];
@@ -281,6 +287,90 @@ function render(){
   `;
   document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
 }
-</script>
+
+function fmtINR(n){
+  n = Number(n)||0;
+  return '₹' + n.toLocaleString('en-IN');
+}
+
+function renderRevenue(){
+  if(!DATA) return;
+  const r = DATA.revenue || {};
+  const recent = DATA.revenue_recent || [];
+  const rangeVal = r[RANGE] != null ? r[RANGE] : (r.total||0);
+  const rangeLabel = {today:'Today',week:'This Week',month:'This Month',total:'All Time'}[RANGE];
+
+  // funnel bars
+  const byFunnel = r.by_funnel || {};
+  const fLabels = {consult:'Consultations', modak:'Kamdev Modak', other:'Other'};
+  const fMax = Math.max(1, ...Object.values(byFunnel));
+  let funnelBars = Object.entries(byFunnel).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+    const label = fLabels[k]||k;
+    const col = k==='modak'?'var(--gold)':k==='consult'?'var(--green)':'var(--text-dim)';
+    return `<div class="bar-row"><div class="bar-head"><span class="bl">${label}</span><span class="bv">${fmtINR(v)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/fMax*100}%;background:${col}"></div></div></div>`;
+  }).join('');
+
+  // modak pack bars
+  const byPack = r.modak_by_pack || {};
+  const pLabels = {trial:'Trial · 7 day', monthly:'Monthly · 30 day', quarterly:'3-Month · 90 day', other:'Other'};
+  const pMax = Math.max(1, ...Object.values(byPack));
+  let packBars = Object.entries(byPack).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+    const label = pLabels[k]||k;
+    return `<div class="bar-row"><div class="bar-head"><span class="bl">${label}</span><span class="bv">${fmtINR(v)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/pMax*100}%;background:var(--gold)"></div></div></div>`;
+  }).join('');
+
+  // daily trend
+  const daily = r.daily || [];
+  const dMax = Math.max(1, ...daily.map(d=>d.r));
+  let trend = daily.slice(-14).map(d=>{
+    const h = d.r/dMax*100;
+    const dd = d.day.slice(5);
+    return `<div class="col"><div class="bar" style="height:${h}%" title="${fmtINR(d.r)} on ${d.day}"></div><div class="day">${dd}</div></div>`;
+  }).join('');
+  if(!trend) trend = '<div class="loading">No revenue yet</div>';
+
+  // recent rows
+  let rows = recent.slice(0,15).map(p=>{
+    const fLabel = p.funnel==='modak' ? (pLabels[p.pack]||'Modak') : 'Consultation';
+    const total = (Number(p.amount_rupees)||0) + (Number(p.consult_sale_rupees)||0);
+    const medTag = (Number(p.consult_sale_rupees)>0) ? ` <span style="color:var(--text-faint);font-size:11px;">(+${fmtINR(p.consult_sale_rupees)} med)</span>` : '';
+    return `<tr>
+      <td class="nm">${p.name||'—'}</td>
+      <td class="sc">${fmtINR(total)}${medTag}</td>
+      <td><span class="zpill ${p.funnel==='modak'?'z-growth':'z-thriving'}">${fLabel}</span></td>
+      <td class="hide-m">${p.created||'—'}</td>
+    </tr>`;
+  }).join('');
+  if(!rows) rows = '<tr><td colspan="4" style="text-align:center;color:var(--text-faint);padding:30px;">No payments yet — this fills in real time as Razorpay captures payments.</td></tr>';
+
+  document.getElementById('content').innerHTML = `
+    <div class="tease">💰 <strong>Revenue</strong> — live from Razorpay, real time. Product sales (Modak) and consultation bookings roll up here. Medicine sales after consults are added manually until the clinic CRM is live.</div>
+    <div class="stats">
+      <div class="stat accent"><div class="label">${rangeLabel}</div><div class="num" style="font-size:30px;">${fmtINR(rangeVal)}</div><div class="sub">revenue ${rangeLabel.toLowerCase()}</div></div>
+      <div class="stat"><div class="label">All Time</div><div class="num" style="font-size:30px;">${fmtINR(r.total_rupees||0)}</div><div class="sub">${r.count||0} payments</div></div>
+      <div class="stat"><div class="label">Product Orders</div><div class="num" style="font-size:30px;">${fmtINR(r.order_revenue||0)}</div><div class="sub">funnel sales</div></div>
+      <div class="stat"><div class="label">Medicine Sales</div><div class="num" style="font-size:30px;">${fmtINR(r.medicine_revenue||0)}</div><div class="sub">post-consult (manual)</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="panel"><h3>Revenue by Funnel</h3>${funnelBars||'<div style="color:var(--text-faint);font-size:13px">No revenue yet</div>'}</div>
+      <div class="panel"><h3>Kamdev Modak — by Pack</h3>${packBars||'<div style="color:var(--text-faint);font-size:13px">No Modak sales yet</div>'}</div>
+    </div>
+
+    <div class="panel" style="margin-bottom:26px;">
+      <h3>Revenue Over Time</h3>
+      <div class="trend">${trend}</div>
+    </div>
+
+    <div class="recent">
+      <h3>Recent Payments <span style="color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">· latest 15</span></h3>
+      <table class="tbl">
+        <thead><tr><th>Name</th><th>Amount</th><th>Funnel</th><th class="hide-m">When</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
+}</script>
 </body>
 </html>
