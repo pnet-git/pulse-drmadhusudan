@@ -246,8 +246,9 @@ function renderAssessment(){
   const dMax = Math.max(1, ...daily.map(d=>d.c));
   let trend = daily.slice(-14).map(d=>{
     const h = d.c/dMax*100;
-    const dd = d.day.slice(5); // MM-DD
-    return `<div class="col"><div class="bar" style="height:${h}%" title="${d.c} on ${d.day}"></div><div class="day">${dd}</div></div>`;
+    const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dd2 = d.day ? (([y,m])=>months[parseInt(m)-1]+"'"+y.slice(2))(d.day.split('-')) : '';
+    return `<div class="col"><div class="bar" style="height:${h}%" title="${d.c} on ${d.day}"></div><div class="day">${dd2}</div></div>`;
   }).join('');
   if(!trend) trend = '<div class="loading">No data yet</div>';
 
@@ -328,7 +329,8 @@ function renderRevenue(){
   const dMax = Math.max(1, ...daily.map(d=>d.r));
   let trend = daily.slice(-14).map(d=>{
     const h = d.r/dMax*100;
-    const dd = d.day.slice(5);
+    const months2=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dd = d.day ? (([y,m])=>months2[parseInt(m)-1]+"'"+y.slice(2))(d.day.split('-')) : '';
     return `<div class="col"><div class="bar" style="height:${h}%" title="${fmtINR(d.r)} on ${d.day}"></div><div class="day">${dd}</div></div>`;
   }).join('');
   if(!trend) trend = '<div class="loading">No revenue yet</div>';
@@ -386,13 +388,13 @@ function renderOverview(){
   const pCol={p0:'var(--gold)',p1:'var(--green)',p2:'var(--text-dim)',p3:'var(--text-faint)'};
   const projRows=projs.map(p=>`<tr>
     <td style="font-weight:600;color:var(--text)">${p.name}</td>
-    <td><span style="font-size:12px;font-weight:600;color:${pCol[p.priority]||'var(--text-dim)'}">${sIcon[p.status]||'⚪'} ${sLabel[p.status]||p.status}</span></td>
+    <td><span style="font-size:12px;font-weight:600;color:var(--text)">${sIcon[p.status]||'⚪'} ${sLabel[p.status]||p.status}</span></td>
     <td style="color:var(--text-dim);font-size:12px">${p.owner||'—'}</td>
     <td style="color:var(--text-faint);font-size:12px" class="hide-m">${p.notes||'—'}</td>
   </tr>`).join('');
   document.getElementById('content').innerHTML=`
     <div class="stats">
-      <div class="stat accent"><div class="label">All Time Revenue</div><div class="num">${fmtINR(r.total_rupees||0)}</div><div class="sub">${r.count||0} payments</div></div>
+      <div class="stat accent"><div class="label">Revenue · ${{'today':'Today','week':'This Week','month':'This Month','total':'All Time'}[RANGE]||'All Time'}</div><div class="num">${fmtINR(r[RANGE]||r.total_rupees||0)}</div><div class="sub">${r.count||0} payments total</div></div>
       <div class="stat"><div class="label">This Month Revenue</div><div class="num">${fmtINR(r.month||0)}</div><div class="sub">from funnels</div></div>
       <div class="stat"><div class="label">Assessment Leads</div><div class="num">${s.total||s.count||0}</div><div class="sub">all time</div></div>
       <div class="stat"><div class="label">Reels Published</div><div class="num">${c.total_reels||0}</div><div class="sub">${Number(c.total_views||0).toLocaleString('en-IN')} views</div></div>
