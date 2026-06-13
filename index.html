@@ -101,6 +101,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .zpill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;}
 .z-thriving{background:rgba(74,222,128,0.12);color:var(--green);}
 .z-growth{background:rgba(251,191,36,0.12);color:var(--amber);}
+.z-attention{background:rgba(167,139,250,0.14);color:#a78bfa;}
 .z-needs{background:rgba(251,113,133,0.12);color:var(--orange);}
 
 .loading{text-align:center;color:var(--text-faint);padding:60px;font-size:14px;}
@@ -338,13 +339,20 @@ function renderRevenue(){
 
   // recent rows
   let rows = recent.slice(0,15).map(p=>{
-    const fLabel = p.funnel==='modak' ? (pLabels[p.pack]||'Modak') : 'Consultation';
+    const fLabel = p.funnel==='modak' ? (pLabels[p.pack]||'Modak')
+                 : p.funnel==='consult-paid-ads' ? 'Consult · Paid Ads'
+                 : p.funnel==='consult' ? 'Consult · Organic'
+                 : 'Other';
+    const pillClass = p.funnel==='modak' ? 'z-growth'
+                    : p.funnel==='consult-paid-ads' ? 'z-attention'
+                    : p.funnel==='consult' ? 'z-thriving'
+                    : '';
     const total = (Number(p.amount_rupees)||0) + (Number(p.consult_sale_rupees)||0);
     const medTag = (Number(p.consult_sale_rupees)>0) ? ` <span style="color:var(--text-faint);font-size:11px;">(+${fmtINR(p.consult_sale_rupees)} med)</span>` : '';
     return `<tr>
       <td class="nm">${p.name||'—'}</td>
       <td class="sc">${fmtINR(total)}${medTag}</td>
-      <td><span class="zpill ${p.funnel==='modak'?'z-growth':'z-thriving'}">${fLabel}</span></td>
+      <td><span class="zpill ${pillClass}">${fLabel}</span></td>
       <td class="hide-m">${p.created||'—'}</td>
     </tr>`;
   }).join('');
