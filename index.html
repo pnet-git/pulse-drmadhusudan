@@ -421,24 +421,50 @@ function renderOverview(){
 // ─── CONTENT ─────────────────────────────────────────────────────────────────
 function renderContent(){
   if(!DATA) return;
-  const c=DATA.content||{}, monthly=c.monthly||[];
-  const maxR=Math.max(1,...monthly.map(m=>m.reels||0));
+  const c=DATA.content||{}, monthly=c.monthly||[], pillars=c.pillars||[];
   const maxV=Math.max(1,...monthly.map(m=>Number(m.views||0)));
+
+  // View curve — month by month (trend-style bars, tall)
+  const curve=monthly.map(m=>{
+    const v=Number(m.views||0);
+    const h=(v/maxV*100).toFixed(1);
+    return `<div class="col"><div class="bar" style="height:${h}%" title="${v.toLocaleString('en-IN')} views"></div><div class="day">${m.month}</div></div>`;
+  }).join('');
+
+  // Reels bars
+  const maxR=Math.max(1,...monthly.map(m=>m.reels||0));
   const reelBars=monthly.map(m=>`<div class="bar-row"><div class="bar-head"><span class="bl">${m.month}</span><span class="bv">${m.reels} reels</span></div><div class="bar-track"><div class="bar-fill" style="width:${((m.reels||0)/maxR*100).toFixed(1)}%;background:var(--gold)"></div></div></div>`).join('');
-  const viewBars=monthly.map(m=>{const v=Number(m.views||0);return `<div class="bar-row"><div class="bar-head"><span class="bl">${m.month}</span><span class="bv">${v.toLocaleString('en-IN')} views</span></div><div class="bar-track"><div class="bar-fill" style="width:${(v/maxV*100).toFixed(1)}%;background:var(--green)"></div></div></div>`;}).join('');
+
+  // Monthly table
   const rows=monthly.map(m=>`<tr><td style="font-weight:600">${m.month}</td><td style="color:var(--gold);font-weight:700">${m.reels||0}</td><td style="color:var(--green);font-weight:700">${Number(m.views||0).toLocaleString('en-IN')}</td><td style="color:var(--text-faint);font-size:12px" class="hide-m">${m.notes||'—'}</td></tr>`).join('');
+
+  // Pillar breakdown (May)
+  const maxP=Math.max(1,...pillars.map(p=>Number(p.views||0)));
+  const pillarBars=pillars.map(p=>{
+    const v=Number(p.views||0);
+    return `<div class="bar-row"><div class="bar-head"><span class="bl">${p.pillar} <span style="color:var(--text-faint);font-size:11px">· ${p.published} reels</span></span><span class="bv">${v.toLocaleString('en-IN')}</span></div><div class="bar-track"><div class="bar-fill" style="width:${(v/maxP*100).toFixed(1)}%;background:var(--gold)"></div></div></div>`;
+  }).join('');
+  const pillarMonth = pillars.length ? pillars[0].month : '';
+
   document.getElementById('content').innerHTML=`
-    <div class="tease">🎬 <strong>GetCloned Content Engine</strong> — reels published and views generated for Dr. Madhu Sudan, month on month.</div>
+    <div class="tease">🎬 <strong>GetCloned — AI Cloned Reels</strong> — every reel below is produced by Dr. Madhu Sudan's AI clone and published across Instagram, YouTube Shorts & Facebook. Fully automated content engine.</div>
     <div class="stats">
-      <div class="stat accent"><div class="label">Total Reels</div><div class="num">${c.total_reels||0}</div><div class="sub">all time published</div></div>
-      <div class="stat"><div class="label">Total Views</div><div class="num">${Number(c.total_views||0).toLocaleString('en-IN')}</div><div class="sub">all time</div></div>
+      <div class="stat accent"><div class="label">Total Cloned Reels</div><div class="num">${c.total_reels||0}</div><div class="sub">published all platforms</div></div>
+      <div class="stat"><div class="label">Total Views</div><div class="num">${Number(c.total_views||0).toLocaleString('en-IN')}</div><div class="sub">across all reels</div></div>
     </div>
+
+    <div class="panel" style="margin-bottom:26px">
+      <h3>Views Growth — Month by Month</h3>
+      <div class="trend">${curve||'<div class="loading">No data yet</div>'}</div>
+    </div>
+
     <div class="grid">
-      <div class="panel"><h3>Reels — by Month</h3>${reelBars||'<div style="color:var(--text-faint);font-size:13px">No data yet</div>'}</div>
-      <div class="panel"><h3>Views — by Month</h3>${viewBars||'<div style="color:var(--text-faint);font-size:13px">No data yet</div>'}</div>
+      <div class="panel"><h3>Cloned Reels Published — by Month</h3>${reelBars||'<div style="color:var(--text-faint);font-size:13px">No data yet</div>'}</div>
+      <div class="panel"><h3>Views by Content Pillar <span style="color:var(--text-faint);font-weight:400;font-size:11px;text-transform:none;letter-spacing:0">· ${pillarMonth}</span></h3>${pillarBars||'<div style="color:var(--text-faint);font-size:13px">No pillar data yet</div>'}</div>
     </div>
+
     <div class="panel"><h3>Monthly Breakdown</h3>
-      <table class="tbl"><thead><tr><th>Month</th><th style="color:var(--gold)">Reels</th><th style="color:var(--green)">Views</th><th class="hide-m">Notes</th></tr></thead><tbody>${rows}</tbody></table>
+      <table class="tbl"><thead><tr><th>Month</th><th style="color:var(--gold)">Cloned Reels</th><th style="color:var(--green)">Views</th><th class="hide-m">Platform Split</th></tr></thead><tbody>${rows}</tbody></table>
     </div>`;
   document.getElementById('lastSync').textContent='Synced '+new Date().toLocaleTimeString();
 }
