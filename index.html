@@ -84,7 +84,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .bar-fill{height:100%;border-radius:50px;transition:width .8s ease;}
 
 /* trend chart */
-.trend{display:flex;align-items:flex-end;gap:4px;height:120px;margin-top:8px;}
+.trend{display:flex;align-items:flex-end;gap:4px;height:140px;margin-top:20px;padding-top:18px;}
+.trend .val{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;white-space:nowrap;}
 .trend .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;}
 .trend .bar{width:100%;max-width:32px;background:linear-gradient(180deg,var(--gold),rgba(201,161,74,0.3));border-radius:4px 4px 0 0;min-height:3px;transition:height .8s ease;flex-shrink:0;}
 .trend .day{font-size:10px;color:var(--text-faint);}
@@ -275,7 +276,7 @@ function renderAssessment(){
     const h = d.c/dMax*100;
     const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const dd2 = d.day ? (([y,m])=>months[parseInt(m)-1]+"'"+y.slice(2))(d.day.split('-')) : '';
-    return `<div class="col"><div class="bar" style="height:${h}%" title="${d.c} on ${d.day}"></div><div class="day">${dd2}</div></div>`;
+    return `<div class="col"><div class="val">${d.c}</div><div class="bar" style="height:${h}%" title="${d.c} assessments"></div><div class="day">${dd2}</div></div>`;
   }).join('');
   if(!trend) trend = '<div class="loading">No data yet</div>';
 
@@ -358,7 +359,7 @@ function renderRevenue(){
     const h = d.r/dMax*100;
     const months2=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const dd = d.day ? (([y,m])=>months2[parseInt(m)-1]+"'"+y.slice(2))(d.day.split('-')) : '';
-    return `<div class="col"><div class="bar" style="height:${h}%" title="${fmtINR(d.r)} on ${d.day}"></div><div class="day">${dd}</div></div>`;
+    return `<div class="col"><div class="val">${fmtINR(d.r)}</div><div class="bar" style="height:${h}%" title="${fmtINR(d.r)}"></div><div class="day">${dd}</div></div>`;
   }).join('');
   if(!trend) trend = '<div class="loading">No revenue yet</div>';
 
@@ -453,7 +454,8 @@ function renderContent(){
   const curve=monthly.map(m=>{
     const v=Number(m.views||0);
     const h=(v/maxV*100).toFixed(1);
-    return `<div class="col"><div class="bar" style="height:${h}%" title="${v.toLocaleString('en-IN')} views"></div><div class="day">${m.month}</div></div>`;
+    const vShort = v>=100000 ? (v/100000).toFixed(1)+'L' : v>=1000 ? (v/1000).toFixed(0)+'K' : v;
+    return `<div class="col"><div class="val">${vShort}</div><div class="bar" style="height:${h}%" title="${v.toLocaleString('en-IN')} views"></div><div class="day">${m.month}</div></div>`;
   }).join('');
 
   // Reels bars
