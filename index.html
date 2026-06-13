@@ -173,7 +173,31 @@ function setTab(t, btn){
   TAB = t;
   document.querySelectorAll('.tab:not(.disabled)').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  applyRangeAvailability();
   render();
+}
+
+// Content tab is monthly/manual — Today & This Week don't apply, grey them out
+function applyRangeAvailability(){
+  const monthlyOnly = (TAB==='content');
+  document.querySelectorAll('.filters button').forEach(b=>{
+    const r = b.getAttribute('data-range');
+    if(monthlyOnly && (r==='today' || r==='week')){
+      b.disabled = true;
+      b.style.opacity = '0.35';
+      b.style.cursor = 'not-allowed';
+      if(b.classList.contains('active')){
+        b.classList.remove('active');
+        RANGE = 'month';
+        const mBtn = document.querySelector('.filters button[data-range="month"]');
+        if(mBtn) mBtn.classList.add('active');
+      }
+    } else {
+      b.disabled = false;
+      b.style.opacity = '';
+      b.style.cursor = '';
+    }
+  });
 }
 
 function login(){
@@ -201,6 +225,7 @@ window.addEventListener('load', ()=>{
 });
 
 function setRange(r, btn){
+  if(btn.disabled) return;
   RANGE = r;
   document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
