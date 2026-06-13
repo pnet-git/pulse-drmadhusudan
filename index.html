@@ -339,7 +339,7 @@ function renderRevenue(){
 
   // recent rows
   let rows = recent.slice(0,15).map(p=>{
-    const fLabel = p.funnel==='modak' ? (pLabels[p.pack]||'Modak')
+    const fLabel = p.funnel==='modak' ? ('Modak · '+({trial:'Trial 7 day',monthly:'Monthly 30 day',quarterly:'3-Month 90 day'}[p.pack]||'Pack'))
                  : p.funnel==='consult-paid-ads' ? 'Consult · Paid Ads'
                  : p.funnel==='consult' ? 'Consult · Organic'
                  : 'Other';
