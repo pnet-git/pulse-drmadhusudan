@@ -395,7 +395,7 @@ function renderOverview(){
   </tr>`).join('');
   document.getElementById('content').innerHTML=`
     <div class="stats">
-      <div class="stat accent"><div class="label">Revenue · ${{'today':'Today','week':'This Week','month':'This Month','total':'All Time'}[RANGE]||'All Time'}</div><div class="num">${fmtINR(r[RANGE]||r.total_rupees||0)}</div><div class="sub">${r.count||0} payments total</div></div>
+      <div class="stat accent"><div class="label">Revenue · ${{'today':'Today','week':'This Week','month':'This Month','total':'All Time'}[RANGE]||'All Time'}</div><div class="num">${fmtINR(r[RANGE]!=null?r[RANGE]:(r.total_rupees||0))}</div><div class="sub">${r.count||0} payments total</div></div>
       <div class="stat"><div class="label">This Month Revenue</div><div class="num">${fmtINR(r.month||0)}</div><div class="sub">from funnels</div></div>
       <div class="stat"><div class="label">Assessment Leads</div><div class="num">${s.total||s.count||0}</div><div class="sub">all time</div></div>
       <div class="stat"><div class="label">Reels Published</div><div class="num">${c.total_reels||0}</div><div class="sub">${Number(c.total_views||0).toLocaleString('en-IN')} views</div></div>
