@@ -85,8 +85,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 
 /* trend chart */
 .trend{display:flex;align-items:flex-end;gap:4px;height:120px;margin-top:8px;}
-.trend .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
-.trend .bar{width:100%;max-width:32px;background:linear-gradient(180deg,var(--gold),rgba(201,161,74,0.3));border-radius:4px 4px 0 0;min-height:3px;transition:height .8s ease;}
+.trend .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;}
+.trend .bar{width:100%;max-width:32px;background:linear-gradient(180deg,var(--gold),rgba(201,161,74,0.3));border-radius:4px 4px 0 0;min-height:3px;transition:height .8s ease;flex-shrink:0;}
 .trend .day{font-size:10px;color:var(--text-faint);}
 
 /* recent table */
