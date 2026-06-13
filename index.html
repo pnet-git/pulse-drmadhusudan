@@ -417,10 +417,14 @@ function renderRevenue(){
 // ─── OVERVIEW ────────────────────────────────────────────────────────────────
 function renderOverview(){
   if(!DATA) return;
-  const s=DATA.stats||{}, r=DATA.revenue||{}, c=DATA.content||{}, projs=DATA.projects||[];
+  const s=DATA.stats||{}, r=DATA.revenue||{}, c=DATA.content||{}, projs=DATA.projects||[], f=DATA.funnels||{};
+  const lm=f.lead_magnets||{}, pf=f.product_funnels||{}, pa=f.paid_ads||{};
+  // Total leads across funnels = lead magnet leads + uncoverted modak leads + paid ads list
+  const totalLeads = (lm.assessment||0)+(lm.routine||0)+(pf.modak_leads||0)+(pa.upgro_ad||0);
+  // Total customers (conversions) = paid consults + all modak packs
+  const totalCustomers = (pf.consult_organic||0)+(pf.modak_trial||0)+(pf.modak_monthly||0)+(pf.modak_quarterly||0);
   const sIcon={active:'🟢','in-progress':'🟡',parked:'⏸',planned:'🔵',done:'✅'};
   const sLabel={active:'Active','in-progress':'In Progress',parked:'Parked',planned:'Planned',done:'Done'};
-  const pCol={p0:'var(--gold)',p1:'var(--green)',p2:'var(--text-dim)',p3:'var(--text-faint)'};
   const projRows=projs.map(p=>`<tr>
     <td style="font-weight:600;color:var(--text)">${p.name}</td>
     <td><span style="font-size:12px;font-weight:600;color:var(--text)">${sIcon[p.status]||'⚪'} ${sLabel[p.status]||p.status}</span></td>
@@ -429,10 +433,10 @@ function renderOverview(){
   </tr>`).join('');
   document.getElementById('content').innerHTML=`
     <div class="stats">
-      <div class="stat accent"><div class="label">Revenue · ${{'today':'Today','week':'This Week','month':'This Month','total':'All Time'}[RANGE]||'All Time'}</div><div class="num">${fmtINR(r[RANGE]!=null?r[RANGE]:(r.total_rupees||0))}</div><div class="sub">${r.count||0} payments total</div></div>
-      <div class="stat"><div class="label">This Month Revenue</div><div class="num">${fmtINR(r.month||0)}</div><div class="sub">from funnels</div></div>
-      <div class="stat"><div class="label">Assessment Leads</div><div class="num">${s.total||s.count||0}</div><div class="sub">all time</div></div>
-      <div class="stat"><div class="label">Reels Published</div><div class="num">${c.total_reels||0}</div><div class="sub">${Number(c.total_views||0).toLocaleString('en-IN')} views</div></div>
+      <div class="stat accent"><div class="label">Cloned Reels</div><div class="num">${c.total_reels||0}</div><div class="sub">${Number(c.total_views||0).toLocaleString('en-IN')} views generated</div></div>
+      <div class="stat"><div class="label">Total Leads</div><div class="num">${totalLeads}</div><div class="sub">across all funnels</div></div>
+      <div class="stat"><div class="label">Total Customers</div><div class="num">${totalCustomers}</div><div class="sub">paid conversions</div></div>
+      <div class="stat"><div class="label">Total Revenue</div><div class="num">${fmtINR(r.total_rupees||0)}</div><div class="sub">${r.count||0} payments</div></div>
     </div>
     <div class="panel" style="margin-bottom:26px">
       <h3>Projects & Status</h3>
