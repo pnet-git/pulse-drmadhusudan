@@ -420,7 +420,7 @@ function renderOverview(){
   const s=DATA.stats||{}, r=DATA.revenue||{}, c=DATA.content||{}, projs=DATA.projects||[], f=DATA.funnels||{};
   const lm=f.lead_magnets||{}, pf=f.product_funnels||{}, pa=f.paid_ads||{};
   // Total leads across funnels = lead magnet leads + uncoverted modak leads + paid ads list
-  const totalLeads = (lm.assessment||0)+(lm.routine||0)+(pf.modak_leads||0)+(pa.upgro_ad||0);
+  const totalLeads = (lm.assessment||0)+(lm.routine||0)+(lm.consult_lead||0)+(pf.modak_leads||0)+(pa.upgro_ad||0);
   // Total customers (conversions) = paid consults + all modak packs
   const totalCustomers = (pf.consult_organic||0)+(pf.modak_trial||0)+(pf.modak_monthly||0)+(pf.modak_quarterly||0);
   const sIcon={active:'🟢','in-progress':'🟡',parked:'⏸',planned:'🔵',done:'✅'};
@@ -504,7 +504,7 @@ function renderContent(){
 function renderFunnels(){
   if(!DATA) return;
   const f=DATA.funnels||{}, lm=f.lead_magnets||{}, pf=f.product_funnels||{}, pa=f.paid_ads||{};
-  const totalLeads=(lm.assessment||0)+(lm.routine||0);
+  const totalLeads=(lm.assessment||0)+(lm.routine||0)+(lm.consult_lead||0)+(pf.modak_leads||0);
   const totalCust=(pf.consult_organic||0)+(pf.modak_trial||0)+(pf.modak_monthly||0)+(pf.modak_quarterly||0);
   const totalModak=(pf.modak_trial||0)+(pf.modak_monthly||0)+(pf.modak_quarterly||0);
   function pill(label,count,col){return `<div class="bar-row"><div class="bar-head"><span class="bl">${label}</span><span class="bv" style="color:${col};font-weight:700">${count}</span></div></div>`;}
@@ -520,6 +520,7 @@ function renderFunnels(){
       <div class="panel"><h3>Lead Magnets</h3>
         ${pill('Assessment — Sexual Wellness',lm.assessment||0,'var(--gold)')}
         ${pill('Power Routine',lm.routine||0,'var(--text-dim)')}
+        ${pill('Consultation Leads (not paid)',lm.consult_lead||0,'var(--text-dim)')}
       </div>
       <div class="panel"><h3>Customers by Funnel</h3>
         ${pill('Consultation Organic (₹497)',pf.consult_organic||0,'var(--green)')}
