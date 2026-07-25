@@ -333,24 +333,33 @@ function renderRevenue(){
   const rangeVal = r[RANGE] != null ? r[RANGE] : (r.total||0);
   const rangeLabel = {today:'Today',week:'This Week',month:'This Month',total:'All Time'}[RANGE];
 
-  // funnel bars
-  const byFunnel = r.by_funnel || {};
-  const fLabels = {consult:'Consultation Organic', modak:'Kamdev Modak', 'consult-paid-ads':'Consultation Paid Ads', other:'Other'};
-  const fMax = Math.max(1, ...Object.values(byFunnel));
-  let funnelBars = Object.entries(byFunnel).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
-    const label = fLabels[k]||k;
-    const col = k==='modak'?'var(--gold)':k==='consult'?'var(--green)':k==='consult-paid-ads'?'#a78bfa':'var(--text-dim)';
-    return `<div class="bar-row"><div class="bar-head"><span class="bl">${label}</span><span class="bv">${fmtINR(v)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/fMax*100}%;background:${col}"></div></div></div>`;
+  // ── 5-BUCKET ATTRIBUTION (range-aware: today / week / month / total) ──
+  const BUCKETS = [
+    { key:'consult',          label:'Consult Organic',   price:'₹497',    col:'var(--green)' },
+    { key:'consult-paid-ads', label:'Consult Paid Ads',  price:'₹499',    col:'#a78bfa' },
+    { key:'modak-trial',      label:'Modak Trial',       price:'₹1,490',  col:'var(--gold)' },
+    { key:'modak-monthly',    label:'Modak Monthly',     price:'₹5,550',  col:'var(--gold)' },
+    { key:'modak-quarterly',  label:'Modak 3-Month',     price:'₹15,000', col:'var(--gold)' },
+    { key:'other',            label:'Other / Unmapped',  price:'—',       col:'var(--text-faint)' }
+  ];
+  const bk = (r.buckets && r.buckets[RANGE]) ? r.buckets[RANGE] : {};
+  const bMax = Math.max(1, ...BUCKETS.map(b => Number((bk[b.key]||{}).revenue) || 0));
+  const rangeCount = r[RANGE + '_count'] != null ? r[RANGE + '_count'] : (r.total_count || 0);
+
+  let bucketRows = BUCKETS.map(b => {
+    const d = bk[b.key] || {};
+    const cnt = Number(d.count) || 0;
+    const rev = Number(d.revenue) || 0;
+    const dim = cnt === 0 ? 'opacity:0.4;' : '';
+    return `<div class="bar-row" style="${dim}">
+      <div class="bar-head">
+        <span class="bl">${b.label} <span style="color:var(--text-faint);font-size:11px">· ${b.price}</span></span>
+        <span class="bv"><strong style="color:var(--text)">${cnt}</strong> <span style="color:var(--text-faint)">order${cnt===1?'':'s'}</span> &nbsp;·&nbsp; ${fmtINR(rev)}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${rev/bMax*100}%;background:${b.col}"></div></div>
+    </div>`;
   }).join('');
 
-  // modak pack bars
-  const byPack = r.modak_by_pack || {};
-  const pLabels = {trial:'Trial · 7 day', monthly:'Monthly · 30 day', quarterly:'3-Month · 90 day', other:'Other'};
-  const pMax = Math.max(1, ...Object.values(byPack));
-  let packBars = Object.entries(byPack).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
-    const label = pLabels[k]||k;
-    return `<div class="bar-row"><div class="bar-head"><span class="bl">${label}</span><span class="bv">${fmtINR(v)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/pMax*100}%;background:var(--gold)"></div></div></div>`;
-  }).join('');
 
   // daily trend
   const daily = r.daily || [];
@@ -385,17 +394,17 @@ function renderRevenue(){
   if(!rows) rows = '<tr><td colspan="4" style="text-align:center;color:var(--text-faint);padding:30px;">No payments yet — this fills in real time as Razorpay captures payments.</td></tr>';
 
   document.getElementById('content').innerHTML = `
-    <div class="tease">💰 <strong>Revenue</strong> — live from Razorpay, real time. Product sales (Modak) and consultation bookings roll up here. Medicine sales after consults are added manually until the clinic CRM is live.</div>
+    <div class="tease">💰 <strong>Revenue</strong> — live from Cashfree &amp; Razorpay. Every payment is attributed to one of five funnels by price point. Medicine sales after consults are added manually until the clinic CRM is live.</div>
     <div class="stats">
-      <div class="stat accent"><div class="label">${rangeLabel}</div><div class="num" style="font-size:30px;">${fmtINR(rangeVal)}</div><div class="sub">revenue ${rangeLabel.toLowerCase()}</div></div>
-      <div class="stat"><div class="label">All Time</div><div class="num" style="font-size:30px;">${fmtINR(r.total_rupees||0)}</div><div class="sub">${r.count||0} payments</div></div>
+      <div class="stat accent"><div class="label">${rangeLabel}</div><div class="num" style="font-size:30px;">${fmtINR(rangeVal)}</div><div class="sub">${rangeCount} order${rangeCount===1?'':'s'} ${rangeLabel.toLowerCase()}</div></div>
+      <div class="stat"><div class="label">All Time</div><div class="num" style="font-size:30px;">${fmtINR(r.total_rupees||0)}</div><div class="sub">${r.total_count||r.count||0} payments</div></div>
       <div class="stat"><div class="label">Product Orders</div><div class="num" style="font-size:30px;">${fmtINR(r.order_revenue||0)}</div><div class="sub">funnel sales</div></div>
       <div class="stat"><div class="label">Medicine Sales</div><div class="num" style="font-size:30px;">${fmtINR(r.medicine_revenue||0)}</div><div class="sub">post-consult (manual)</div></div>
     </div>
 
-    <div class="grid">
-      <div class="panel"><h3>Revenue by Funnel</h3>${funnelBars||'<div style="color:var(--text-faint);font-size:13px">No revenue yet</div>'}</div>
-      <div class="panel"><h3>Kamdev Modak — by Pack</h3>${packBars||'<div style="color:var(--text-faint);font-size:13px">No Modak sales yet</div>'}</div>
+    <div class="panel" style="margin-bottom:26px;">
+      <h3>Revenue by Funnel <span style="color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">· ${rangeLabel} · orders &amp; revenue</span></h3>
+      ${bucketRows}
     </div>
 
     <div class="panel" style="margin-bottom:26px;">
