@@ -111,42 +111,56 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .foot{text-align:center;color:var(--text-faint);font-size:12px;margin-top:40px;}
 .foot .p{color:var(--gold);}
 
-/* follow-up desk */
-.desk-controls{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;}
-.desk-controls button{padding:8px 14px;background:var(--panel);border:1px solid var(--border);border-radius:50px;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter';transition:all .18s;}
+/* follow-up desk — a tool, not a report */
+.desk-head,.desk-controls,.desk-tools,.desk-sum,#deskList{max-width:820px;}
+.desk-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.desk-title{font-family:'Fraunces',serif;font-size:24px;font-weight:600;letter-spacing:-0.3px;}
+.desk-note{font-size:13px;color:var(--text-dim);margin-top:2px;}
+#deskRefresh{min-height:44px;padding:10px 16px;background:none;border:1px solid var(--border-2);border-radius:50px;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter';}
+#deskRefresh:disabled{opacity:.5;}
+.desk-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 12px;box-shadow:0 10px 14px -12px rgba(0,0,0,.85);}
+.desk-controls button{min-height:44px;padding:10px 16px;background:var(--panel);border:1px solid var(--border);border-radius:50px;color:var(--text-dim);font-size:14px;font-weight:500;cursor:pointer;font-family:'Inter';transition:all .18s;}
+.desk-controls button b{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text);margin-left:2px;}
 .desk-controls button.active{background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:700;}
-.desk-controls select{padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:'Inter';}
-.desk-search{padding:8px 14px;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:'Inter';min-width:180px;}
+.desk-controls button.active b{color:#1a1a1a;}
+.desk-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 4px;}
+.desk-tools select{min-height:44px;padding:10px 32px 10px 14px;background:var(--panel);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;font-family:'Inter';color-scheme:dark;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.desk-search{min-height:44px;padding:10px 14px;background:var(--panel);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;font-family:'Inter';min-width:180px;color-scheme:dark;-webkit-appearance:none;appearance:none;}
 .desk-search:focus{outline:none;border-color:var(--gold);}
-.lead{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:10px;}
+.desk-sum{font-size:13px;color:var(--text-dim);margin:10px 2px 16px;}
+.desk-sum b{color:var(--text);font-variant-numeric:tabular-nums;font-weight:700;}
+.closed-toggle{display:flex;gap:8px;margin-bottom:12px;}
+.closed-toggle button{min-height:44px;padding:10px 18px;background:var(--panel);border:1px solid var(--border);border-radius:50px;color:var(--text-dim);font-size:14px;cursor:pointer;font-family:'Inter';}
+.closed-toggle button.on{border-color:var(--gold);color:var(--gold-light);font-weight:700;}
+.lead{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;}
 .lead.saving{border-color:var(--gold);}
-.lead-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline;}
-.lead-name{font-weight:700;color:var(--text);font-size:15px;}
-.lead-links{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;}
-.lead-links a{color:var(--gold);text-decoration:none;font-weight:600;}
-.lead-links a:hover{text-decoration:underline;}
-.lead-sub{font-size:13px;color:var(--text-dim);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.lead-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;}
+.lead-name{font-weight:700;color:var(--text);font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.due-tag{font-size:11px;font-weight:700;color:var(--orange);border:1px solid rgba(251,113,133,0.4);border-radius:50px;padding:2px 9px;letter-spacing:.5px;text-transform:uppercase;}
+.lead-links{display:flex;gap:8px;flex-wrap:wrap;font-size:14px;}
+.lead-links a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:50px;text-decoration:none;font-weight:600;}
+.lead-links a.act-call{background:var(--gold);border:1px solid var(--gold);color:#1a1a1a;font-weight:700;}
+.lead-links a.act-wa{background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.35);color:var(--green);}
+.lead-sub{font-size:13px;color:var(--text-dim);margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
 .lead-edit{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;}
-.lead-edit select,.lead-edit input{padding:8px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:'Inter';}
+.lead-edit select,.lead-edit input{min-height:44px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;font-family:'Inter';color-scheme:dark;}
+.lead-edit select{-webkit-appearance:none;appearance:none;padding-right:32px;font-weight:600;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.lead-date{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim);}
 .lead-edit input[type=text]{flex:1;min-width:160px;}
 .lead-edit select:focus,.lead-edit input:focus{outline:none;border-color:var(--gold);}
-.lead-saved{font-size:12px;color:var(--green);min-width:52px;}
+.lead-saved{font-size:13px;color:var(--green);min-width:52px;}
 .due{color:var(--orange)!important;font-weight:700;}
 .src-pill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;background:var(--bg-2);color:var(--text-dim);}
-/* Emily audit: thumb-sized targets, no iOS zoom, dark native controls */
-.desk-controls button{min-height:44px;padding:10px 16px;}
-.desk-controls select,.desk-search{min-height:44px;font-size:16px;}
-.lead-edit select,.lead-edit input{min-height:44px;padding:10px 12px;font-size:16px;}
-.lead-links a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;background:var(--bg-2);border:1px solid var(--border);border-radius:50px;}
-.desk-controls select,.desk-search,.lead-edit select,.lead-edit input{color-scheme:dark;}
-.desk-controls select,.lead-edit select{-webkit-appearance:none;appearance:none;padding-right:32px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
 
 @media (max-width:780px){
   .stats{grid-template-columns:repeat(2,1fr);}
   .grid{grid-template-columns:1fr;}
   .tbl .hide-m{display:none;}
-  .desk-controls select{flex:1;}
+  .desk-tools select{flex:1;}
   .desk-search{flex:1 1 100%;min-width:0;}
+  .lead-links{width:100%;}
+  .lead-links a.act-call{flex:1;justify-content:center;}
+  .lead-edit input[type=text]{flex:1 1 100%;}
 }
 </style>
 </head>
@@ -640,20 +654,21 @@ function renderDesk(){
   const conv = DESK.filter(l=>l.status==='Converted');
   const collected = DESK.reduce((s,l)=>s+(Number(l.total_paid)||0),0);
   el.innerHTML = `
-    <div class="tease">📞 <strong>Follow-up Desk</strong> — every lead and buyer from all funnels in one list. Update the status after every call; people who pay flip to Converted on their own.</div>
-    <div class="stats">
-      <div class="stat accent"><div class="label">Due For A Call</div><div class="num">${due.length}</div><div class="sub">call them today</div></div>
-      <div class="stat"><div class="label">To Work</div><div class="num">${active.length}</div><div class="sub">leads not yet closed</div></div>
-      <div class="stat"><div class="label">Converted</div><div class="num">${conv.length}</div><div class="sub">paid customers</div></div>
-      <div class="stat"><div class="label">Collected</div><div class="num" style="font-size:26px;">${fmtINR(collected)}</div><div class="sub">from everyone here</div></div>
+    <div class="desk-head">
+      <div>
+        <div class="desk-title">Follow-up Desk</div>
+        <div class="desk-note">Every lead in one list. After each call, set the status and the next call date.</div>
+      </div>
+      <button id="deskRefresh" onclick="loadDesk(true)">↻ Check for new leads</button>
     </div>
     <div class="desk-controls">
-      <button class="${DESK_FILTER==='work'?'active':''}" onclick="setDeskFilter('work',this)">To work</button>
-      <button class="${DESK_FILTER==='due'?'active':''}" onclick="setDeskFilter('due',this)">Due today</button>
+      <button class="${DESK_FILTER==='work'?'active':''}" onclick="setDeskFilter('work',this)">To work <b>${active.length}</b></button>
+      <button class="${DESK_FILTER==='due'?'active':''}" onclick="setDeskFilter('due',this)">Due today <b>${due.length}</b></button>
       <button class="${DESK_FILTER==='appt'?'active':''}" onclick="setDeskFilter('appt',this)">Appointments</button>
-      <button class="${DESK_FILTER==='converted'?'active':''}" onclick="setDeskFilter('converted',this)">Converted</button>
-      <button class="${DESK_FILTER==='lost'?'active':''}" onclick="setDeskFilter('lost',this)">Not interested</button>
+      <button class="${['converted','lost'].includes(DESK_FILTER)?'active':''}" onclick="setDeskFilter('converted',this)">Closed</button>
       <button class="${DESK_FILTER==='all'?'active':''}" onclick="setDeskFilter('all',this)">All</button>
+    </div>
+    <div class="desk-tools">
       <select onchange="DESK_DOOR=this.value;paintDesk()">
         <option value="all">Every funnel</option>
         <option value="Assessment" ${DESK_DOOR==='Assessment'?'selected':''}>Assessment</option>
@@ -661,9 +676,9 @@ function renderDesk(){
         <option value="Consultation page" ${DESK_DOOR==='Consultation page'?'selected':''}>Consultation page</option>
         <option value="Modak page" ${DESK_DOOR==='Modak page'?'selected':''}>Modak page</option>
       </select>
-      <input class="desk-search" placeholder="Search name / phone / email" value="${DESK_Q}" oninput="DESK_Q=this.value;paintDesk()">
-      <button id="deskRefresh" onclick="loadDesk(true)">↻ Check for new leads</button>
+      <input class="desk-search" type="search" placeholder="Search name / phone / email" value="${DESK_Q}" oninput="DESK_Q=this.value;paintDesk()">
     </div>
+    <div class="desk-sum">Paid customers <b>${conv.length}</b> · Collected <b>${fmtINR(collected)}</b></div>
     <div id="deskList"></div>`;
   paintDesk();
   document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
@@ -673,22 +688,24 @@ function paintDesk(){
   const list = document.getElementById('deskList');
   if(!list) return;
   const rows = DESK.filter(deskMatches);
+  const closedBar = ['converted','lost'].includes(DESK_FILTER) ? `<div class="closed-toggle"><button class="${DESK_FILTER==='converted'?'on':''}" onclick="DESK_FILTER='converted';paintDesk()">Paid</button><button class="${DESK_FILTER==='lost'?'on':''}" onclick="DESK_FILTER='lost';paintDesk()">Not interested</button></div>` : '';
   const EMPTY={work:'No leads to work right now. New leads land here on their own.',due:'No calls due today. You are caught up.',appt:'No appointments booked yet.',converted:'No paid customers yet.',lost:'Nobody is marked Not interested.',all:'No leads yet.'};
-  if(!rows.length){ list.innerHTML = `<div class="loading">${EMPTY[DESK_FILTER]||'Nothing here. Pick another filter.'}</div>`; return; }
-  list.innerHTML = rows.slice(0,400).map(l=>{
+  if(!rows.length){ list.innerHTML = closedBar + `<div class="loading">${EMPTY[DESK_FILTER]||'Nothing here. Pick another filter.'}</div>`; return; }
+  list.innerHTML = closedBar + rows.slice(0,400).map(l=>{
     const phone10 = (l.phone||'').slice(-10);
     const wa = (l.phone||'').length>=10 ? ((l.phone.length===10?'91':'')+l.phone) : '';
     const links = [
-      l.phone ? `<a href="tel:+${wa}">📞 ${phone10}</a>` : '<span style="color:var(--orange);font-size:12px">no phone</span>',
-      wa ? `<a href="https://wa.me/${wa}" target="_blank">WhatsApp</a>` : ''
+      l.phone ? `<a class="act-call" href="tel:+${wa}">Call ${phone10}</a>` : '<span style="color:var(--orange);font-size:13px;font-weight:600">no phone</span>',
+      wa ? `<a class="act-wa" href="https://wa.me/${wa}" target="_blank">WhatsApp</a>` : ''
     ].filter(Boolean).join(' ');
     const dueCls = (l.next_followup && l.next_followup <= deskToday()) ? 'due' : '';
     const boughtBit = l.bought ? ` · <span style="color:var(--gold)">${l.bought} · ${fmtINR(l.total_paid)}</span>` : '';
     const opts = DESK_STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('');
     const strip = l.status==='Converted' ? 'var(--green)' : l.status==='Not interested' ? 'var(--border-2)' : dueCls ? 'var(--orange)' : l.status==='New' ? 'var(--gold)' : 'var(--border-2)';
+    const stCol = l.status==='Converted' ? 'var(--green)' : l.status==='Not interested' ? 'var(--text-faint)' : l.status==='New' ? 'var(--gold-light)' : 'var(--text)';
     return `<div class="lead" id="lead-${l.id}" style="border-left:3px solid ${strip}">
       <div class="lead-top">
-        <span class="lead-name">${l.name||'(no name)'}</span>
+        <span class="lead-name">${l.name||'(no name)'}${dueCls?'<span class="due-tag">Call due</span>':''}</span>
         <span class="lead-links">${links}</span>
       </div>
       <div class="lead-sub">
@@ -696,14 +713,13 @@ function paintDesk(){
         <a href="mailto:${l.email}" style="color:var(--text-dim);text-decoration:none;word-break:break-all">${l.email}</a>${boughtBit}
       </div>
       <div class="lead-edit">
-        <select onchange="saveLead('${l.id}')">${opts}</select>
-        <span style="font-size:12px;color:var(--text-dim)">Next call</span>
-        <input type="date" class="${dueCls}" value="${l.next_followup||''}" onchange="saveLead('${l.id}')">
+        <select style="color:${stCol}" onchange="saveLead('${l.id}')">${opts}</select>
+        <label class="lead-date"><span>Next call</span><input type="date" class="${dueCls}" value="${l.next_followup||''}" onchange="saveLead('${l.id}')"></label>
         <input type="text" placeholder="Note after the call" value="${(l.note||'').replace(/"/g,'&quot;')}" onchange="saveLead('${l.id}')">
         <span class="lead-saved" id="saved-${l.id}"></span>
       </div>
     </div>`;
-  }).join('') + (rows.length>400?`<div class="loading">Showing 400 of ${rows.length} — narrow the filter.</div>`:'');
+  }).join('') + (rows.length>400?`<div class="loading">Showing 400 of ${rows.length} — narrow the search.</div>`:'');
 }
 
 function saveLead(id){
