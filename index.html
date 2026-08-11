@@ -198,7 +198,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
     <button class="tab" data-tab="assessment" onclick="setTab('assessment',this)">Assessment</button>
     <button class="tab" data-tab="revenue" onclick="setTab('revenue',this)">Revenue</button>
     <button class="tab" data-tab="content" onclick="setTab('content',this)">Content</button>
-    <button class="tab" data-tab="desk" onclick="setTab('desk',this)">Follow-ups</button>
+    <button class="tab" data-tab="desk" onclick="setTab('desk',this)">Lead Tracking</button>
   </div>
 
   <div class="filters">
@@ -495,41 +495,47 @@ function renderContent(){
   const months = [];
   const byM = {};
   rows.forEach(r=>{
-    if(!byM[r.month]){ byM[r.month] = {month:r.month, cloned:{v:0,views:0}, edited:{v:0,views:0}, ig:0, yt:0, fb:0, total:0}; months.push(r.month); }
+    if(!byM[r.month]){ byM[r.month] = {month:r.month, cloned:{v:0,views:0}, es:{v:0,views:0}, el:{v:0,views:0}, ig:0, yt:0, fb:0, total:0}; months.push(r.month); }
     const m = byM[r.month];
-    const slot = r.type==='Cloned reel' ? m.cloned : m.edited;
+    const slot = r.type==='Cloned reel' ? m.cloned : r.type==='Edited long' ? m.el : m.es;
     slot.v += r.videos; slot.views += r.total;
     m.ig += r.ig; m.yt += r.yt; m.fb += r.fb; m.total += r.total;
   });
   const tot = rows.reduce((a,r)=>{ a.views+=r.total; a.ig+=r.ig; a.yt+=r.yt; a.fb+=r.fb;
-    if(r.type==='Cloned reel'){ a.clonedV+=r.videos; a.clonedViews+=r.total; } else { a.editedV+=r.videos; a.editedViews+=r.total; }
-    return a; }, {views:0,ig:0,yt:0,fb:0,clonedV:0,clonedViews:0,editedV:0,editedViews:0});
+    if(r.type==='Cloned reel'){ a.clonedV+=r.videos; a.clonedViews+=r.total; }
+    else if(r.type==='Edited long'){ a.elV+=r.videos; a.elViews+=r.total; }
+    else { a.esV+=r.videos; a.esViews+=r.total; }
+    return a; }, {views:0,ig:0,yt:0,fb:0,clonedV:0,clonedViews:0,esV:0,esViews:0,elV:0,elViews:0});
   const latest = byM[months[months.length-1]];
   const mMax = Math.max(1, ...months.map(k=>byM[k].total));
   const trend = months.map(k=>{
     const m = byM[k];
-    const hc = m.cloned.views/mMax*100, he = m.edited.views/mMax*100;
+    const parts = [
+      {v:m.el.views, col:'var(--amber)', label:'Long edits'},
+      {v:m.es.views, col:'var(--text-faint)', label:'Short edits'},
+      {v:m.cloned.views, col:'var(--gold)', label:'Cloned reels'}
+    ].filter(p=>p.v>0);
+    const hTotal = m.total/mMax*100;
     const vShort = m.total>=100000 ? (m.total/100000).toFixed(1)+'L' : m.total>=1000 ? (m.total/1000).toFixed(0)+'K' : m.total;
+    const stack = parts.map((p,i)=>`<div style="height:${p.v/m.total*100}%;background:${p.col};${i===0?'border-radius:4px 4px 0 0;':''}" title="${p.label}: ${p.v.toLocaleString('en-IN')}"></div>`).join('');
     return `<div class="col"><div class="val">${vShort}</div>
-      <div style="width:100%;max-width:32px;display:flex;flex-direction:column;justify-content:flex-end;height:${hc+he}%;min-height:3px;">
-        ${he>0?`<div style="height:${he/(hc+he)*100}%;background:var(--text-faint);border-radius:4px 4px 0 0;" title="Edited: ${m.edited.views.toLocaleString('en-IN')}"></div>`:''}
-        <div style="flex:1;background:linear-gradient(180deg,var(--gold),rgba(201,161,74,0.3));border-radius:${he>0?'0 0 0 0':'4px 4px 0 0'};" title="Cloned: ${m.cloned.views.toLocaleString('en-IN')}"></div>
-      </div><div class="day">${k.replace(' 20',"'")}</div></div>`;
+      <div style="width:100%;max-width:32px;display:flex;flex-direction:column;justify-content:flex-end;height:${hTotal}%;min-height:3px;">${stack}</div>
+      <div class="day">${k.replace(' 20',"'")}</div></div>`;
   }).join('');
   const pMax = Math.max(1, tot.ig, tot.yt, tot.fb);
   const platRow = (label,v,col)=>`<div class="bar-row"><div class="bar-head"><span class="bl">${label}</span><span class="bv">${v.toLocaleString('en-IN')}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/pMax*100}%;background:${col}"></div></div></div>`;
   const tblRows = months.slice().reverse().map(k=>{ const m=byM[k];
-    return `<tr><td style="font-weight:600">${k}</td><td style="color:var(--gold);font-weight:700">${m.cloned.v}</td><td style="color:var(--text-dim)">${m.edited.v||'—'}</td><td class="hide-m">${m.ig.toLocaleString('en-IN')}</td><td class="hide-m">${m.yt.toLocaleString('en-IN')}</td><td class="hide-m">${m.fb.toLocaleString('en-IN')}</td><td style="color:var(--green);font-weight:700">${m.total.toLocaleString('en-IN')}</td></tr>`; }).join('');
+    return `<tr><td style="font-weight:600">${k}</td><td style="color:var(--gold);font-weight:700">${m.cloned.v}</td><td style="color:var(--text-dim)">${m.es.v||'—'}</td><td style="color:var(--amber)">${m.el.v||'—'}</td><td class="hide-m">${m.ig.toLocaleString('en-IN')}</td><td class="hide-m">${m.yt.toLocaleString('en-IN')}</td><td class="hide-m">${m.fb.toLocaleString('en-IN')}</td><td style="color:var(--green);font-weight:700">${m.total.toLocaleString('en-IN')}</td></tr>`; }).join('');
   document.getElementById('content').innerHTML = `
-    <div class="tease">🎬 <strong>Cloned reels</strong> are produced by Dr. Madhu's AI clone — no shooting, no studio. <strong>Edited videos</strong> are his own footage our team edits. Numbers update from the weekly content sheet.</div>
+    <div class="tease">🎬 <strong>Cloned reels</strong> are produced by Dr. Madhu's AI clone — no shooting, no studio. <strong>Edited videos</strong> are his own footage our team edits — split into short form and long form. Numbers update from the weekly content sheet.</div>
     <div class="stats">
-      <div class="stat accent"><div class="label">${latest.month}</div><div class="num">${latest.total.toLocaleString('en-IN')}</div><div class="sub">${latest.cloned.v} cloned + ${latest.edited.v} edited videos</div></div>
+      <div class="stat accent"><div class="label">${latest.month}</div><div class="num">${latest.total.toLocaleString('en-IN')}</div><div class="sub">${latest.cloned.v} cloned · ${latest.es.v} short + ${latest.el.v} long edits</div></div>
       <div class="stat"><div class="label">All Time Views</div><div class="num">${tot.views.toLocaleString('en-IN')}</div><div class="sub">across all platforms</div></div>
       <div class="stat"><div class="label">Cloned Reels</div><div class="num">${tot.clonedV}</div><div class="sub">${tot.clonedViews.toLocaleString('en-IN')} views</div></div>
-      <div class="stat"><div class="label">Edited Videos</div><div class="num">${tot.editedV}</div><div class="sub">${tot.editedViews.toLocaleString('en-IN')} views</div></div>
+      <div class="stat"><div class="label">Edited Videos</div><div class="num">${tot.esV + tot.elV}</div><div class="sub">${tot.esV} short · ${tot.elV} long · ${(tot.esViews + tot.elViews).toLocaleString('en-IN')} views</div></div>
     </div>
     <div class="panel" style="margin-bottom:26px">
-      <h3>Views Month By Month <span style="color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">· gold = cloned, grey = edited</span></h3>
+      <h3>Views Month By Month <span style="color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">· gold = cloned reels, grey = short edits, amber = long edits</span></h3>
       <div class="trend">${trend}</div>
     </div>
     <div class="grid">
@@ -545,7 +551,7 @@ function renderContent(){
       </div>
     </div>
     <div class="panel"><h3>Monthly Breakdown</h3>
-      <table class="tbl"><thead><tr><th>Month</th><th style="color:var(--gold)">Cloned</th><th>Edited</th><th class="hide-m">Instagram</th><th class="hide-m">YouTube</th><th class="hide-m">Facebook</th><th style="color:var(--green)">Total Views</th></tr></thead><tbody>${tblRows}</tbody></table>
+      <table class="tbl"><thead><tr><th>Month</th><th style="color:var(--gold)">Cloned</th><th>Short edits</th><th style="color:var(--amber)">Long edits</th><th class="hide-m">Instagram</th><th class="hide-m">YouTube</th><th class="hide-m">Facebook</th><th style="color:var(--green)">Total Views</th></tr></thead><tbody>${tblRows}</tbody></table>
     </div>`;
   document.getElementById('lastSync').textContent='Synced '+new Date().toLocaleTimeString();
 }
@@ -653,7 +659,7 @@ function renderDesk(){
   el.innerHTML = `
     <div class="desk-head">
       <div>
-        <div class="desk-title">Follow-up Desk</div>
+        <div class="desk-title">Lead Tracking</div>
         <div class="desk-note">Every lead in one list. After each call, set the status and the next call date.</div>
       </div>
       <button id="deskRefresh" onclick="syncDesk()" ${DESK_SYNCING?'disabled':''}>${DESK_SYNCING?'Checking…':'↻ Check for new leads'}</button>
