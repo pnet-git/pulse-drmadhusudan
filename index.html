@@ -125,7 +125,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .lead-links{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;}
 .lead-links a{color:var(--gold);text-decoration:none;font-weight:600;}
 .lead-links a:hover{text-decoration:underline;}
-.lead-sub{font-size:12px;color:var(--text-faint);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.lead-sub{font-size:13px;color:var(--text-dim);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
 .lead-edit{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;}
 .lead-edit select,.lead-edit input{padding:8px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:'Inter';}
 .lead-edit input[type=text]{flex:1;min-width:160px;}
@@ -133,11 +133,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .lead-saved{font-size:12px;color:var(--green);min-width:52px;}
 .due{color:var(--orange)!important;font-weight:700;}
 .src-pill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;background:var(--bg-2);color:var(--text-dim);}
+/* Emily audit: thumb-sized targets, no iOS zoom, dark native controls */
+.desk-controls button{min-height:44px;padding:10px 16px;}
+.desk-controls select,.desk-search{min-height:44px;font-size:16px;}
+.lead-edit select,.lead-edit input{min-height:44px;padding:10px 12px;font-size:16px;}
+.lead-links a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;background:var(--bg-2);border:1px solid var(--border);border-radius:50px;}
+.desk-controls select,.desk-search,.lead-edit select,.lead-edit input{color-scheme:dark;}
+.desk-controls select,.lead-edit select{-webkit-appearance:none;appearance:none;padding-right:32px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.lead-links a[href^="mailto:"]{background:none;border:none;padding:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 @media (max-width:780px){
   .stats{grid-template-columns:repeat(2,1fr);}
   .grid{grid-template-columns:1fr;}
   .tbl .hide-m{display:none;}
+  .desk-controls select{flex:1;}
+  .desk-search{flex:1 1 100%;min-width:0;}
 }
 </style>
 </head>
@@ -628,8 +638,8 @@ function renderDesk(){
   el.innerHTML = `
     <div class="tease">📞 <strong>Follow-up Desk</strong> — every lead and buyer from all funnels in one list. Update the status after every call; people who pay flip to Converted on their own.</div>
     <div class="stats">
-      <div class="stat accent"><div class="label">To Work</div><div class="num">${active.length}</div><div class="sub">leads not yet closed</div></div>
-      <div class="stat"><div class="label">Due For A Call</div><div class="num">${due.length}</div><div class="sub">follow-up date reached</div></div>
+      <div class="stat accent"><div class="label">Due For A Call</div><div class="num">${due.length}</div><div class="sub">call them today</div></div>
+      <div class="stat"><div class="label">To Work</div><div class="num">${active.length}</div><div class="sub">leads not yet closed</div></div>
       <div class="stat"><div class="label">Converted</div><div class="num">${conv.length}</div><div class="sub">paid customers</div></div>
       <div class="stat"><div class="label">Collected</div><div class="num" style="font-size:26px;">${fmtINR(collected)}</div><div class="sub">from everyone here</div></div>
     </div>
@@ -658,7 +668,8 @@ function paintDesk(){
   const list = document.getElementById('deskList');
   if(!list) return;
   const rows = DESK.filter(deskMatches);
-  if(!rows.length){ list.innerHTML = '<div class="loading">Nothing here. Pick another filter.</div>'; return; }
+  const EMPTY={work:'No leads to work right now. New leads land here on their own.',due:'No calls due today. You are caught up.',appt:'No appointments booked yet.',converted:'No paid customers yet.',lost:'Nobody is marked Not interested.',all:'No leads yet.'};
+  if(!rows.length){ list.innerHTML = `<div class="loading">${EMPTY[DESK_FILTER]||'Nothing here. Pick another filter.'}</div>`; return; }
   list.innerHTML = rows.slice(0,400).map(l=>{
     const phone10 = (l.phone||'').slice(-10);
     const wa = (l.phone||'').length>=10 ? ((l.phone.length===10?'91':'')+l.phone) : '';
@@ -670,17 +681,18 @@ function paintDesk(){
     const dueCls = (l.next_followup && l.next_followup <= deskToday()) ? 'due' : '';
     const boughtBit = l.bought ? ` · <span style="color:var(--gold)">${l.bought} · ${fmtINR(l.total_paid)}</span>` : '';
     const opts = DESK_STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('');
-    return `<div class="lead" id="lead-${l.id}">
+    const strip = l.status==='Converted' ? 'var(--green)' : l.status==='Not interested' ? 'var(--border-2)' : dueCls ? 'var(--orange)' : l.status==='New' ? 'var(--gold)' : 'var(--border-2)';
+    return `<div class="lead" id="lead-${l.id}" style="border-left:3px solid ${strip}">
       <div class="lead-top">
         <span class="lead-name">${l.name||'(no name)'}</span>
         <span class="lead-links">${links}</span>
       </div>
       <div class="lead-sub">
-        <span class="src-pill">${l.came_from}</span>
-        <span>first seen ${l.first_seen ? l.first_seen.slice(0,10) : '—'}</span>${boughtBit}
+        <span class="src-pill">${l.came_from}</span>${boughtBit}
       </div>
       <div class="lead-edit">
         <select onchange="saveLead('${l.id}')">${opts}</select>
+        <span style="font-size:12px;color:var(--text-dim)">Next call</span>
         <input type="date" class="${dueCls}" value="${l.next_followup||''}" onchange="saveLead('${l.id}')">
         <input type="text" placeholder="Note after the call" value="${(l.note||'').replace(/"/g,'&quot;')}" onchange="saveLead('${l.id}')">
         <span class="lead-saved" id="saved-${l.id}"></span>
