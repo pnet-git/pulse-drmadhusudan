@@ -14,25 +14,24 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const KEY = process.env.SUPABASE_KEY;
   const headers = { 'apikey': KEY, 'Authorization': `Bearer ${KEY}`, 'Content-Type': 'application/json' };
+  const rpc = (fn) => fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: '{}' });
 
   try {
-    const [statsRes, recentRes, revRes, revRecentRes, contentRes, projectsRes, funnelsRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_stats`, { method: 'POST', headers, body: '{}' }),
-      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_recent`, { method: 'POST', headers, body: '{}' }),
-      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_revenue`, { method: 'POST', headers, body: '{}' }),
-      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_revenue_recent`, { method: 'POST', headers, body: '{}' }),
-      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_content`, { method: 'POST', headers, body: '{}' }),
-      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_projects`, { method: 'POST', headers, body: '{}' }),
-      fetch(`${SUPABASE_URL}/rest/v1/rpc/pulse_funnels`, { method: 'POST', headers, body: '{}' })
+    const [statsRes, recentRes, revRes, revRecentRes, execRes, content2Res] = await Promise.all([
+      rpc('pulse_stats'),
+      rpc('pulse_recent'),
+      rpc('pulse_revenue'),
+      rpc('pulse_revenue_recent'),
+      rpc('pulse_exec'),
+      rpc('pulse_content_v2')
     ]);
     const stats = await statsRes.json();
     const recent = await recentRes.json();
     const revenue = await revRes.json();
     const revenue_recent = await revRecentRes.json();
-    const content = await contentRes.json();
-    const projects = await projectsRes.json();
-    const funnels = await funnelsRes.json();
-    return res.status(200).json({ ok: true, stats, recent, revenue, revenue_recent, content, projects, funnels });
+    const exec = await execRes.json();
+    const content2 = await content2Res.json();
+    return res.status(200).json({ ok: true, stats, recent, revenue, revenue_recent, exec, content2 });
   } catch (e) {
     return res.status(500).json({ error: 'fetch_failed', detail: String(e) });
   }
