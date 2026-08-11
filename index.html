@@ -111,6 +111,29 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .foot{text-align:center;color:var(--text-faint);font-size:12px;margin-top:40px;}
 .foot .p{color:var(--gold);}
 
+/* follow-up desk */
+.desk-controls{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;}
+.desk-controls button{padding:8px 14px;background:var(--panel);border:1px solid var(--border);border-radius:50px;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter';transition:all .18s;}
+.desk-controls button.active{background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:700;}
+.desk-controls select{padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:'Inter';}
+.desk-search{padding:8px 14px;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:'Inter';min-width:180px;}
+.desk-search:focus{outline:none;border-color:var(--gold);}
+.lead{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:10px;}
+.lead.saving{border-color:var(--gold);}
+.lead-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline;}
+.lead-name{font-weight:700;color:var(--text);font-size:15px;}
+.lead-links{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;}
+.lead-links a{color:var(--gold);text-decoration:none;font-weight:600;}
+.lead-links a:hover{text-decoration:underline;}
+.lead-sub{font-size:12px;color:var(--text-faint);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.lead-edit{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;}
+.lead-edit select,.lead-edit input{padding:8px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:'Inter';}
+.lead-edit input[type=text]{flex:1;min-width:160px;}
+.lead-edit select:focus,.lead-edit input:focus{outline:none;border-color:var(--gold);}
+.lead-saved{font-size:12px;color:var(--green);min-width:52px;}
+.due{color:var(--orange)!important;font-weight:700;}
+.src-pill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;background:var(--bg-2);color:var(--text-dim);}
+
 @media (max-width:780px){
   .stats{grid-template-columns:repeat(2,1fr);}
   .grid{grid-template-columns:1fr;}
@@ -151,6 +174,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
     <button class="tab" data-tab="revenue" onclick="setTab('revenue',this)">Revenue</button>
     <button class="tab" data-tab="content" onclick="setTab('content',this)">Content</button>
     <button class="tab" data-tab="funnels" onclick="setTab('funnels',this)">Funnels</button>
+    <button class="tab" data-tab="desk" onclick="setTab('desk',this)">Follow-ups</button>
   </div>
 
   <div class="filters">
@@ -174,6 +198,8 @@ function setTab(t, btn){
   TAB = t;
   document.querySelectorAll('.tab:not(.disabled)').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  // The follow-up desk has its own filters — the time range row does not apply
+  document.querySelector('.filters').style.display = (t==='desk') ? 'none' : '';
   applyRangeAvailability();
   render();
 }
@@ -237,6 +263,7 @@ function zClass(z){ return z==='Thriving'?'z-thriving':z==='Growth'?'z-growth':'
 function zColor(z){ return z==='Thriving'?'var(--green)':z==='Growth'?'var(--amber)':'var(--orange)'; }
 
 function render(){
+  if(TAB==='desk')       { renderDesk();       return; }
   if(!DATA) return;
   if(TAB==='revenue')    { renderRevenue();    return; }
   if(TAB==='content')    { renderContent();    return; }
@@ -544,6 +571,140 @@ function renderFunnels(){
       <div style="color:var(--text-faint);font-size:12px;margin-top:12px">${f.synced_at?'Auto-synced daily 7:00 AM · last: '+f.synced_at:''}</div>
     </div>`;
   document.getElementById('lastSync').textContent='Synced '+new Date().toLocaleTimeString();
+}
+
+// ─── FOLLOW-UP DESK ──────────────────────────────────────────────────────────
+let DESK = null;          // rows from /api/desk
+let DESK_FILTER = 'work'; // work | due | appt | converted | lost | all
+let DESK_DOOR = 'all';
+let DESK_Q = '';
+let DESK_SYNCED = false;
+
+const DESK_STATUSES = ['New','Contacted','Talk again later','Appointment booked','Appointment done','Converted','Not interested'];
+
+function deskPass(){ return sessionStorage.getItem('pulse_p') || ''; }
+
+function loadDesk(){
+  const doList = () => fetch('/api/desk', { headers: { 'x-pulse-pass': deskPass() } })
+    .then(r=>r.json()).then(d=>{ DESK = d.leads || []; renderDesk(); });
+  if(!DESK_SYNCED){
+    // one sync per visit: pull new payments + new leads, flip paid people to Converted
+    document.getElementById('content').innerHTML = '<div class="loading">Checking for new leads and payments…</div>';
+    fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' }, body: JSON.stringify({action:'sync'}) })
+      .then(()=>{ DESK_SYNCED = true; })
+      .catch(()=>{})
+      .then(doList);
+  } else {
+    doList();
+  }
+}
+
+function deskToday(){ const d = new Date(); return d.toISOString().slice(0,10); }
+
+function deskMatches(l){
+  const active = ['New','Contacted','Talk again later'];
+  if(DESK_FILTER==='work'      && !active.includes(l.status)) return false;
+  if(DESK_FILTER==='due'       && !(l.next_followup && l.next_followup <= deskToday() && !['Converted','Not interested','Appointment done'].includes(l.status))) return false;
+  if(DESK_FILTER==='appt'      && !['Appointment booked','Appointment done'].includes(l.status)) return false;
+  if(DESK_FILTER==='converted' && l.status!=='Converted') return false;
+  if(DESK_FILTER==='lost'      && l.status!=='Not interested') return false;
+  if(DESK_DOOR!=='all' && l.came_from!==DESK_DOOR) return false;
+  if(DESK_Q){
+    const q = DESK_Q.toLowerCase();
+    if(!((l.name||'').toLowerCase().includes(q) || (l.email||'').includes(q) || (l.phone||'').includes(q))) return false;
+  }
+  return true;
+}
+
+function setDeskFilter(f,btn){ DESK_FILTER=f; document.querySelectorAll('.desk-controls button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); paintDesk(); }
+
+function renderDesk(){
+  if(DESK===null){ loadDesk(); return; }
+  const el = document.getElementById('content');
+  const active = DESK.filter(l=>['New','Contacted','Talk again later'].includes(l.status));
+  const due = DESK.filter(l=>l.next_followup && l.next_followup <= deskToday() && !['Converted','Not interested','Appointment done'].includes(l.status));
+  const conv = DESK.filter(l=>l.status==='Converted');
+  const collected = DESK.reduce((s,l)=>s+(Number(l.total_paid)||0),0);
+  el.innerHTML = `
+    <div class="tease">📞 <strong>Follow-up Desk</strong> — every lead and buyer from all funnels in one list. Update the status after every call; people who pay flip to Converted on their own.</div>
+    <div class="stats">
+      <div class="stat accent"><div class="label">To Work</div><div class="num">${active.length}</div><div class="sub">leads not yet closed</div></div>
+      <div class="stat"><div class="label">Due For A Call</div><div class="num">${due.length}</div><div class="sub">follow-up date reached</div></div>
+      <div class="stat"><div class="label">Converted</div><div class="num">${conv.length}</div><div class="sub">paid customers</div></div>
+      <div class="stat"><div class="label">Collected</div><div class="num" style="font-size:26px;">${fmtINR(collected)}</div><div class="sub">from everyone here</div></div>
+    </div>
+    <div class="desk-controls">
+      <button class="${DESK_FILTER==='work'?'active':''}" onclick="setDeskFilter('work',this)">To work</button>
+      <button class="${DESK_FILTER==='due'?'active':''}" onclick="setDeskFilter('due',this)">Due today</button>
+      <button class="${DESK_FILTER==='appt'?'active':''}" onclick="setDeskFilter('appt',this)">Appointments</button>
+      <button class="${DESK_FILTER==='converted'?'active':''}" onclick="setDeskFilter('converted',this)">Converted</button>
+      <button class="${DESK_FILTER==='lost'?'active':''}" onclick="setDeskFilter('lost',this)">Not interested</button>
+      <button class="${DESK_FILTER==='all'?'active':''}" onclick="setDeskFilter('all',this)">All</button>
+      <select onchange="DESK_DOOR=this.value;paintDesk()">
+        <option value="all">Every funnel</option>
+        <option value="Assessment" ${DESK_DOOR==='Assessment'?'selected':''}>Assessment</option>
+        <option value="Routine" ${DESK_DOOR==='Routine'?'selected':''}>Routine</option>
+        <option value="Consultation page" ${DESK_DOOR==='Consultation page'?'selected':''}>Consultation page</option>
+        <option value="Modak page" ${DESK_DOOR==='Modak page'?'selected':''}>Modak page</option>
+      </select>
+      <input class="desk-search" placeholder="Search name / phone / email" value="${DESK_Q}" oninput="DESK_Q=this.value;paintDesk()">
+    </div>
+    <div id="deskList"></div>`;
+  paintDesk();
+  document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
+}
+
+function paintDesk(){
+  const list = document.getElementById('deskList');
+  if(!list) return;
+  const rows = DESK.filter(deskMatches);
+  if(!rows.length){ list.innerHTML = '<div class="loading">Nothing here. Pick another filter.</div>'; return; }
+  list.innerHTML = rows.slice(0,400).map(l=>{
+    const phone10 = (l.phone||'').slice(-10);
+    const wa = (l.phone||'').length>=10 ? ((l.phone.length===10?'91':'')+l.phone) : '';
+    const links = [
+      l.phone ? `<a href="tel:+${wa}">📞 ${phone10}</a>` : '<span style="color:var(--orange);font-size:12px">no phone</span>',
+      wa ? `<a href="https://wa.me/${wa}" target="_blank">WhatsApp</a>` : '',
+      `<a href="mailto:${l.email}" style="color:var(--text-dim);font-weight:400">${l.email}</a>`
+    ].filter(Boolean).join(' ');
+    const dueCls = (l.next_followup && l.next_followup <= deskToday()) ? 'due' : '';
+    const boughtBit = l.bought ? ` · <span style="color:var(--gold)">${l.bought} · ${fmtINR(l.total_paid)}</span>` : '';
+    const opts = DESK_STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('');
+    return `<div class="lead" id="lead-${l.id}">
+      <div class="lead-top">
+        <span class="lead-name">${l.name||'(no name)'}</span>
+        <span class="lead-links">${links}</span>
+      </div>
+      <div class="lead-sub">
+        <span class="src-pill">${l.came_from}</span>
+        <span>first seen ${l.first_seen ? l.first_seen.slice(0,10) : '—'}</span>${boughtBit}
+      </div>
+      <div class="lead-edit">
+        <select onchange="saveLead('${l.id}')">${opts}</select>
+        <input type="date" class="${dueCls}" value="${l.next_followup||''}" onchange="saveLead('${l.id}')">
+        <input type="text" placeholder="Note after the call" value="${(l.note||'').replace(/"/g,'&quot;')}" onchange="saveLead('${l.id}')">
+        <span class="lead-saved" id="saved-${l.id}"></span>
+      </div>
+    </div>`;
+  }).join('') + (rows.length>400?`<div class="loading">Showing 400 of ${rows.length} — narrow the filter.</div>`:'');
+}
+
+function saveLead(id){
+  const card = document.getElementById('lead-'+id);
+  const [sel, dateIn, noteIn] = card.querySelectorAll('select, input[type=date], input[type=text]');
+  card.classList.add('saving');
+  fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' },
+    body: JSON.stringify({ action:'update', id, status: sel.value, next_followup: dateIn.value || null, note: noteIn.value || null }) })
+  .then(r=>r.json()).then(d=>{
+    card.classList.remove('saving');
+    const tag = document.getElementById('saved-'+id);
+    tag.textContent = d.ok ? 'Saved' : 'Failed';
+    tag.style.color = d.ok ? 'var(--green)' : 'var(--orange)';
+    const row = DESK.find(x=>x.id===id);
+    if(d.ok && row){ row.status = sel.value; row.next_followup = dateIn.value||null; row.note = noteIn.value||null; }
+    setTimeout(()=>{ tag.textContent=''; }, 1800);
+  })
+  .catch(()=>{ card.classList.remove('saving'); const tag=document.getElementById('saved-'+id); tag.textContent='Failed'; tag.style.color='var(--orange)'; });
 }</script>
 </body>
 </html>
