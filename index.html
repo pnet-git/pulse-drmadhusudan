@@ -602,6 +602,7 @@ function renderFunnels(){
 let DESK = null;          // rows from /api/desk
 let DESK_FILTER = 'work'; // work | due | appt | converted | lost | all
 let DESK_DOOR = 'all';
+let DESK_SINCE = 'all';   // any date | 1 | 7 | 30 days since the lead arrived
 let DESK_Q = '';
 let DESK_LAST_SYNC = 0;   // sync again when older than 5 minutes
 
@@ -659,7 +660,18 @@ function deskMatches(l){
   if(DESK_FILTER==='appt'      && !['Appointment booked','Appointment done'].includes(l.status)) return false;
   if(DESK_FILTER==='converted' && l.status!=='Converted') return false;
   if(DESK_FILTER==='lost'      && l.status!=='Not interested') return false;
-  if(DESK_DOOR!=='all' && l.came_from!==DESK_DOOR) return false;
+  if(DESK_DOOR==='b497'){ if(!(l.bought||'').includes('organic 497')) return false; }
+  else if(DESK_DOOR==='b499'){ if(!(l.bought||'').includes('ads 499')) return false; }
+  else if(DESK_DOOR==='bmodak'){ if(!(l.bought||'').includes('Modak')) return false; }
+  else if(DESK_DOOR!=='all' && l.came_from!==DESK_DOOR) return false;
+  if(DESK_SINCE!=='all'){
+    if(!l.first_seen) return false;
+    const t = new Date(l.first_seen).getTime();
+    if(DESK_SINCE==='month'){
+      const m = new Date(); m.setDate(1); m.setHours(0,0,0,0);
+      if(t < m.getTime()) return false;
+    } else if(t < Date.now() - Number(DESK_SINCE)*86400000) return false;
+  }
   if(DESK_Q){
     const q = DESK_Q.toLowerCase();
     if(!((l.name||'').toLowerCase().includes(q) || (l.email||'').includes(q) || (l.phone||'').includes(q))) return false;
@@ -704,10 +716,23 @@ function renderDesk(){
     <div class="desk-tools">
       <select onchange="DESK_DOOR=this.value;paintDesk()">
         <option value="all">Every funnel</option>
-        <option value="Assessment" ${DESK_DOOR==='Assessment'?'selected':''}>Assessment</option>
-        <option value="Routine" ${DESK_DOOR==='Routine'?'selected':''}>Routine</option>
-        <option value="Consultation page" ${DESK_DOOR==='Consultation page'?'selected':''}>Consultation page</option>
-        <option value="Modak page" ${DESK_DOOR==='Modak page'?'selected':''}>Modak page</option>
+        <optgroup label="Came from">
+          <option value="Assessment" ${DESK_DOOR==='Assessment'?'selected':''}>Assessment</option>
+          <option value="Routine" ${DESK_DOOR==='Routine'?'selected':''}>Routine</option>
+          <option value="Consultation page" ${DESK_DOOR==='Consultation page'?'selected':''}>Consultation page</option>
+          <option value="Modak page" ${DESK_DOOR==='Modak page'?'selected':''}>Modak page</option>
+        </optgroup>
+        <optgroup label="Bought">
+          <option value="b497" ${DESK_DOOR==='b497'?'selected':''}>Consultation organic (497)</option>
+          <option value="b499" ${DESK_DOOR==='b499'?'selected':''}>Consultation paid ads (499)</option>
+          <option value="bmodak" ${DESK_DOOR==='bmodak'?'selected':''}>Modak (any pack)</option>
+        </optgroup>
+      </select>
+      <select onchange="DESK_SINCE=this.value;paintDesk()">
+        <option value="all">Any date</option>
+        <option value="1" ${DESK_SINCE==='1'?'selected':''}>Last 24 hours</option>
+        <option value="7" ${DESK_SINCE==='7'?'selected':''}>Last 7 days</option>
+        <option value="month" ${DESK_SINCE==='month'?'selected':''}>This month</option>
       </select>
       <input class="desk-search" type="search" placeholder="Search name / phone / email" value="${DESK_Q}" oninput="DESK_Q=this.value;paintDesk()">
     </div>
