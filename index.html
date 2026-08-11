@@ -140,7 +140,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .lead-links a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;background:var(--bg-2);border:1px solid var(--border);border-radius:50px;}
 .desk-controls select,.desk-search,.lead-edit select,.lead-edit input{color-scheme:dark;}
 .desk-controls select,.lead-edit select{-webkit-appearance:none;appearance:none;padding-right:32px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
-.lead-links a[href^="mailto:"]{background:none;border:none;padding:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 @media (max-width:780px){
   .stats{grid-template-columns:repeat(2,1fr);}
@@ -588,20 +587,23 @@ let DESK = null;          // rows from /api/desk
 let DESK_FILTER = 'work'; // work | due | appt | converted | lost | all
 let DESK_DOOR = 'all';
 let DESK_Q = '';
-let DESK_SYNCED = false;
+let DESK_LAST_SYNC = 0;   // sync again when older than 5 minutes
 
 const DESK_STATUSES = ['New','Contacted','Talk again later','Appointment booked','Appointment done','Converted','Not interested'];
 
 function deskPass(){ return sessionStorage.getItem('pulse_p') || ''; }
 
-function loadDesk(){
+function loadDesk(force){
   const doList = () => fetch('/api/desk', { headers: { 'x-pulse-pass': deskPass() } })
     .then(r=>r.json()).then(d=>{ DESK = d.leads || []; renderDesk(); });
-  if(!DESK_SYNCED){
-    // one sync per visit: pull new payments + new leads, flip paid people to Converted
-    document.getElementById('content').innerHTML = '<div class="loading">Checking for new leads and payments…</div>';
+  const stale = (Date.now() - DESK_LAST_SYNC) > 5*60*1000;
+  if(force || stale){
+    // pull new payments + new leads, flip paid people to Converted
+    if(DESK===null) document.getElementById('content').innerHTML = '<div class="loading">Checking for new leads and payments…</div>';
+    const btn = document.getElementById('deskRefresh');
+    if(btn){ btn.textContent = 'Checking…'; btn.disabled = true; }
     fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' }, body: JSON.stringify({action:'sync'}) })
-      .then(()=>{ DESK_SYNCED = true; })
+      .then(()=>{ DESK_LAST_SYNC = Date.now(); })
       .catch(()=>{})
       .then(doList);
   } else {
@@ -630,6 +632,8 @@ function setDeskFilter(f,btn){ DESK_FILTER=f; document.querySelectorAll('.desk-c
 
 function renderDesk(){
   if(DESK===null){ loadDesk(); return; }
+  // coming back to the tab after a while: repaint now, check for new leads behind it
+  if((Date.now() - DESK_LAST_SYNC) > 5*60*1000) loadDesk(true);
   const el = document.getElementById('content');
   const active = DESK.filter(l=>['New','Contacted','Talk again later'].includes(l.status));
   const due = DESK.filter(l=>l.next_followup && l.next_followup <= deskToday() && !['Converted','Not interested','Appointment done'].includes(l.status));
@@ -658,6 +662,7 @@ function renderDesk(){
         <option value="Modak page" ${DESK_DOOR==='Modak page'?'selected':''}>Modak page</option>
       </select>
       <input class="desk-search" placeholder="Search name / phone / email" value="${DESK_Q}" oninput="DESK_Q=this.value;paintDesk()">
+      <button id="deskRefresh" onclick="loadDesk(true)">↻ Check for new leads</button>
     </div>
     <div id="deskList"></div>`;
   paintDesk();
@@ -675,8 +680,7 @@ function paintDesk(){
     const wa = (l.phone||'').length>=10 ? ((l.phone.length===10?'91':'')+l.phone) : '';
     const links = [
       l.phone ? `<a href="tel:+${wa}">📞 ${phone10}</a>` : '<span style="color:var(--orange);font-size:12px">no phone</span>',
-      wa ? `<a href="https://wa.me/${wa}" target="_blank">WhatsApp</a>` : '',
-      `<a href="mailto:${l.email}" style="color:var(--text-dim);font-weight:400">${l.email}</a>`
+      wa ? `<a href="https://wa.me/${wa}" target="_blank">WhatsApp</a>` : ''
     ].filter(Boolean).join(' ');
     const dueCls = (l.next_followup && l.next_followup <= deskToday()) ? 'due' : '';
     const boughtBit = l.bought ? ` · <span style="color:var(--gold)">${l.bought} · ${fmtINR(l.total_paid)}</span>` : '';
@@ -688,7 +692,8 @@ function paintDesk(){
         <span class="lead-links">${links}</span>
       </div>
       <div class="lead-sub">
-        <span class="src-pill">${l.came_from}</span>${boughtBit}
+        <span class="src-pill">${l.came_from}</span>
+        <a href="mailto:${l.email}" style="color:var(--text-dim);text-decoration:none;word-break:break-all">${l.email}</a>${boughtBit}
       </div>
       <div class="lead-edit">
         <select onchange="saveLead('${l.id}')">${opts}</select>
