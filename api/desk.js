@@ -56,9 +56,11 @@ export default async function handler(req, res) {
       let kit_added = 0, kit_error = null;
 
       // Fresh page leads from Kit, when a key is configured.
+      // One batched RPC per tag — never one call per person.
       if (process.env.KIT_API_KEY) {
         try {
           for (const tag of KIT_TAGS) {
+            const rows = [];
             let after = null;
             do {
               const url = `https://api.kit.com/v4/tags/${tag.id}/subscribers?per_page=500` +
@@ -69,18 +71,20 @@ export default async function handler(req, res) {
               if (!kr.ok) throw new Error(`Kit tag ${tag.id}: ${kr.status}`);
               const kd = await kr.json();
               for (const s of (kd.subscribers || [])) {
-                const up = await rpc('desk_upsert_lead', {
-                  p_key: DESK_KEY,
-                  p_email: s.email_address,
-                  p_name: s.first_name || '',
-                  p_phone: (s.fields && s.fields.phone_number) || '',
-                  p_source: tag.source,
-                  p_first: s.created_at || null
+                rows.push({
+                  email: s.email_address,
+                  name: s.first_name || '',
+                  phone: (s.fields && s.fields.phone_number) || '',
+                  first: s.created_at || null
                 });
-                if (up.ok) kit_added++;
               }
               after = kd.pagination && kd.pagination.has_next_page ? kd.pagination.end_cursor : null;
             } while (after);
+            if (rows.length) {
+              const up = await rpc('desk_upsert_many', { p_key: DESK_KEY, p_source: tag.source, p_rows: rows });
+              const uo = await up.json();
+              if (up.ok && uo && uo.touched != null) kit_added += Number(uo.touched);
+            }
           }
         } catch (e) {
           kit_error = String(e);

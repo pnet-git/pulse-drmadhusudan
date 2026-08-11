@@ -118,6 +118,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .desk-note{font-size:13px;color:var(--text-dim);margin-top:2px;}
 #deskRefresh{min-height:44px;padding:10px 16px;background:none;border:1px solid var(--border-2);border-radius:50px;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter';}
 #deskRefresh:disabled{opacity:.5;}
+.desk-bar{height:4px;background:var(--bg-2);border-radius:50px;overflow:hidden;display:none;max-width:820px;margin:0 auto 12px;}
+.desk-bar-fill{height:100%;width:8%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:50px;transition:width .25s ease;}
 .desk-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 12px;box-shadow:0 10px 14px -12px rgba(0,0,0,.85);}
 .desk-controls button{min-height:44px;padding:10px 16px;background:var(--panel);border:1px solid var(--border);border-radius:50px;color:var(--text-dim);font-size:14px;font-weight:500;cursor:pointer;font-family:'Inter';transition:all .18s;}
 .desk-controls button b{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text);margin-left:2px;}
@@ -607,22 +609,45 @@ const DESK_STATUSES = ['New','Contacted','Talk again later','Appointment booked'
 
 function deskPass(){ return sessionStorage.getItem('pulse_p') || ''; }
 
-function loadDesk(force){
-  const doList = () => fetch('/api/desk', { headers: { 'x-pulse-pass': deskPass() } })
-    .then(r=>r.json()).then(d=>{ DESK = d.leads || []; renderDesk(); });
-  const stale = (Date.now() - DESK_LAST_SYNC) > 5*60*1000;
-  if(force || stale){
-    // pull new payments + new leads, flip paid people to Converted
-    if(DESK===null) document.getElementById('content').innerHTML = '<div class="loading">Checking for new leads and payments…</div>';
-    const btn = document.getElementById('deskRefresh');
-    if(btn){ btn.textContent = 'Checking…'; btn.disabled = true; }
-    fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' }, body: JSON.stringify({action:'sync'}) })
-      .then(()=>{ DESK_LAST_SYNC = Date.now(); })
-      .catch(()=>{})
-      .then(doList);
-  } else {
-    doList();
-  }
+let DESK_SYNCING = false;
+let DESK_BAR_TIMER = null;
+
+// a moving bar so a wait never looks like a freeze; eases toward 92%,
+// jumps to 100% when the work actually finishes
+function deskBarStart(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  let p = 8;
+  el.style.width = p + '%';
+  el.parentElement.style.display = 'block';
+  clearInterval(DESK_BAR_TIMER);
+  DESK_BAR_TIMER = setInterval(()=>{ p += (92 - p) * 0.06; el.style.width = p + '%'; }, 250);
+}
+function deskBarDone(){
+  clearInterval(DESK_BAR_TIMER);
+  document.querySelectorAll('.desk-bar-fill').forEach(el=>{
+    el.style.width = '100%';
+    setTimeout(()=>{ if(el.parentElement) el.parentElement.style.display = 'none'; el.style.width = '8%'; }, 400);
+  });
+}
+
+// show the list — always fast, never blocked by a sync
+function loadDesk(){
+  fetch('/api/desk', { headers: { 'x-pulse-pass': deskPass() } })
+    .then(r=>r.json()).then(d=>{ DESK = d.leads || []; renderDesk(); })
+    .catch(()=>{ if(DESK===null) document.getElementById('content').innerHTML = '<div class="loading">Could not load the desk. Check the internet and open this tab again.</div>'; });
+}
+
+// pull new leads + payments behind the scenes, then repaint
+function syncDesk(){
+  if(DESK_SYNCING) return;
+  DESK_SYNCING = true;
+  const btn = document.getElementById('deskRefresh');
+  if(btn){ btn.textContent = 'Checking…'; btn.disabled = true; }
+  deskBarStart(DESK===null ? 'deskBarBoot' : 'deskSyncBar');
+  fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' }, body: JSON.stringify({action:'sync'}) })
+    .catch(()=>{})
+    .then(()=>{ DESK_LAST_SYNC = Date.now(); DESK_SYNCING = false; deskBarDone(); loadDesk(); });
 }
 
 function deskToday(){ const d = new Date(); return d.toISOString().slice(0,10); }
@@ -645,13 +670,21 @@ function deskMatches(l){
 function setDeskFilter(f,btn){ DESK_FILTER=f; document.querySelectorAll('.desk-controls button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); paintDesk(); }
 
 function renderDesk(){
-  if(DESK===null){ loadDesk(); return; }
+  if(DESK===null){
+    document.getElementById('content').innerHTML = '<div class="loading">Opening the desk…</div><div class="desk-bar"><div class="desk-bar-fill" id="deskBarBoot"></div></div>';
+    deskBarStart('deskBarBoot');
+    loadDesk();
+    if((Date.now() - DESK_LAST_SYNC) > 5*60*1000) syncDesk();
+    return;
+  }
   // coming back to the tab after a while: repaint now, check for new leads behind it
-  if((Date.now() - DESK_LAST_SYNC) > 5*60*1000) loadDesk(true);
+  if((Date.now() - DESK_LAST_SYNC) > 5*60*1000) syncDesk();
   const el = document.getElementById('content');
   const active = DESK.filter(l=>['New','Contacted','Talk again later'].includes(l.status));
   const due = DESK.filter(l=>l.next_followup && l.next_followup <= deskToday() && !['Converted','Not interested','Appointment done'].includes(l.status));
   const conv = DESK.filter(l=>l.status==='Converted');
+  const lost = DESK.filter(l=>l.status==='Not interested');
+  const appt = DESK.filter(l=>['Appointment booked','Appointment done'].includes(l.status));
   const collected = DESK.reduce((s,l)=>s+(Number(l.total_paid)||0),0);
   el.innerHTML = `
     <div class="desk-head">
@@ -659,14 +692,14 @@ function renderDesk(){
         <div class="desk-title">Follow-up Desk</div>
         <div class="desk-note">Every lead in one list. After each call, set the status and the next call date.</div>
       </div>
-      <button id="deskRefresh" onclick="loadDesk(true)">↻ Check for new leads</button>
+      <button id="deskRefresh" onclick="syncDesk()" ${DESK_SYNCING?'disabled':''}>${DESK_SYNCING?'Checking…':'↻ Check for new leads'}</button>
     </div>
     <div class="desk-controls">
-      <button class="${DESK_FILTER==='work'?'active':''}" onclick="setDeskFilter('work',this)">To work <b>${active.length}</b></button>
+      <button class="${DESK_FILTER==='work'?'active':''}" onclick="setDeskFilter('work',this)">Leads <b>${active.length}</b></button>
       <button class="${DESK_FILTER==='due'?'active':''}" onclick="setDeskFilter('due',this)">Due today <b>${due.length}</b></button>
-      <button class="${DESK_FILTER==='appt'?'active':''}" onclick="setDeskFilter('appt',this)">Appointments</button>
-      <button class="${['converted','lost'].includes(DESK_FILTER)?'active':''}" onclick="setDeskFilter('converted',this)">Closed</button>
-      <button class="${DESK_FILTER==='all'?'active':''}" onclick="setDeskFilter('all',this)">All</button>
+      <button class="${DESK_FILTER==='appt'?'active':''}" onclick="setDeskFilter('appt',this)">Appointments <b>${appt.length}</b></button>
+      <button class="${['converted','lost'].includes(DESK_FILTER)?'active':''}" onclick="setDeskFilter('converted',this)">Closed <b>${conv.length + lost.length}</b></button>
+      <button class="${DESK_FILTER==='all'?'active':''}" onclick="setDeskFilter('all',this)">All <b>${DESK.length}</b></button>
     </div>
     <div class="desk-tools">
       <select onchange="DESK_DOOR=this.value;paintDesk()">
@@ -678,8 +711,10 @@ function renderDesk(){
       </select>
       <input class="desk-search" type="search" placeholder="Search name / phone / email" value="${DESK_Q}" oninput="DESK_Q=this.value;paintDesk()">
     </div>
-    <div class="desk-sum">Paid customers <b>${conv.length}</b> · Collected <b>${fmtINR(collected)}</b></div>
+    <div class="desk-bar"><div class="desk-bar-fill" id="deskSyncBar"></div></div>
+    <div class="desk-sum">Leads <b>${active.length}</b> · Paid customers <b>${conv.length}</b> · Collected <b>${fmtINR(collected)}</b></div>
     <div id="deskList"></div>`;
+  if(DESK_SYNCING) deskBarStart('deskSyncBar');
   paintDesk();
   document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
 }
@@ -688,7 +723,9 @@ function paintDesk(){
   const list = document.getElementById('deskList');
   if(!list) return;
   const rows = DESK.filter(deskMatches);
-  const closedBar = ['converted','lost'].includes(DESK_FILTER) ? `<div class="closed-toggle"><button class="${DESK_FILTER==='converted'?'on':''}" onclick="DESK_FILTER='converted';paintDesk()">Paid</button><button class="${DESK_FILTER==='lost'?'on':''}" onclick="DESK_FILTER='lost';paintDesk()">Not interested</button></div>` : '';
+  const nPaid = DESK.filter(l=>l.status==='Converted').length;
+  const nLost = DESK.filter(l=>l.status==='Not interested').length;
+  const closedBar = ['converted','lost'].includes(DESK_FILTER) ? `<div class="closed-toggle"><button class="${DESK_FILTER==='converted'?'on':''}" onclick="DESK_FILTER='converted';paintDesk()">Paid <b>${nPaid}</b></button><button class="${DESK_FILTER==='lost'?'on':''}" onclick="DESK_FILTER='lost';paintDesk()">Not interested <b>${nLost}</b></button></div>` : '';
   const EMPTY={work:'No leads to work right now. New leads land here on their own.',due:'No calls due today. You are caught up.',appt:'No appointments booked yet.',converted:'No paid customers yet.',lost:'Nobody is marked Not interested.',all:'No leads yet.'};
   if(!rows.length){ list.innerHTML = closedBar + `<div class="loading">${EMPTY[DESK_FILTER]||'Nothing here. Pick another filter.'}</div>`; return; }
   list.innerHTML = closedBar + rows.slice(0,400).map(l=>{
