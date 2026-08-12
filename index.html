@@ -146,6 +146,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .addmsg{font-size:14px;flex:1;min-width:180px;}
 .lead-owner{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);}
 .lead-owner select{min-height:44px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;font-family:'Inter';color-scheme:dark;-webkit-appearance:none;appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;}
+.phnum{display:inline-block;min-width:17px;height:17px;line-height:17px;text-align:center;border-radius:5px;background:var(--bg-2);color:var(--text-faint);font-size:10px;font-weight:700;margin-right:7px;vertical-align:1px;}
+.desk-controls button.active .phnum{background:rgba(0,0,0,0.22);color:#1a1a1a;}
 .phase-pill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;background:var(--bg-2);color:var(--gold-light);border:1px solid var(--border);}
 .waited{font-size:12px;font-weight:600;}
 .lead-detail{font-size:13px;color:var(--text-faint);margin-top:6px;}
@@ -726,14 +728,17 @@ function ageText(iso){
   if(!iso) return '';
   const d = new Date(iso);
   if(isNaN(d.getTime())) return '';
-  const days = Math.floor((Date.now() - d.getTime()) / 86400000);
-  const on = d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+// shown on hover, so the date stays simple but the wait is still one hover away
+function ageHint(iso){
+  if(!iso) return '';
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
   if(days <= 0)  return 'Came in today';
-  if(days === 1) return 'Came in yesterday';
-  if(days < 30)  return `Waiting ${days} days · since ${on}`;
-  if(days < 60)  return `Waiting a month · since ${on}`;
-  if(days < 365) return `Waiting ${Math.round(days/30)} months · since ${on}`;
-  return `Waiting over a year · since ${on}`;
+  if(days === 1) return 'Waiting 1 day';
+  if(days < 60)  return `Waiting ${days} days`;
+  if(days < 365) return `Waiting about ${Math.round(days/30)} months`;
+  return 'Waiting over a year';
 }
 
 function deskToday(){ const d = new Date(); return d.toISOString().slice(0,10); }
@@ -831,10 +836,10 @@ function renderDesk(){
     ${addFormHTML()}
     <div class="desk-controls">
       <button class="${DESK_FILTER==='due'?'active':''}" onclick="setDeskFilter('due',this)">Due today <b id="cDue">${C.due}</b></button>
-      <button class="${DESK_FILTER==='p1'?'active':''}" onclick="setDeskFilter('p1',this)">1 Consultation <b id="cP1">${C.p1}</b></button>
-      <button class="${DESK_FILTER==='p2'?'active':''}" onclick="setDeskFilter('p2',this)">2 Medicine <b id="cP2">${C.p2}</b></button>
-      <button class="${DESK_FILTER==='p3'?'active':''}" onclick="setDeskFilter('p3',this)">3 Delivery <b id="cP3">${C.p3}</b></button>
-      <button class="${DESK_FILTER==='p4'?'active':''}" onclick="setDeskFilter('p4',this)">4 Reorder <b id="cP4">${C.p4}</b></button>
+      <button class="${DESK_FILTER==='p1'?'active':''}" onclick="setDeskFilter('p1',this)"><span class="phnum">1</span>Consultation <b id="cP1">${C.p1}</b></button>
+      <button class="${DESK_FILTER==='p2'?'active':''}" onclick="setDeskFilter('p2',this)"><span class="phnum">2</span>Medicine <b id="cP2">${C.p2}</b></button>
+      <button class="${DESK_FILTER==='p3'?'active':''}" onclick="setDeskFilter('p3',this)"><span class="phnum">3</span>Delivery <b id="cP3">${C.p3}</b></button>
+      <button class="${DESK_FILTER==='p4'?'active':''}" onclick="setDeskFilter('p4',this)"><span class="phnum">4</span>Reorder <b id="cP4">${C.p4}</b></button>
       <button class="${DESK_FILTER==='lost'?'active':''}" onclick="setDeskFilter('lost',this)">Closed <b id="cClosed">${C.lost}</b></button>
       <button class="${DESK_FILTER==='all'?'active':''}" onclick="setDeskFilter('all',this)">All <b id="cAll">${C.all}</b></button>
     </div>
@@ -920,8 +925,8 @@ function paintDesk(){
       </div>
       <div class="lead-sub">
         <span class="src-pill${['Walk-in','Phone enquiry','Referral'].includes(l.came_from)?' manual':''}">${l.came_from}</span>
-        <span class="phase-pill">${ph}. ${PHASE_NAMES[ph]}</span>
-        ${waited?`<span class="waited" style="color:${waitCol}">${waited}</span>`:''}
+        <span class="phase-pill"><span class="phnum">${ph}</span>${PHASE_NAMES[ph]}</span>
+        ${waited?`<span class="waited" style="color:${waitCol}" title="${ageHint(l.first_seen)}">${waited}</span>`:''}
         <a href="mailto:${l.email}" style="color:var(--text-dim);text-decoration:none;word-break:break-all">${l.email}</a>${boughtBit}
       </div>
       ${detail?`<div class="lead-detail">${detail}</div>`:''}
