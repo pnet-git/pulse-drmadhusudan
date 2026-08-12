@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse for Arogya Clinic — What We Are Building, In Order</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="The four stage plan for the Arogya Clinic patient system, prepared by Peepoye Network.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --ground:#FBFAF8; --panel:#FFFFFF; --panel-2:#F4F2EE;
+    --line:#E3DFD6; --line-2:#CFC9BC;
+    --ink:#16161A; --ink-dim:#57575F; --ink-faint:#84848D;
+    --gold:#8A6A1A; --gold-wash:rgba(138,106,26,0.07);
+    --live:#1F7A45;
+    --shadow:0 1px 2px rgba(22,22,26,0.04), 0 10px 28px -20px rgba(22,22,26,0.30);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0A0A0C; --panel:#16161A; --panel-2:#1C1C22;
+      --line:#26262E; --line-2:#33333D;
+      --ink:#F2F2F5; --ink-dim:#9A9AA8; --ink-faint:#6E6E78;
+      --gold:#C9A14A; --gold-wash:rgba(201,161,74,0.09);
+      --live:#4ADE80;
+      --shadow:0 1px 2px rgba(0,0,0,0.4), 0 12px 32px -22px rgba(0,0,0,0.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0A0A0C; --panel:#16161A; --panel-2:#1C1C22;
+    --line:#26262E; --line-2:#33333D;
+    --ink:#F2F2F5; --ink-dim:#9A9AA8; --ink-faint:#6E6E78;
+    --gold:#C9A14A; --gold-wash:rgba(201,161,74,0.09);
+    --live:#4ADE80;
+    --shadow:0 1px 2px rgba(0,0,0,0.4), 0 12px 32px -22px rgba(0,0,0,0.9);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--sans); font-size:16.5px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:800px; margin:0 auto; padding:52px 24px 96px; display:flex; flex-direction:column; gap:60px;}
+
+  /* masthead */
+  .mast{display:flex; flex-direction:column; gap:18px;}
+  .brandline{display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    padding-bottom:18px; border-bottom:1px solid var(--line);}
+  .mark{font-family:var(--serif); font-size:26px; font-weight:600; letter-spacing:-0.4px;}
+  .mark span{color:var(--gold);}
+  .by{font-family:var(--mono); font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ink-faint);}
+  h1{font-family:var(--serif); font-weight:600; font-size:clamp(29px,5vw,40px); line-height:1.18;
+    letter-spacing:-0.6px; margin:0; text-wrap:balance;}
+  .standfirst{font-size:18px; color:var(--ink-dim); margin:0; max-width:58ch;}
+  .meta{font-family:var(--mono); font-size:11.5px; letter-spacing:.6px; color:var(--ink-faint);}
+
+  section{display:flex; flex-direction:column; gap:18px;}
+  p{margin:0; max-width:66ch;}
+  .lede{color:var(--ink-dim);}
+
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:1.6px; text-transform:uppercase;
+    color:var(--gold); display:flex; align-items:center; gap:12px;}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--line);}
+
+  /* plain line list, used for "today" and "later" */
+  .lines{margin:0; padding:0; list-style:none; display:flex; flex-direction:column;}
+  .lines li{display:flex; gap:12px; align-items:baseline; padding:11px 0; border-bottom:1px solid var(--line);}
+  .lines li:last-child{border-bottom:none;}
+  .lines .tick{color:var(--live); font-weight:700; flex-shrink:0;}
+
+  /* stages */
+  .stages{display:flex; flex-direction:column; gap:20px;}
+  .stage{background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    display:flex; flex-direction:column; box-shadow:var(--shadow); overflow:hidden;}
+  .stage-head{display:flex; gap:14px; align-items:center; padding:22px 24px 0;}
+  .num{font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:1px; color:var(--gold);
+    background:var(--gold-wash); border:1px solid var(--line-2); border-radius:6px;
+    padding:5px 9px; flex-shrink:0; line-height:1;}
+  .when{font-family:var(--mono); font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-faint);}
+  .stage h3{font-family:var(--serif); font-size:23px; font-weight:600; margin:14px 24px 0;
+    letter-spacing:-0.3px; line-height:1.25; text-wrap:balance;}
+  .stage .intro{margin:10px 24px 20px; color:var(--ink-dim); font-size:16px;}
+
+  .t-scroll{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:15.5px;}
+  thead th{text-align:left; font-family:var(--mono); font-size:10.5px; letter-spacing:1.2px;
+    text-transform:uppercase; color:var(--ink-faint); font-weight:600;
+    padding:11px 24px; background:var(--panel-2);
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+  tbody td{padding:14px 24px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.5;}
+  tbody tr:last-child td{border-bottom:none;}
+  td.what{font-weight:600; color:var(--ink); width:42%;}
+  td.gain{color:var(--ink-dim);}
+
+  .footnote{margin:0; padding:16px 24px; background:var(--panel-2); border-top:1px solid var(--line);
+    font-size:15px; color:var(--ink-dim);}
+  .footnote b{color:var(--ink); font-weight:600;}
+
+  footer{border-top:1px solid var(--line); padding-top:22px; color:var(--ink-faint); font-size:14px;
+    display:flex; flex-direction:column; gap:6px;}
+  footer .sig{font-family:var(--mono); font-size:11px; letter-spacing:1.4px; text-transform:uppercase;}
+
+  @media (max-width:600px){
+    body{font-size:16px;}
+    .wrap{padding:36px 16px 72px; gap:46px;}
+    .stage-head, .stage h3, .stage .intro{padding-left:18px; padding-right:18px; margin-left:0; margin-right:0;}
+    .stage h3{margin-left:18px; margin-right:18px;}
+    .stage .intro{margin-left:18px; margin-right:18px;}
+    /* tables become stacked pairs so nothing is squeezed */
+    thead{display:none;}
+    table, tbody, tr, td{display:block; width:100%;}
+    tbody tr{border-bottom:1px solid var(--line); padding:14px 18px;}
+    tbody tr:last-child{border-bottom:none;}
+    tbody td{padding:0; border:none;}
+    td.what{width:auto; margin-bottom:4px;}
+    .footnote{padding:16px 18px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <div class="brandline">
+      <div class="mark">Pulse<span>.</span></div>
+      <div class="by">Built for Arogya Clinic by Peepoye Network</div>
+    </div>
+    <h1>The patient system, and the order we build it in</h1>
+    <p class="standfirst">Everything from our call, turned into a plan. Four stages. Each one is useful on its own, and each one builds on the last.</p>
+    <div class="meta">12 August 2026 &nbsp;·&nbsp; For Dr. Madhu Sudan, Raj Kumar and Manish</div>
+  </header>
+
+  <section>
+    <div class="eyebrow">Working today</div>
+    <p class="lede">Your team can open Pulse right now and use all of this.</p>
+    <ul class="lines">
+      <li><span class="tick">✓</span><span>Every lead from your four online pages sits in one list, with duplicates removed.</span></li>
+      <li><span class="tick">✓</span><span>Call or WhatsApp any person with one tap.</span></li>
+      <li><span class="tick">✓</span><span>After the call, set the status, the next call date and a note.</span></li>
+      <li><span class="tick">✓</span><span>Anyone who pays is marked automatically and leaves the calling list.</span></li>
+      <li><span class="tick">✓</span><span>Videos, views, leads, patients and money collected, all updating on their own.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="eyebrow">The build, in order</div>
+
+    <div class="stages">
+
+      <article class="stage">
+        <div class="stage-head"><span class="num">STAGE 1</span><span class="when">This week</span></div>
+        <h3>Get your whole day into one place</h3>
+        <p class="intro">Pulse only knows about people who come through your website. A large part of your day walks into the clinic or telephones you.</p>
+        <div class="t-scroll">
+          <table>
+            <thead><tr><th>What we add</th><th>What you will notice</th></tr></thead>
+            <tbody>
+              <tr><td class="what">Add a person by hand</td><td class="gain">A walk-in or a phone enquiry goes into the same list in a few seconds.</td></tr>
+              <tr><td class="what">An owner for every person</td><td class="gain">One patient, one caller. Nobody hears two different answers.</td></tr>
+              <tr><td class="what">Your own list when you log in</td><td class="gain">Each person sees only the patients they are responsible for.</td></tr>
+              <tr><td class="what">Phone number asked on the consultation page</td><td class="gain">No more enquiries arriving with no way to ring them back.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote"><b>Why this comes first:</b> the one week trial cannot be judged fairly until every kind of patient is inside the system.</p>
+      </article>
+
+      <article class="stage">
+        <div class="stage-head"><span class="num">STAGE 2</span><span class="when">Next</span></div>
+        <h3>Never lose a refill again</h3>
+        <p class="intro">A patient takes a thirty day course. Around day twenty six his medicine runs low. If nobody calls, he stops or he finds somebody else.</p>
+        <div class="t-scroll">
+          <table>
+            <thead><tr><th>What we add</th><th>What you will notice</th></tr></thead>
+            <tbody>
+              <tr><td class="what">A full profile for every patient</td><td class="gain">Open a name and see every medicine, every amount, every date.</td></tr>
+              <tr><td class="what">The clock starts on delivery</td><td class="gain">Courier time is counted, so thirty days means thirty days in his hands.</td></tr>
+              <tr><td class="what">A daily refill list</td><td class="gain">Everyone running low in the next four or five days, ready to call.</td></tr>
+              <tr><td class="what">Trial packs counted on seven days</td><td class="gain">The short course gets its own reminder, at the right time.</td></tr>
+              <tr><td class="what">A view of who never reordered</td><td class="gain">The patients who quietly stopped, in one place, so they can be won back.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote"><b>Why this matters most:</b> this is money you have already earned once. Every refill call that lands needs no advertising at all.</p>
+      </article>
+
+      <article class="stage">
+        <div class="stage-head"><span class="num">STAGE 3</span><span class="when">After the refill work</span></div>
+        <h3>The doctor's day, on one screen</h3>
+        <p class="intro">Dr. Madhu, today you hear about your consultations on WhatsApp. This gives you your own view of the day.</p>
+        <div class="t-scroll">
+          <table>
+            <thead><tr><th>What we add</th><th>What you will notice</th></tr></thead>
+            <tbody>
+              <tr><td class="what">A date and time on every consultation</td><td class="gain">The team enters it when they fix the appointment with the patient.</td></tr>
+              <tr><td class="what">Your day at a glance</td><td class="gain">How many consultations today, and at what times.</td></tr>
+              <tr><td class="what">Your own time windows</td><td class="gain">The afternoon and evening slots you actually keep.</td></tr>
+              <tr><td class="what">One shared screen</td><td class="gain">No double booking, because everyone is looking at the same page.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote"><b>Why here:</b> a small piece of work, and the part you personally use every morning.</p>
+      </article>
+
+      <article class="stage">
+        <div class="stage-head"><span class="num">STAGE 4</span><span class="when">Once the daily habit is set</span></div>
+        <h3>Reach more people, in less time</h3>
+        <p class="intro">By now your team works inside Pulse every day. This stage is about speed, and about bringing your older patients back.</p>
+        <div class="t-scroll">
+          <table>
+            <thead><tr><th>What we add</th><th>What you will notice</th></tr></thead>
+            <tbody>
+              <tr><td class="what">Ready written WhatsApp messages</td><td class="gain">Tap, read it, change a word, send. One for refills, one for follow ups, one for old patients.</td></tr>
+              <tr><td class="what">Older records in batches of fifty</td><td class="gain">A batch arrives, your team works it, then the next. Never a thousand names at once.</td></tr>
+              <tr><td class="what">A view of what is being missed</td><td class="gain">People who booked but never bought, and those who asked about the medicine and went quiet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote"><b>Why last:</b> these only pay off once the daily habit exists. Built too early, they are buttons nobody presses.</p>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">What we need from your side</div>
+    <p class="lede">The system works if a few small habits hold.</p>
+    <div class="t-scroll">
+      <table>
+        <thead><tr><th>Who</th><th>What we are asking</th></tr></thead>
+        <tbody>
+          <tr><td class="what">The team</td><td class="gain">Run both for one week. Keep using your sheet exactly as you do now, and put the same work into Pulse. Then we compare honestly and you decide.</td></tr>
+          <tr><td class="what">The team</td><td class="gain">Update the person right after the call, even one word. A call nobody recorded is a call somebody else will repeat.</td></tr>
+          <tr><td class="what">The clinic</td><td class="gain">Walk-ins and phone enquiries go in too, from Stage 1 onward.</td></tr>
+          <tr><td class="what">Dispatch</td><td class="gain">Note the day the medicine is delivered. This one date is what makes every refill reminder work.</td></tr>
+          <tr><td class="what">Old records</td><td class="gain">Tell us when your team has room for the next fifty, and we release them.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Noted, but not in this plan</div>
+    <ul class="lines">
+      <li><span>The video topic bank Dr. Madhu asked for. Agreed, and it belongs with the content plan rather than this one.</span></li>
+      <li><span>Automatic appointment booking through a calendar. Possible later. For now the team enters the time, which is simpler and gives you the same view.</span></li>
+    </ul>
+  </section>
+
+  <footer>
+    <div class="sig">Peepoye Network</div>
+    <div>Prepared after our call on 12 August 2026. Each stage is delivered and shown to you before the next one begins, so nothing is built on a guess.</div>
+  </footer>
+
+</div>
+
+</body>
+</html>
