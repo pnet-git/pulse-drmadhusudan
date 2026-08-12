@@ -146,6 +146,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .addmsg{font-size:14px;flex:1;min-width:180px;}
 .lead-owner{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);}
 .lead-owner select{min-height:44px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;font-family:'Inter';color-scheme:dark;-webkit-appearance:none;appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;}
+.phase-pill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;background:var(--bg-2);color:var(--gold-light);border:1px solid var(--border);}
+.lead-detail{font-size:13px;color:var(--text-faint);margin-top:6px;}
+.lead-edit optgroup{color:var(--text-faint);}
 .src-pill.manual{background:var(--gold-wash,rgba(201,161,74,0.12));color:var(--gold-light);}
 .desk-sum{font-size:13px;color:var(--text-dim);margin:10px 2px 16px;}
 .desk-sum b{color:var(--text);font-variant-numeric:tabular-nums;font-weight:700;}
@@ -576,15 +579,17 @@ function renderContent(){
 
 // ─── FOLLOW-UP DESK ──────────────────────────────────────────────────────────
 let DESK = null;          // rows from /api/desk
-let DESK_FILTER = 'work'; // work | due | appt | converted | lost | all
+let DESK_FILTER = 'p1';   // p1 | p2 | p3 | p4 | due | lost | all
 let DESK_DOOR = 'all';
 let DESK_SINCE = 'all';
 let DESK_WHO = 'all';   // filter by who owns the lead
-let DESK_TEAM = [];     // people who can own a lead   // any date | 1 | 7 | 30 days since the lead arrived
+let DESK_TEAM = [];     // people who can own a lead
+let DESK_STATUSES = []; // the phase-by-phase disposition list
+const PHASE_NAMES = {1:'Consultation', 2:'Medicine', 3:'Delivery', 4:'Reorder'};
+const PHASE_HELP  = {1:'Getting them to a paid consultation', 2:'Getting the medicine paid for', 3:'Getting it dispatched and delivered', 4:'Bringing them back for the next course'};   // any date | 1 | 7 | 30 days since the lead arrived
 let DESK_Q = '';
 let DESK_LAST_SYNC = 0;   // sync again when older than 5 minutes
 
-const DESK_STATUSES = ['New','Contacted','Talk again later','Appointment booked','Appointment done','Converted','Not interested'];
 
 function deskPass(){ return sessionStorage.getItem('pulse_p') || ''; }
 
@@ -613,7 +618,7 @@ function deskBarDone(){
 // show the list — always fast, never blocked by a sync
 function loadDesk(){
   fetch('/api/desk', { headers: { 'x-pulse-pass': deskPass() } })
-    .then(r=>r.json()).then(d=>{ DESK = d.leads || []; if(d.team && d.team.length) DESK_TEAM = d.team; renderDesk(); })
+    .then(r=>r.json()).then(d=>{ DESK = d.leads || []; if(d.team && d.team.length) DESK_TEAM = d.team; if(d.statuses && d.statuses.length) DESK_STATUSES = d.statuses; renderDesk(); })
     .catch(()=>{ if(DESK===null) document.getElementById('content').innerHTML = '<div class="loading">Could not load the desk. Check the internet and open this tab again.</div>'; });
 }
 
@@ -633,7 +638,7 @@ function addFormHTML(){
   const people = DESK_TEAM.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
   return `<div class="addbox" id="addBox">
     <h4>Add a person</h4>
-    <div class="hint">For someone who walked into the clinic or telephoned. Name and phone number are needed.</div>
+    <div class="hint">For someone who walked into the clinic or telephoned. Only the name and phone number are needed. Fill the rest if you know it.</div>
     <div class="addgrid">
       <label class="wide">Name<input id="afName" type="text" placeholder="Full name" autocomplete="off"></label>
       <label>Phone number<input id="afPhone" type="tel" placeholder="10 digits" autocomplete="off"></label>
@@ -643,6 +648,30 @@ function addFormHTML(){
           <option value="Walk-in">Walked into the clinic</option>
           <option value="Phone enquiry">Telephoned us</option>
           <option value="Referral">Referred by someone</option>
+        </select>
+      </label>
+      <label>Another phone, if any<input id="afPhone2" type="tel" placeholder="Optional" autocomplete="off"></label>
+      <label>Where did he hear about us
+        <select id="afLeadSource">
+          <option value="">Not known</option>
+          <option>Instagram</option>
+          <option>YouTube</option>
+          <option>Facebook</option>
+          <option>Google search</option>
+          <option>Friend or family</option>
+          <option>Existing patient</option>
+          <option>Passing the clinic</option>
+          <option>Newspaper or hoarding</option>
+          <option>Other</option>
+        </select>
+      </label>
+      <label>Age<input id="afAge" type="text" placeholder="Optional" autocomplete="off"></label>
+      <label>Town or city<input id="afLocation" type="text" placeholder="Optional" autocomplete="off"></label>
+      <label>Married
+        <select id="afMarital">
+          <option value="">Not known</option>
+          <option>Married</option>
+          <option>Unmarried</option>
         </select>
       </label>
       <label>Who will call him
@@ -672,10 +701,12 @@ function submitAdd(){
   msg.textContent = 'Saving…';
   fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' },
     body: JSON.stringify({ action:'add', name:g('afName').value, phone:g('afPhone').value,
-      email:g('afEmail').value, source:g('afSource').value, note:g('afNote').value, assigned_to:g('afOwner').value }) })
+      email:g('afEmail').value, source:g('afSource').value, note:g('afNote').value, assigned_to:g('afOwner').value,
+      phone_alt:g('afPhone2').value, age:g('afAge').value, location:g('afLocation').value,
+      marital_status:g('afMarital').value, lead_source:g('afLeadSource').value }) })
   .then(r=>r.json()).then(d=>{
     if(!d.ok){ msg.style.color='var(--orange)'; msg.textContent = d.error || 'Could not save.'; return; }
-    ['afName','afPhone','afEmail','afNote'].forEach(i=>g(i).value='');
+    ['afName','afPhone','afEmail','afNote','afPhone2','afAge','afLocation'].forEach(i=>g(i).value='');
     msg.style.color='var(--green)'; msg.textContent='Added. He is in the list now.';
     loadDesk();
   })
@@ -685,7 +716,8 @@ function submitAdd(){
 function deskSumText(C){
   const scope = (DESK_DOOR==='all' && DESK_SINCE==='all' && !DESK_Q) ? '' :
     ' <span style="color:var(--text-faint)">· this selection only</span>';
-  return `Leads to work <b>${C.work}</b> · Paid customers <b>${C.conv}</b> · Collected <b>${fmtINR(C.collected)}</b>${scope}`;
+  const open = C.p1 + C.p2 + C.p3 + C.p4;
+  return `Open patients <b>${open}</b> · Collected <b>${fmtINR(C.collected)}</b>${scope}`;
 }
 
 function deskToday(){ const d = new Date(); return d.toISOString().slice(0,10); }
@@ -715,13 +747,16 @@ function deskBase(l){
   return true;
 }
 
+function statusMeta(code){ return DESK_STATUSES.find(s=>s.code===code) || null; }
+function isClosed(l){ const m = statusMeta(l.status); return !!(m && m.closes); }
+
 function deskStatus(l, f){
-  const active = ['New','Contacted','Talk again later'];
-  if(f==='work')      return active.includes(l.status);
-  if(f==='due')       return !!(l.next_followup && l.next_followup <= deskToday() && !['Converted','Not interested','Appointment done'].includes(l.status));
-  if(f==='appt')      return ['Appointment booked','Appointment done'].includes(l.status);
-  if(f==='converted') return l.status==='Converted';
-  if(f==='lost')      return l.status==='Not interested';
+  if(f==='due')  return !!(l.next_followup && l.next_followup <= deskToday() && !isClosed(l));
+  if(f==='lost') return isClosed(l);
+  if(f==='p1')   return l.phase===1 && !isClosed(l);
+  if(f==='p2')   return l.phase===2 && !isClosed(l);
+  if(f==='p3')   return l.phase===3 && !isClosed(l);
+  if(f==='p4')   return l.phase===4 && !isClosed(l);
   return true;
 }
 
@@ -732,10 +767,11 @@ function deskCounts(){
   const base = DESK.filter(deskBase);
   return {
     base: base,
-    work: base.filter(l=>deskStatus(l,'work')).length,
     due: base.filter(l=>deskStatus(l,'due')).length,
-    appt: base.filter(l=>deskStatus(l,'appt')).length,
-    conv: base.filter(l=>deskStatus(l,'converted')).length,
+    p1: base.filter(l=>deskStatus(l,'p1')).length,
+    p2: base.filter(l=>deskStatus(l,'p2')).length,
+    p3: base.filter(l=>deskStatus(l,'p3')).length,
+    p4: base.filter(l=>deskStatus(l,'p4')).length,
     lost: base.filter(l=>deskStatus(l,'lost')).length,
     all: base.length,
     collected: base.reduce((s,l)=>s+(Number(l.total_paid)||0),0)
@@ -747,7 +783,7 @@ function deskSetDoor(v){
   DESK_DOOR = v;
   // "Bought" choices only ever contain paying customers, so jump to a view
   // that actually holds them instead of showing an empty Leads list
-  if(v.charAt(0)==='b' && ['work','due','appt'].includes(DESK_FILTER)) DESK_FILTER = 'all';
+  if(v.charAt(0)==='b' && DESK_FILTER!=='all') DESK_FILTER = 'all';
   renderDesk();
 }
 
@@ -778,10 +814,12 @@ function renderDesk(){
     </div>
     ${addFormHTML()}
     <div class="desk-controls">
-      <button class="${DESK_FILTER==='work'?'active':''}" onclick="setDeskFilter('work',this)">Leads <b id="cLeads">${C.work}</b></button>
       <button class="${DESK_FILTER==='due'?'active':''}" onclick="setDeskFilter('due',this)">Due today <b id="cDue">${C.due}</b></button>
-      <button class="${DESK_FILTER==='appt'?'active':''}" onclick="setDeskFilter('appt',this)">Appointments <b id="cAppt">${C.appt}</b></button>
-      <button class="${['converted','lost'].includes(DESK_FILTER)?'active':''}" onclick="setDeskFilter('converted',this)">Closed <b id="cClosed">${C.conv + C.lost}</b></button>
+      <button class="${DESK_FILTER==='p1'?'active':''}" onclick="setDeskFilter('p1',this)">1 Consultation <b id="cP1">${C.p1}</b></button>
+      <button class="${DESK_FILTER==='p2'?'active':''}" onclick="setDeskFilter('p2',this)">2 Medicine <b id="cP2">${C.p2}</b></button>
+      <button class="${DESK_FILTER==='p3'?'active':''}" onclick="setDeskFilter('p3',this)">3 Delivery <b id="cP3">${C.p3}</b></button>
+      <button class="${DESK_FILTER==='p4'?'active':''}" onclick="setDeskFilter('p4',this)">4 Reorder <b id="cP4">${C.p4}</b></button>
+      <button class="${DESK_FILTER==='lost'?'active':''}" onclick="setDeskFilter('lost',this)">Closed <b id="cClosed">${C.lost}</b></button>
       <button class="${DESK_FILTER==='all'?'active':''}" onclick="setDeskFilter('all',this)">All <b id="cAll">${C.all}</b></button>
     </div>
     <div class="desk-tools">
@@ -826,12 +864,11 @@ function paintDesk(){
   const C = deskCounts();
   ['cLeads','work','cDue','due','cAppt','appt','cAll','all'].forEach(function(){});
   const setC = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
-  setC('cLeads',C.work); setC('cDue',C.due); setC('cAppt',C.appt); setC('cClosed',C.conv+C.lost); setC('cAll',C.all);
+  setC('cDue',C.due); setC('cP1',C.p1); setC('cP2',C.p2); setC('cP3',C.p3); setC('cP4',C.p4); setC('cClosed',C.lost); setC('cAll',C.all);
   const sumEl = document.getElementById('deskSum'); if(sumEl) sumEl.innerHTML = deskSumText(C);
   const rows = DESK.filter(deskMatches);
-  const nPaid = C.conv, nLost = C.lost;
-  const closedBar = ['converted','lost'].includes(DESK_FILTER) ? `<div class="closed-toggle"><button class="${DESK_FILTER==='converted'?'on':''}" onclick="DESK_FILTER='converted';paintDesk()">Paid <b>${nPaid}</b></button><button class="${DESK_FILTER==='lost'?'on':''}" onclick="DESK_FILTER='lost';paintDesk()">Not interested <b>${nLost}</b></button></div>` : '';
-  const EMPTY={work:'No leads to work right now. New leads land here on their own.',due:'No calls due today. You are caught up.',appt:'No appointments booked yet.',converted:'No paid customers yet.',lost:'Nobody is marked Not interested.',all:'No leads yet.'};
+  const closedBar = '';
+  const EMPTY={due:'No calls due today. You are caught up.',p1:'Nobody waiting on a consultation right now.',p2:'Nobody waiting to pay for medicine.',p3:'Nothing waiting to be dispatched or delivered.',p4:'Nobody due for a reorder yet.',lost:'Nobody has been closed off.',all:'No patients yet.'};
   if(!rows.length){ list.innerHTML = closedBar + `<div class="loading">${EMPTY[DESK_FILTER]||'Nothing here. Pick another filter.'}</div>`; return; }
   list.innerHTML = closedBar + rows.slice(0,400).map(l=>{
     const phone10 = (l.phone||'').slice(-10);
@@ -842,9 +879,21 @@ function paintDesk(){
     ].filter(Boolean).join(' ');
     const dueCls = (l.next_followup && l.next_followup <= deskToday()) ? 'due' : '';
     const boughtBit = l.bought ? ` · <span style="color:var(--gold)">${l.bought} · ${fmtINR(l.total_paid)}</span>` : '';
-    const opts = DESK_STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('');
-    const strip = l.status==='Converted' ? 'var(--green)' : l.status==='Not interested' ? 'var(--border-2)' : dueCls ? 'var(--orange)' : l.status==='New' ? 'var(--gold)' : 'var(--border-2)';
-    const stCol = l.status==='Converted' ? 'var(--green)' : l.status==='Not interested' ? 'var(--text-faint)' : l.status==='New' ? 'var(--gold-light)' : 'var(--text)';
+    const meta = statusMeta(l.status);
+    const ph = l.phase || 1;
+    const opts = DESK_STATUSES.filter(s=>s.phase===ph)
+      .map(s=>`<option value="${s.code}" ${s.code===l.status?'selected':''}>${s.label}</option>`).join('');
+    const otherPhases = [1,2,3,4].filter(p=>p!==ph)
+      .map(p=>`<option value="move${p}">Move to ${p}. ${PHASE_NAMES[p]}</option>`).join('');
+    const closed = !!(meta && meta.closes);
+    const strip = closed ? 'var(--border-2)' : dueCls ? 'var(--orange)'
+      : ph===4 ? 'var(--green)' : ph===3 ? '#a78bfa' : ph===2 ? 'var(--amber)' : 'var(--gold)';
+    const stCol = closed ? 'var(--text-faint)' : ph===4 ? 'var(--green)' : 'var(--text)';
+    const detail = [l.age && l.age+' yrs', l.location, l.marital_status, l.lead_source && 'via '+l.lead_source]
+      .filter(Boolean).join(' · ');
+    const dates = ph===3 ? `
+        <label class="lead-date"><span>Dispatched</span><input type="date" value="${l.dispatched_on||''}" onchange="saveDate('${l.id}','dispatched_on',this.value)"></label>
+        <label class="lead-date"><span>Delivered</span><input type="date" value="${l.delivered_on||''}" onchange="saveDate('${l.id}','delivered_on',this.value)"></label>` : '';
     return `<div class="lead" id="lead-${l.id}" style="border-left:3px solid ${strip}">
       <div class="lead-top">
         <span class="lead-name">${l.name||'(no name)'}${dueCls?'<span class="due-tag">Call due</span>':''}</span>
@@ -852,11 +901,17 @@ function paintDesk(){
       </div>
       <div class="lead-sub">
         <span class="src-pill${['Walk-in','Phone enquiry','Referral'].includes(l.came_from)?' manual':''}">${l.came_from}</span>
+        <span class="phase-pill">${ph}. ${PHASE_NAMES[ph]}</span>
         <a href="mailto:${l.email}" style="color:var(--text-dim);text-decoration:none;word-break:break-all">${l.email}</a>${boughtBit}
       </div>
+      ${detail?`<div class="lead-detail">${detail}</div>`:''}
       <div class="lead-edit">
-        <select style="color:${stCol}" onchange="saveLead('${l.id}')">${opts}</select>
+        <select style="color:${stCol}" onchange="saveLead('${l.id}')">
+          ${opts}
+          <optgroup label="Move to another phase">${otherPhases}</optgroup>
+        </select>
         <label class="lead-date"><span>Next call</span><input type="date" class="${dueCls}" value="${l.next_followup||''}" onchange="saveLead('${l.id}')"></label>
+        ${dates}
         <input type="text" placeholder="Note after the call" value="${(l.note||'').replace(/"/g,'&quot;')}" onchange="saveLead('${l.id}')">
         <label class="lead-owner"><span>Owner</span>
           <select onchange="saveLead('${l.id}')">
@@ -870,10 +925,33 @@ function paintDesk(){
   }).join('') + (rows.length>400?`<div class="loading">Showing 400 of ${rows.length} — narrow the search.</div>`:'');
 }
 
+// moving a patient to another phase drops them on that phase's first status
+function moveePhase(id, phase){
+  const first = DESK_STATUSES.filter(s=>s.phase===phase).sort((a,b)=>a.sort-b.sort)[0];
+  if(!first) return;
+  fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' },
+    body: JSON.stringify({ action:'update', id, status:first.code }) })
+  .then(r=>r.json()).then(()=>loadDesk());
+}
+
+// the dispatch and delivery dates save on their own
+function saveDate(id, field, value){
+  const body = { action:'update', id }; body[field] = value || null;
+  const card = document.getElementById('lead-'+id);
+  const tag = document.getElementById('saved-'+id);
+  fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' },
+    body: JSON.stringify(body) })
+  .then(r=>r.json()).then(d=>{
+    if(tag){ tag.textContent = d.ok ? 'Saved' : 'Failed'; tag.style.color = d.ok?'var(--green)':'var(--orange)'; setTimeout(()=>{tag.textContent='';},1800); }
+    const row = DESK.find(x=>x.id===id); if(d.ok && row) row[field] = value || null;
+  });
+}
+
 function saveLead(id){
   const card = document.getElementById('lead-'+id);
   const sel = card.querySelector('.lead-edit > select');
   const dateIn = card.querySelector('input[type=date]');
+  if(sel.value.indexOf('move')===0){ moveePhase(id, Number(sel.value.slice(4))); return; }
   const noteIn = card.querySelector('input[type=text]');
   const ownerIn = card.querySelector('.lead-owner select');
   card.classList.add('saving');

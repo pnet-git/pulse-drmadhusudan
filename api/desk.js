@@ -30,14 +30,18 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const [lr, tr] = await Promise.all([
+      const [lr, tr, sr] = await Promise.all([
         rpc('desk_list', { p_key: DESK_KEY }),
-        rpc('desk_team_list', { p_key: DESK_KEY })
+        rpc('desk_team_list', { p_key: DESK_KEY }),
+        rpc('desk_status_list', { p_key: DESK_KEY })
       ]);
       const rows = await lr.json();
       const team = await tr.json();
+      const statuses = await sr.json();
       if (!lr.ok) return res.status(500).json({ error: 'list_failed', detail: rows });
-      return res.status(200).json({ ok: true, leads: rows, team: Array.isArray(team) ? team : [] });
+      return res.status(200).json({ ok: true, leads: rows,
+        team: Array.isArray(team) ? team : [],
+        statuses: Array.isArray(statuses) ? statuses : [] });
     }
 
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
@@ -50,7 +54,12 @@ export default async function handler(req, res) {
         p_email: body.email || null,
         p_source: body.source || '',
         p_note: body.note || null,
-        p_assigned: body.assigned_to || null
+        p_assigned: body.assigned_to || null,
+        p_phone_alt: body.phone_alt || null,
+        p_age: body.age || null,
+        p_location: body.location || null,
+        p_marital: body.marital_status || null,
+        p_lead_source: body.lead_source || null
       });
       const out = await r.json();
       if (!r.ok) return res.status(500).json({ error: 'add_failed', detail: out });
@@ -64,7 +73,9 @@ export default async function handler(req, res) {
         p_status: body.status || null,
         p_next_followup: body.next_followup || null,
         p_note: body.note || null,
-        p_assigned: body.assigned_to || null
+        p_assigned: body.assigned_to || null,
+        p_delivered: body.delivered_on || null,
+        p_dispatched: body.dispatched_on || null
       });
       const out = await r.json();
       if (!r.ok) return res.status(500).json({ error: 'update_failed', detail: out });
