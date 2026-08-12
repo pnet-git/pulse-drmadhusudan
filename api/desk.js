@@ -30,13 +30,32 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const r = await rpc('desk_list', { p_key: DESK_KEY });
-      const rows = await r.json();
-      if (!r.ok) return res.status(500).json({ error: 'list_failed', detail: rows });
-      return res.status(200).json({ ok: true, leads: rows });
+      const [lr, tr] = await Promise.all([
+        rpc('desk_list', { p_key: DESK_KEY }),
+        rpc('desk_team_list', { p_key: DESK_KEY })
+      ]);
+      const rows = await lr.json();
+      const team = await tr.json();
+      if (!lr.ok) return res.status(500).json({ error: 'list_failed', detail: rows });
+      return res.status(200).json({ ok: true, leads: rows, team: Array.isArray(team) ? team : [] });
     }
 
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+
+    if (body.action === 'add') {
+      const r = await rpc('desk_add_person', {
+        p_key: DESK_KEY,
+        p_name: body.name || '',
+        p_phone: body.phone || '',
+        p_email: body.email || null,
+        p_source: body.source || '',
+        p_note: body.note || null,
+        p_assigned: body.assigned_to || null
+      });
+      const out = await r.json();
+      if (!r.ok) return res.status(500).json({ error: 'add_failed', detail: out });
+      return res.status(200).json(out);
+    }
 
     if (body.action === 'update') {
       const r = await rpc('desk_update', {
