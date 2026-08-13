@@ -76,7 +76,9 @@ export default async function handler(req, res) {
         p_note: body.note || null,
         p_assigned: body.assigned_to || null,
         p_delivered: body.delivered_on || null,
-        p_dispatched: body.dispatched_on || null
+        p_dispatched: body.dispatched_on || null,
+        p_appt_at: body.appointment_at === undefined ? null : body.appointment_at,
+        p_appt_mode: body.appointment_mode || null
       });
       const out = await r.json();
       if (!r.ok) return res.status(500).json({ error: 'update_failed', detail: out });

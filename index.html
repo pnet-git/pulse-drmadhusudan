@@ -171,6 +171,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .lead-edit{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;}
 .lead-edit select,.lead-edit input{min-height:44px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;font-family:'Inter';color-scheme:dark;}
 .lead-edit select{-webkit-appearance:none;appearance:none;padding-right:32px;font-weight:600;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.lead-date.appt input,.lead-date.appt select{border-color:var(--border-2);}
 .lead-date{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim);}
 .lead-edit input[type=text]{flex:1;min-width:160px;}
 .lead-edit select:focus,.lead-edit input:focus{outline:none;border-color:var(--gold);}
@@ -179,9 +180,34 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .src-pill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;background:var(--bg-2);color:var(--text-dim);}
 
 @media (max-width:780px){
-  .stats{grid-template-columns:repeat(2,1fr);}
+  .stats{grid-template-columns:repeat(2,1fr); gap:10px;}
   .grid{grid-template-columns:1fr;}
   .tbl .hide-m{display:none;}
+
+  /* big numbers must shrink to fit, not spill out of the card */
+  #app{padding:20px 14px 56px;}
+  .stat{padding:16px 14px;}
+  .stat .num{font-size:clamp(20px,6.4vw,30px) !important; line-height:1.05; overflow-wrap:anywhere;}
+  .stat .label{font-size:10.5px; letter-spacing:.6px;}
+  .stat .sub{font-size:11px;}
+  .panel{padding:18px 16px;}
+  .recent{padding:18px 14px;}
+
+  /* every wide thing scrolls inside itself instead of pushing the page sideways */
+  .recent, .panel{overflow-x:auto;}
+  .tbl{min-width:0;}
+  .tbl th,.tbl td{padding:9px 7px; font-size:12.5px;}
+
+  /* the month chart gets tight on a phone */
+  .trend{gap:2px; height:120px;}
+  .trend .val{font-size:9.5px;}
+  .trend .day{font-size:9px;}
+  .bar-head{font-size:12px; gap:8px;}
+  .bar-head .bv{white-space:nowrap;}
+
+  .tease{font-size:13px; padding:13px 15px;}
+  .tabs{gap:2px;}
+  .tab{padding:9px 11px; font-size:13px;}
   .desk-tools select{flex:1;}
   .desk-search{flex:1 1 100%;min-width:0;}
   .lead-links{width:100%;}
@@ -962,6 +988,17 @@ function paintDesk(){
     const waited = ageText(l.first_seen);
     const waitDays = l.first_seen ? Math.floor((Date.now() - new Date(l.first_seen).getTime())/86400000) : 0;
     const waitCol = closed ? 'var(--text-faint)' : waitDays > 30 ? 'var(--orange)' : waitDays > 7 ? 'var(--amber)' : 'var(--text-dim)';
+    const wantsAppt = ['p1_fees_paid','p1_appt_pending','p1_appt_done','p4_appt_booked','p4_appt_done'].includes(l.status);
+    const apptVal = l.appointment_at ? new Date(new Date(l.appointment_at).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : '';
+    const apptBox = wantsAppt ? `
+        <label class="lead-date appt"><span>Appointment</span><input type="datetime-local" value="${apptVal}" onchange="saveAppt('${l.id}', this.value)"></label>
+        <label class="lead-date appt"><span>Where</span>
+          <select onchange="saveApptMode('${l.id}', this.value)">
+            <option value="">Not set</option>
+            <option ${l.appointment_mode==='Online'?'selected':''}>Online</option>
+            <option ${l.appointment_mode==='At the clinic'?'selected':''}>At the clinic</option>
+          </select>
+        </label>` : '';
     const dates = ph===3 ? `
         <label class="lead-date"><span>Dispatched</span><input type="date" value="${l.dispatched_on||''}" onchange="saveDate('${l.id}','dispatched_on',this.value)"></label>
         <label class="lead-date"><span>Delivered</span><input type="date" value="${l.delivered_on||''}" onchange="saveDate('${l.id}','delivered_on',this.value)"></label>` : '';
@@ -985,6 +1022,7 @@ function paintDesk(){
           <optgroup label="Move to another phase">${otherPhases}</optgroup>
         </select>
         <label class="lead-date"><span>Next call</span><input type="date" class="${dueCls}" value="${l.next_followup||''}" onchange="saveLead('${l.id}')"></label>
+        ${apptBox}
         ${dates}
         <input type="text" placeholder="Note after the call" value="${(l.note||'').replace(/"/g,'&quot;')}" onchange="saveLead('${l.id}')">
         <label class="lead-owner"><span>Owner</span>
@@ -1006,6 +1044,25 @@ function moveePhase(id, phase){
   fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' },
     body: JSON.stringify({ action:'update', id, status:first.code }) })
   .then(r=>r.json()).then(()=>loadDesk());
+}
+
+function saveAppt(id, value){
+  const body = { action:'update', id, appointment_at: value ? value : '' };
+  postLeadField(id, body, v => { const r = DESK.find(x=>x.id===id); if(r) r.appointment_at = value || null; });
+}
+function saveApptMode(id, value){
+  postLeadField(id, { action:'update', id, appointment_mode: value }, () => {
+    const r = DESK.find(x=>x.id===id); if(r) r.appointment_mode = value || null;
+  });
+}
+function postLeadField(id, body, onOk){
+  const tag = document.getElementById('saved-'+id);
+  fetch('/api/desk', { method:'POST', headers:{ 'x-pulse-pass': deskPass(), 'Content-Type':'application/json' },
+    body: JSON.stringify(body) })
+  .then(r=>r.json()).then(d=>{
+    if(tag){ tag.textContent = d.ok ? 'Saved' : 'Failed'; tag.style.color = d.ok?'var(--green)':'var(--orange)'; setTimeout(()=>{tag.textContent='';},1800); }
+    if(d.ok && onOk) onOk();
+  });
 }
 
 // the dispatch and delivery dates save on their own
