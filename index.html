@@ -641,6 +641,9 @@ let DESK_WHO = 'all';   // filter by who owns the lead
 let DESK_TEAM = [];     // people who can own a lead
 let DESK_STATUSES = []; // the phase-by-phase disposition list
 const PHASE_NAMES = {1:'Consultation', 2:'Medicine', 3:'Delivery', 4:'Reorder'};
+// "Consultation" is Manish's word for the phase. Keep it meaning only that,
+// so the funnel a patient arrived through reads differently on screen.
+const CAME_FROM_LABEL = {'Consultation page':'Consult page','Walk-in':'Walked in','Phone enquiry':'Telephoned','Referral':'Referred'};
 const PHASE_HELP  = {1:'Getting them to a paid consultation', 2:'Getting the medicine paid for', 3:'Getting it dispatched and delivered', 4:'Bringing them back for the next course'};   // any date | 1 | 7 | 30 days since the lead arrived
 let DESK_Q = '';
 let DESK_LAST_SYNC = 0;   // sync again when older than 5 minutes
@@ -943,13 +946,16 @@ function renderDesk(){
         <optgroup label="Came from">
           <option value="Assessment" ${DESK_DOOR==='Assessment'?'selected':''}>Assessment</option>
           <option value="Routine" ${DESK_DOOR==='Routine'?'selected':''}>Routine</option>
-          <option value="Consultation page" ${DESK_DOOR==='Consultation page'?'selected':''}>Consultation page</option>
+          <option value="Consultation page" ${DESK_DOOR==='Consultation page'?'selected':''}>Consult page</option>
           <option value="Modak page" ${DESK_DOOR==='Modak page'?'selected':''}>Modak page</option>
+          <option value="Walk-in" ${DESK_DOOR==='Walk-in'?'selected':''}>Walked in</option>
+          <option value="Phone enquiry" ${DESK_DOOR==='Phone enquiry'?'selected':''}>Telephoned</option>
+          <option value="Referral" ${DESK_DOOR==='Referral'?'selected':''}>Referred</option>
         </optgroup>
         <optgroup label="Bought">
-          <option value="b497" ${DESK_DOOR==='b497'?'selected':''}>Consultation organic (497)</option>
-          <option value="b499" ${DESK_DOOR==='b499'?'selected':''}>Consultation paid ads (499)</option>
-          <option value="bmodak" ${DESK_DOOR==='bmodak'?'selected':''}>Modak (any pack)</option>
+          <option value="b497" ${DESK_DOOR==='b497'?'selected':''}>Bought consult ₹497</option>
+          <option value="b499" ${DESK_DOOR==='b499'?'selected':''}>Bought consult ₹499</option>
+          <option value="bmodak" ${DESK_DOOR==='bmodak'?'selected':''}>Bought Modak</option>
         </optgroup>
       </select>
       <select onchange="DESK_SINCE=this.value;renderDesk()">
@@ -1029,7 +1035,7 @@ function paintDesk(){
         <span class="lead-links">${links}</span>
       </div>
       <div class="lead-sub">
-        <span class="src-pill${['Walk-in','Phone enquiry','Referral'].includes(l.came_from)?' manual':''}">${l.came_from}</span>
+        <span class="src-pill${['Walk-in','Phone enquiry','Referral'].includes(l.came_from)?' manual':''}">${CAME_FROM_LABEL[l.came_from]||l.came_from}</span>
         <span class="phase-pill"><span class="phnum">${ph}</span>${PHASE_NAMES[ph]}</span>
         ${waited?`<span class="waited" style="color:${waitCol}" title="${ageHint(l.first_seen)}">${waited}</span>`:''}
         ${(l.email||'').endsWith('@no-email.local')
