@@ -99,6 +99,18 @@
   .footnote{margin:0; padding:16px 24px; background:var(--panel-2); border-top:1px solid var(--line);
     font-size:15px; color:var(--ink-dim);}
   .footnote b{color:var(--ink); font-weight:600;}
+  .num.done{color:var(--live); background:rgba(31,122,69,0.10);}
+  .when.live{color:var(--live); font-weight:700;}
+  ol.steps{margin:0; padding:0; list-style:none; counter-reset:s; display:flex; flex-direction:column;}
+  ol.steps li{counter-increment:s; display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--line); align-items:flex-start;}
+  ol.steps li:last-child{border-bottom:none;}
+  ol.steps li::before{content:counter(s); font-family:var(--mono); font-size:11px; font-weight:700;
+    color:var(--gold); background:var(--gold-wash); border:1px solid var(--line-2); border-radius:6px;
+    min-width:24px; height:24px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  ol.steps b{font-weight:600;}
+  .callout{background:var(--panel); border:1px solid var(--gold); border-radius:12px; padding:18px 20px;
+    display:flex; flex-direction:column; gap:8px;}
+  .callout b{font-weight:700;}
 
   footer{border-top:1px solid var(--line); padding-top:22px; color:var(--ink-faint); font-size:14px;
     display:flex; flex-direction:column; gap:6px;}
@@ -152,7 +164,7 @@
     <div class="stages">
 
       <article class="stage">
-        <div class="stage-head"><span class="num">STAGE 1</span><span class="when">This week</span></div>
+        <div class="stage-head"><span class="num done">STAGE 1</span><span class="when live">Live now &nbsp;·&nbsp; ready to use today</span></div>
         <h3>Get your whole day into one place</h3>
         <p class="intro">Pulse only knows about people who come through your website. A large part of your day walks into the clinic or telephones you.</p>
         <div class="t-scroll">
@@ -170,7 +182,7 @@
       </article>
 
       <article class="stage">
-        <div class="stage-head"><span class="num">STAGE 2</span><span class="when">Next</span></div>
+        <div class="stage-head"><span class="num">STAGE 2</span><span class="when">Next week</span></div>
         <h3>Never lose a refill again</h3>
         <p class="intro">A patient takes a thirty day course. Around day twenty six his medicine runs low. If nobody calls, he stops or he finds somebody else.</p>
         <div class="t-scroll">
@@ -224,6 +236,43 @@
       </article>
 
     </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Start here: using it this week</div>
+    <p class="lede">Stage 1 is live. Open pulse.drmadhusudan.com on your phone, log in with the password Ritesh shared, and tap Lead Tracking.</p>
+
+    <div class="callout">
+      <b>The one habit that makes this work</b>
+      <span>After every call, set the status, and if you promised to ring back, set the next call date. That is the whole discipline. Everything else the system does on its own.</span>
+    </div>
+
+    <ol class="steps">
+      <li><span><b>Start your day on Due today.</b> These are the people you promised to call. Work the list until it is empty.</span></li>
+      <li><span><b>Then work your phase.</b> 1 Consultation is people who have not paid yet. 2 Medicine is people who have seen the doctor. 3 Delivery is orders to send out. 4 Reorder is patients to bring back.</span></li>
+      <li><span><b>Call or WhatsApp from the card.</b> The gold button dials. The green one opens WhatsApp on that number. You never type a number again.</span></li>
+      <li><span><b>Update him straight after.</b> Pick the status, set a next call date if you promised one, and write a short note in your own words.</span></li>
+      <li><span><b>Put every walk-in and phone enquiry in.</b> Press Add a person. Name and phone number are enough. If he is already in the list it will tell you who he is, so nobody gets called twice.</span></li>
+      <li><span><b>Take ownership.</b> Set Owner to your name on anyone you are handling, then use the Everyone's leads box to see only your own patients.</span></li>
+      <li><span><b>Dispatch team: fill the delivery date.</b> On Phase 3 cards, enter the day it was couriered and the day it reached him. This is what the refill reminder will count from next week.</span></li>
+    </ol>
+
+    <p class="footnote" style="margin-top:18px;border:1px solid var(--line);border-radius:12px;"><b>Two things worth knowing.</b> Anyone who pays moves himself into the next phase, so you never chase a man who has already paid. And the list checks for new leads on its own every few minutes, with a button at the top if you want it now.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">Coming next week</div>
+    <div class="t-scroll">
+      <table>
+        <thead><tr><th>What arrives</th><th>What changes for you</th></tr></thead>
+        <tbody>
+          <tr><td class="what">The refill list</td><td class="gain">Every patient whose medicine runs out in the next four or five days, ready to call, counted from the day it was delivered.</td></tr>
+          <tr><td class="what">The full patient profile</td><td class="gain">Open a name and see every medicine, every amount and every date in one place.</td></tr>
+          <tr><td class="what">Dr. Madhu's own screen</td><td class="gain">How many consultations today and at what times, without asking anyone.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lede">This is why the delivery date matters so much this week. Every date your team enters now is a refill call the system can make for you next week.</p>
   </section>
 
   <section>
