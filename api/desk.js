@@ -59,7 +59,8 @@ export default async function handler(req, res) {
         p_age: body.age || null,
         p_location: body.location || null,
         p_marital: body.marital_status || null,
-        p_lead_source: body.lead_source || null
+        p_lead_source: body.lead_source || null,
+        p_came_for: body.came_for || null
       });
       const out = await r.json();
       if (!r.ok) return res.status(500).json({ error: 'add_failed', detail: out });

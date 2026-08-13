@@ -657,14 +657,37 @@ function addFormHTML(){
       <label>Where did he hear about us
         <select id="afLeadSource">
           <option value="">Not known</option>
-          <option>Instagram</option>
-          <option>YouTube</option>
-          <option>Facebook</option>
-          <option>Google search</option>
-          <option>Friend or family</option>
-          <option>Existing patient</option>
-          <option>Passing the clinic</option>
-          <option>Newspaper or hoarding</option>
+          <optgroup label="Social media">
+            <option>Instagram</option>
+            <option>YouTube</option>
+            <option>Facebook</option>
+          </optgroup>
+          <optgroup label="Search and listings">
+            <option>Google search</option>
+            <option>Google Maps listing</option>
+            <option>Practo</option>
+            <option>Our website</option>
+          </optgroup>
+          <optgroup label="People and place">
+            <option>Friend or family</option>
+            <option>Existing patient</option>
+            <option>Passing the clinic</option>
+          </optgroup>
+          <optgroup label="Other">
+            <option>WhatsApp</option>
+            <option>Newspaper or hoarding</option>
+            <option>Other</option>
+          </optgroup>
+        </select>
+      </label>
+      <label>What he came for
+        <select id="afCameFor">
+          <option value="">Not said</option>
+          <option>Erectile Dysfunction</option>
+          <option>Premature Ejaculation</option>
+          <option>Both ED and PE</option>
+          <option>Low desire or energy</option>
+          <option>Not sure</option>
           <option>Other</option>
         </select>
       </label>
@@ -706,7 +729,7 @@ function submitAdd(){
     body: JSON.stringify({ action:'add', name:g('afName').value, phone:g('afPhone').value,
       email:g('afEmail').value, source:g('afSource').value, note:g('afNote').value, assigned_to:g('afOwner').value,
       phone_alt:g('afPhone2').value, age:g('afAge').value, location:g('afLocation').value,
-      marital_status:g('afMarital').value, lead_source:g('afLeadSource').value }) })
+      marital_status:g('afMarital').value, lead_source:g('afLeadSource').value, came_for:g('afCameFor').value }) })
   .then(r=>r.json()).then(d=>{
     if(!d.ok){ msg.style.color='var(--orange)'; msg.textContent = d.error || 'Could not save.'; return; }
     ['afName','afPhone','afEmail','afNote','afPhone2','afAge','afLocation'].forEach(i=>g(i).value='');
@@ -910,7 +933,7 @@ function paintDesk(){
     const strip = closed ? 'var(--border-2)' : dueCls ? 'var(--orange)'
       : ph===4 ? 'var(--green)' : ph===3 ? '#a78bfa' : ph===2 ? 'var(--amber)' : 'var(--gold)';
     const stCol = closed ? 'var(--text-faint)' : ph===4 ? 'var(--green)' : 'var(--text)';
-    const detail = [l.age && l.age+' yrs', l.location, l.marital_status, l.lead_source && 'via '+l.lead_source]
+    const detail = [l.came_for, l.age && l.age+' yrs', l.location, l.marital_status, l.lead_source && 'via '+l.lead_source]
       .filter(Boolean).join(' · ');
     const waited = ageText(l.first_seen);
     const waitDays = l.first_seen ? Math.floor((Date.now() - new Date(l.first_seen).getTime())/86400000) : 0;
