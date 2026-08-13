@@ -162,6 +162,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .lead.saving{border-color:var(--gold);}
 .lead-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;}
 .lead-name{font-weight:700;color:var(--text);font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.book-tag{font-size:11px;font-weight:700;color:#1a1a1a;background:var(--green);border-radius:50px;padding:2px 9px;letter-spacing:.4px;text-transform:uppercase;}
 .new-tag{font-size:11px;font-weight:700;color:#1a1a1a;background:var(--gold);border-radius:50px;padding:2px 9px;letter-spacing:.5px;text-transform:uppercase;}
 .due-tag{font-size:11px;font-weight:700;color:var(--orange);border:1px solid rgba(251,113,133,0.4);border-radius:50px;padding:2px 9px;letter-spacing:.5px;text-transform:uppercase;}
 .lead-links{display:flex;gap:8px;flex-wrap:wrap;font-size:14px;}
@@ -793,8 +794,9 @@ function submitAdd(){
 function deskSumText(C){
   const scope = (DESK_DOOR==='all' && DESK_SINCE==='all' && !DESK_Q) ? '' :
     ' <span style="color:var(--text-faint)">· this selection only</span>';
-  const open = C.p1 + C.p2 + C.p3 + C.p4;
-  return `Open patients <b>${open}</b> · Collected <b>${fmtINR(C.collected)}</b>${scope}`;
+  const leads = C.base.filter(l=>!(Number(l.total_paid)>0)).length;
+  const customers = C.base.filter(l=>Number(l.total_paid)>0).length;
+  return `Leads <b>${leads}</b> · Paying patients <b>${customers}</b> · Collected <b>${fmtINR(C.collected)}</b>${scope}`;
 }
 
 // "Came in today" reads better than a raw date when you are about to call someone
@@ -846,13 +848,20 @@ function statusMeta(code){ return DESK_STATUSES.find(s=>s.code===code) || null; 
 function isClosed(l){ const m = statusMeta(l.status); return !!(m && m.closes); }
 
 function isNewToday(l){
-  if(!l.first_seen || l.status !== 'p1_new') return false;
+  if(!l.first_seen || isClosed(l)) return false;
   const d = new Date(l.first_seen), n = new Date();
   return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate();
 }
 
+// paid for a consultation and still has no appointment booked.
+// the hottest queue in the system: he has handed over money and heard nothing.
+function needsBooking(l){
+  return ['p1_fees_paid','p1_appt_pending'].includes(l.status) && !l.appointment_at;
+}
+
 function deskStatus(l, f){
   if(f==='fresh') return isNewToday(l);
+  if(f==='book')  return needsBooking(l);
   if(f==='due')  return !!(l.next_followup && l.next_followup <= deskToday() && !isClosed(l));
   if(f==='lost') return isClosed(l);
   if(f==='p1')   return l.phase===1 && !isClosed(l);
@@ -870,6 +879,7 @@ function deskCounts(){
   return {
     base: base,
     fresh: base.filter(l=>deskStatus(l,'fresh')).length,
+    book: base.filter(l=>deskStatus(l,'book')).length,
     due: base.filter(l=>deskStatus(l,'due')).length,
     p1: base.filter(l=>deskStatus(l,'p1')).length,
     p2: base.filter(l=>deskStatus(l,'p2')).length,
@@ -918,6 +928,7 @@ function renderDesk(){
     ${addFormHTML()}
     <div class="desk-controls">
       <button class="${DESK_FILTER==='fresh'?'active':''}" onclick="setDeskFilter('fresh',this)">New today <b id="cFresh">${C.fresh}</b></button>
+      <button class="${DESK_FILTER==='book'?'active':''}" onclick="setDeskFilter('book',this)">To book <b id="cBook">${C.book}</b></button>
       <button class="${DESK_FILTER==='due'?'active':''}" onclick="setDeskFilter('due',this)">Due today <b id="cDue">${C.due}</b></button>
       <button class="${DESK_FILTER==='p1'?'active':''}" onclick="setDeskFilter('p1',this)"><span class="phnum">1</span>Consultation <b id="cP1">${C.p1}</b></button>
       <button class="${DESK_FILTER==='p2'?'active':''}" onclick="setDeskFilter('p2',this)"><span class="phnum">2</span>Medicine <b id="cP2">${C.p2}</b></button>
@@ -968,11 +979,11 @@ function paintDesk(){
   const C = deskCounts();
   ['cLeads','work','cDue','due','cAppt','appt','cAll','all'].forEach(function(){});
   const setC = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
-  setC('cFresh',C.fresh); setC('cDue',C.due); setC('cP1',C.p1); setC('cP2',C.p2); setC('cP3',C.p3); setC('cP4',C.p4); setC('cClosed',C.lost); setC('cAll',C.all);
+  setC('cFresh',C.fresh); setC('cBook',C.book); setC('cDue',C.due); setC('cP1',C.p1); setC('cP2',C.p2); setC('cP3',C.p3); setC('cP4',C.p4); setC('cClosed',C.lost); setC('cAll',C.all);
   const sumEl = document.getElementById('deskSum'); if(sumEl) sumEl.innerHTML = deskSumText(C);
   const rows = DESK.filter(deskMatches);
   const closedBar = '';
-  const EMPTY={fresh:'No new leads today yet. They land here the moment they arrive.',due:'No calls due today. You are caught up.',p1:'Nobody waiting on a consultation right now.',p2:'Nobody waiting to pay for medicine.',p3:'Nothing waiting to be dispatched or delivered.',p4:'Nobody due for a reorder yet.',lost:'Nobody has been closed off.',all:'No patients yet.'};
+  const EMPTY={book:'Nobody is waiting for an appointment. Every paid consultation has a slot.',fresh:'No new leads today yet. They land here the moment they arrive.',due:'No calls due today. You are caught up.',p1:'Nobody waiting on a consultation right now.',p2:'Nobody waiting to pay for medicine.',p3:'Nothing waiting to be dispatched or delivered.',p4:'Nobody due for a reorder yet.',lost:'Nobody has been closed off.',all:'No patients yet.'};
   if(!rows.length){ list.innerHTML = closedBar + `<div class="loading">${EMPTY[DESK_FILTER]||'Nothing here. Pick another filter.'}</div>`; return; }
   list.innerHTML = closedBar + rows.slice(0,400).map(l=>{
     const phone10 = (l.phone||'').slice(-10);
@@ -1014,7 +1025,7 @@ function paintDesk(){
         <label class="lead-date"><span>Delivered</span><input type="date" value="${l.delivered_on||''}" onchange="saveDate('${l.id}','delivered_on',this.value)"></label>` : '';
     return `<div class="lead" id="lead-${l.id}" style="border-left:3px solid ${strip}">
       <div class="lead-top">
-        <span class="lead-name">${l.name||'(no name)'}${isNewToday(l)?'<span class="new-tag">New today</span>':''}${dueCls?'<span class="due-tag">Call due</span>':''}</span>
+        <span class="lead-name">${l.name||'(no name)'}${isNewToday(l)?'<span class="new-tag">New today</span>':''}${needsBooking(l)?'<span class="book-tag">Paid · book his slot</span>':''}${dueCls?'<span class="due-tag">Call due</span>':''}</span>
         <span class="lead-links">${links}</span>
       </div>
       <div class="lead-sub">
