@@ -950,7 +950,9 @@ function paintDesk(){
         <span class="src-pill${['Walk-in','Phone enquiry','Referral'].includes(l.came_from)?' manual':''}">${l.came_from}</span>
         <span class="phase-pill"><span class="phnum">${ph}</span>${PHASE_NAMES[ph]}</span>
         ${waited?`<span class="waited" style="color:${waitCol}" title="${ageHint(l.first_seen)}">${waited}</span>`:''}
-        <a href="mailto:${l.email}" style="color:var(--text-dim);text-decoration:none;word-break:break-all">${l.email}</a>${boughtBit}
+        ${(l.email||'').endsWith('@no-email.local')
+          ? '<span style="color:var(--text-faint)">No email</span>'
+          : `<a href="mailto:${l.email}" style="color:var(--text-dim);text-decoration:none;word-break:break-all">${l.email}</a>`}${boughtBit}
       </div>
       ${detail?`<div class="lead-detail">${detail}</div>`:''}
       <div class="lead-edit">
