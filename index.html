@@ -186,7 +186,31 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   .desk-search{flex:1 1 100%;min-width:0;}
   .lead-links{width:100%;}
   .lead-links a.act-call{flex:1;justify-content:center;}
+
+  /* the header buttons sit side by side and stay thumb sized */
+  .desk-head{align-items:stretch;}
+  .desk-head > div:last-child{display:flex;width:100%;gap:8px;}
+  .desk-head > div:last-child > button{flex:1;}
+
+  /* chips stay readable without eating three rows */
+  .desk-controls{padding:8px 0 10px;gap:6px;}
+  .desk-controls button{padding:10px 12px;font-size:13.5px;}
+
+  /* every control on a card gets its own full width row, so nothing is a sliver */
+  .lead-edit{gap:10px;}
+  .lead-edit > select{flex:1 1 100%;}
   .lead-edit input[type=text]{flex:1 1 100%;}
+  .lead-date{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;}
+  .lead-date input{flex:1;min-width:0;}
+  .lead-owner{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;}
+  .lead-owner select{flex:1;min-width:0;}
+  .lead-saved{width:100%;}
+
+  /* the add form becomes one clean column */
+  .addbox{padding:16px;}
+  .addgrid{grid-template-columns:1fr;}
+  .addactions button{flex:1;}
+  .addmsg{flex:1 1 100%;}
 }
 </style>
 </head>
