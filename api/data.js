@@ -6,8 +6,13 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
 
   // password check (sent as header from the gated page)
+  // Two keys open this door. The client's key shows the four normal tabs.
+  // Our own key does the same AND flags ops:true, which reveals the private
+  // Opportunities tab. The client never learns the second key exists.
   const pass = req.headers['x-pulse-pass'] || (req.query && req.query.p) || '';
-  if (pass !== process.env.PULSE_PASSWORD) {
+  const OPS = process.env.OPS_PASSWORD;
+  const isOps = !!OPS && pass === OPS;
+  if (pass !== process.env.PULSE_PASSWORD && !isOps) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 
@@ -31,7 +36,7 @@ export default async function handler(req, res) {
     const revenue_recent = await revRecentRes.json();
     const exec = await execRes.json();
     const content2 = await content2Res.json();
-    return res.status(200).json({ ok: true, stats, recent, revenue, revenue_recent, exec, content2 });
+    return res.status(200).json({ ok: true, ops: isOps, stats, recent, revenue, revenue_recent, exec, content2 });
   } catch (e) {
     return res.status(500).json({ error: 'fetch_failed', detail: String(e) });
   }

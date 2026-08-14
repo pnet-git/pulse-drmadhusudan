@@ -54,6 +54,17 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .tab.active{color:var(--text);border-bottom-color:var(--gold);}
 .tab.disabled{color:var(--text-faint);opacity:0.45;cursor:not-allowed;display:flex;align-items:center;gap:7px;}
 .tab .soon{font-size:9px;background:var(--panel-2);color:var(--gold);padding:2px 7px;border-radius:50px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;}
+/* Opportunities — ours only, never shown on the client's key */
+.tab.ops-tab{color:#8b7bd8;}
+.tab.ops-tab.active{color:#a99bee;border-bottom-color:#8b7bd8;}
+.ops-note{font-size:12.5px;color:var(--text-faint);background:rgba(139,123,216,.09);border:1px solid rgba(139,123,216,.3);border-radius:10px;padding:11px 14px;margin-bottom:22px;}
+.ops-card{background:var(--panel);border:1px solid var(--border);border-left:3px solid #8b7bd8;border-radius:13px;padding:18px 20px;margin-bottom:14px;}
+.ops-card h4{font-size:15px;font-weight:700;margin-bottom:5px;color:var(--text);}
+.ops-card .num{font-family:'Fraunces',serif;font-size:clamp(26px,6vw,34px);font-weight:700;line-height:1.1;margin-bottom:6px;}
+.ops-card .say{font-size:13.5px;color:var(--text-dim);line-height:1.55;}
+.ops-card .do{font-size:13px;color:var(--gold);margin-top:9px;font-weight:600;}
+.ops-good{border-left-color:var(--green);} .ops-good .num{color:var(--green);}
+.ops-warn{border-left-color:var(--orange);} .ops-warn .num{color:var(--orange);}
 
 /* time filter */
 .filters{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
@@ -275,6 +286,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
     <button class="tab" data-tab="revenue" onclick="setTab('revenue',this)">Revenue</button>
     <button class="tab" data-tab="content" onclick="setTab('content',this)">Content</button>
     <button class="tab" data-tab="desk" onclick="setTab('desk',this)">Lead Tracking</button>
+    <button class="tab ops-tab" id="opsTab" style="display:none" data-tab="ops" onclick="setTab('ops',this)">Opportunities</button>
   </div>
 
   <div class="filters">
@@ -312,6 +324,7 @@ function login(){
       sessionStorage.setItem('pulse_p', p);
       document.getElementById('gate').style.display='none';
       document.getElementById('app').style.display='block';
+      showOpsTab(d);
       render();
     })
     .catch(() => { document.getElementById('gateErr').textContent = 'Wrong access key. Try again.'; });
@@ -323,10 +336,15 @@ window.addEventListener('load', ()=>{
   const p = sessionStorage.getItem('pulse_p');
   if(p){
     fetch('/api/data',{headers:{'x-pulse-pass':p}}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
-      DATA=d; document.getElementById('gate').style.display='none'; document.getElementById('app').style.display='block'; render();
+      DATA=d; document.getElementById('gate').style.display='none'; document.getElementById('app').style.display='block'; showOpsTab(d); render();
     }).catch(()=>{});
   }
 });
+
+// The Opportunities tab only exists if the server said our key was used.
+function showOpsTab(d){
+  if(d && d.ops) document.getElementById('opsTab').style.display='';
+}
 
 function setRange(r, btn){
   if(btn.disabled) return;
@@ -336,11 +354,70 @@ function setRange(r, btn){
   render();
 }
 
+// ===== OPPORTUNITIES — ours only =====
+// Every card answers the same three questions: what is the number,
+// what does it mean, and what do we do about it.
+let OPS = null;
+function renderOps(){
+  const el = document.getElementById('content');
+  if(!OPS){
+    el.innerHTML = '<div class="loading">Reading the funnel…</div>';
+    fetch('/api/ops',{headers:{'x-ops-pass':sessionStorage.getItem('pulse_p')||''}})
+      .then(r=>r.ok?r.json():Promise.reject())
+      .then(d=>{ OPS = d.intel || {}; renderOps(); })
+      .catch(()=>{ el.innerHTML = '<div class="loading">Could not read the funnel.</div>'; });
+    return;
+  }
+  const o = OPS;
+  const pct = (a,b)=> b>0 ? Math.round((b-a)/b*100) : 0;
+  const drop30 = pct(o.submitted_30||0, o.reached_30||0);
+  const dropAll = pct(o.submitted_all||0, o.reached_all||0);
+  const cards = [];
+
+  // 1. assessment drop-off
+  if((o.reached_all||0) === 0){
+    cards.push(card('', 'Assessment drop-off', 'Waiting',
+      'Counting started today. Once people take the assessment we will know exactly how many see the score screen and walk away without giving their details.',
+      'Check back in a few days.'));
+  } else {
+    const cls = drop30 >= 40 ? 'ops-warn' : drop30 <= 20 ? 'ops-good' : '';
+    cards.push(card(cls, 'Assessment drop-off, last 30 days', drop30 + '%',
+      (o.reached_30||0) + ' people saw the score screen. ' + (o.submitted_30||0) + ' gave their details. All time it is ' + dropAll + '%.',
+      drop30 >= 40 ? 'High. Worth testing a shorter form or asking for the number earlier.'
+                   : 'Healthy. Leave the form alone.'));
+  }
+
+  // 2. leads we cannot call
+  const noPhone = o.leads_no_phone||0;
+  cards.push(card(noPhone>0?'ops-warn':'ops-good', 'Leads with no phone number', noPhone,
+    'Out of ' + (o.leads_total||0) + ' people on the desk. These came in before the phone field was made compulsory, so nobody can ring them.',
+    noPhone>0 ? 'Email them once and ask for a number. That is the only way back.' : 'Every lead is callable.'));
+
+  // 3. the team not calling
+  const untouched = o.p1_untouched||0;
+  cards.push(card(untouched>20?'ops-warn':'ops-good', 'Never contacted, no call date set', untouched,
+    'Out of ' + (o.p1_total||0) + ' people sitting in Consultation. Still marked new, with nobody booked to ring them.',
+    untouched>20 ? 'The tool works, the calling does not. Raise it with Manish.' : 'The team is working the list.'));
+
+  // 4. low scorers, the people who need help most
+  const low = o.low_score_total||0, lowNoPhone = o.low_score_no_phone||0;
+  cards.push(card('', 'Scored under 50', low,
+    'These men are in the worst shape and are the most likely to buy. ' + lowNoPhone + ' of them have no phone number on file.',
+    low>0 ? 'Give Manish this list first, ahead of everyone else.' : 'None yet.'));
+
+  el.innerHTML = '<div class="ops-note">🔒 This tab is ours. It does not appear on the client key. It says what to fix, so it is not always flattering.</div>' + cards.join('');
+}
+function card(cls, title, num, say, todo){
+  return '<div class="ops-card '+cls+'"><h4>'+title+'</h4><div class="num">'+num+'</div>'
+       + '<div class="say">'+say+'</div><div class="do">→ '+todo+'</div></div>';
+}
+
 function zClass(z){ return z==='Thriving'?'z-thriving':z==='Growth'?'z-growth':'z-needs'; }
 function zColor(z){ return z==='Thriving'?'var(--green)':z==='Growth'?'var(--amber)':'var(--orange)'; }
 
 function render(){
   if(TAB==='desk')       { renderDesk();       return; }
+  if(TAB==='ops')        { renderOps();        return; }
   if(!DATA) return;
   if(TAB==='revenue')    { renderRevenue();    return; }
   if(TAB==='content')    { renderContent();    return; }
