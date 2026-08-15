@@ -54,6 +54,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .tab.active{color:var(--text);border-bottom-color:var(--gold);}
 .tab.disabled{color:var(--text-faint);opacity:0.45;cursor:not-allowed;display:flex;align-items:center;gap:7px;}
 .tab .soon{font-size:9px;background:var(--panel-2);color:var(--gold);padding:2px 7px;border-radius:50px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;}
+/* The playbook line on every card: what to say, and why */
+.lead-play{background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.22);border-radius:10px;padding:10px 13px;margin:10px 0 2px;font-size:13.5px;line-height:1.55;color:var(--text-dim);}
+.lead-play .pl-tag{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gold);background:rgba(212,175,55,.14);padding:3px 8px;border-radius:50px;margin-right:9px;vertical-align:1px;}
+.pl-peek{display:block;margin-top:8px;background:none;border:none;padding:0;color:var(--gold);font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter';text-decoration:underline;text-underline-offset:3px;}
+.pl-msg{display:none;white-space:pre-wrap;margin-top:9px;padding:11px 13px;background:var(--panel-2);border-radius:9px;font-size:13px;line-height:1.6;color:var(--text-dim);}
+.pl-msg.open{display:block;}
+
 /* Opportunities — ours only, never shown on the client's key */
 .tab.ops-tab{color:#8b7bd8;}
 .tab.ops-tab.active{color:#a99bee;border-bottom-color:#8b7bd8;}
@@ -1056,6 +1063,165 @@ function renderDesk(){
   document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
 }
 
+// ===== THE PLAYBOOK =====
+// Every card gets two things: one line telling the caller what to say and why
+// (that is what they carry into a PHONE call, where there is no script), and a
+// WhatsApp button that opens with the message already typed.
+// Wording is a DRAFT until Manish or Dr. Madhu approves it. Nothing here claims
+// a medical result or promises an outcome.
+const CLINIC = "Dr. Madhu Sudan's clinic";
+
+function firstName(l){ return ((l.name||'').trim().split(/\s+/)[0]) || 'there'; }
+function ownerName(l){
+  const t = DESK_TEAM.find(t=>t.id===l.assigned_to);
+  return t ? t.name : '';
+}
+// The greeting already names the caller, so a sign-off would just repeat it.
+function sign(l){ return ownerName(l) ? '' : `\n\n${CLINIC}`; }
+// The two pages that actually take money. Checked live 15 Aug 2026.
+const PAY_CONSULT = 'https://drmadhusudan.com/appointment';
+const PAY_MEDICINE = 'https://drmadhusudan.com/modak';
+function boughtWhat(l){ return l.bought || 'the medicine'; }
+
+function playbook(l){
+  const n = firstName(l);
+  const src = l.came_from || '';
+  const want = l.came_for ? ` about ${l.came_for.toLowerCase()}` : '';
+  const hi = `Hello ${n}, this is ${ownerName(l)||'the team'} from ${CLINIC}.`;
+  let say = '', msg = '';
+
+  switch(l.status){
+    // ---- PHASE 1, getting him to a paid consultation ----
+    case 'p1_new':
+      if(src === 'Assessment'){
+        say = 'He filled the assessment, so he already told you his problem. Open with his result, not with a price.';
+        msg = `${hi} You completed the wellness assessment with us and I have your result here. Is now a good time to talk through what it means for you?`;
+      } else if(src === 'Modak page'){
+        say = 'He was reading the Modak page. He is close. Ask what he wants to know before he buys.';
+        msg = `${hi} I saw you were looking at Modak on our website. Would you like me to explain how the course works and what it costs?`;
+      } else if(src === 'Consultation page'){
+        say = 'He opened the consultation page and did not pay. Find out what stopped him.';
+        msg = `${hi} I saw you started booking a consultation with Dr. Madhu. Shall I hold a slot for you?`;
+      } else {
+        say = 'He came to you directly, so he is warm. Ask plainly what he needs help with.';
+        msg = `${hi} Thank you for getting in touch${want}. What would you like help with first?`;
+      }
+      break;
+    case 'p1_callback':
+      say = 'He asked you to ring back. Keep it to one question: is now a good time.';
+      msg = `${hi} You asked me to call back. Is this a good time, or shall I try later today?`;
+      break;
+    case 'p1_followup':
+      say = 'He has not decided yet. Do not repeat the pitch, ask what is holding him back.';
+      msg = `${hi} Just checking in${want}. Is there anything you want to know before you book the consultation?`;
+      break;
+    case 'p1_fees_pending':
+      say = 'He said yes but has not paid. Send the link in the same message, do not make him ask.';
+      msg = `${hi} Your consultation with Dr. Madhu is ready to book. You can pay here and I will confirm your slot straight away: ${PAY_CONSULT}`;
+      break;
+    case 'p1_fees_paid':
+      say = 'He has paid and has no slot. This is urgent, book him today.';
+      msg = `${hi} Your consultation payment is received, thank you. Which day suits you this week? I will book Dr. Madhu for you.`;
+      break;
+    case 'p1_appt_pending':
+      say = 'Slot is set. Confirm the time so he turns up.';
+      msg = `${hi} Confirming your consultation with Dr. Madhu. Please reply YES so I know the time works for you.`;
+      break;
+    case 'p1_appt_done':
+      say = 'He has seen the doctor. Now move him to the medicine, gently.';
+      msg = `${hi} I hope your consultation with Dr. Madhu went well. Would you like me to explain the course he suggested for you?`;
+      break;
+    case 'p1_not_interested':
+      say = 'Closed. Leave him alone unless he comes back on his own.';
+      msg = `${hi} No problem at all. If you ever want to talk to Dr. Madhu, we are here.`;
+      break;
+
+    // ---- PHASE 2, getting the medicine paid for ----
+    case 'p2_payment_pending':
+      say = 'The doctor has already advised him. He is one payment away. Send the link.';
+      msg = `${hi} Dr. Madhu has prepared your course. You can pay here and we will pack it for you: ${PAY_MEDICINE}`;
+      break;
+    case 'p2_followup':
+      say = 'He is thinking about the money. Ask which pack suits him rather than pushing the biggest one.';
+      msg = `${hi} Just following up on the course Dr. Madhu suggested. Would you like to start with the trial pack or go straight for the full course?`;
+      break;
+    case 'p2_callback':
+      say = 'He asked you to ring back about the medicine. One question only.';
+      msg = `${hi} You asked me to call about your course. Is this a good time?`;
+      break;
+    case 'p2_paid':
+      say = 'Paid. Tell him it is moving, then get it dispatched.';
+      msg = `${hi} Payment received, thank you. We are packing your order now and I will send you the tracking as soon as it leaves.`;
+      break;
+    case 'p2_not_interested':
+      say = 'He has stepped back from the medicine. Do not chase.';
+      msg = `${hi} Understood. If you change your mind, your consultation notes are safe with us.`;
+      break;
+
+    // ---- PHASE 3, getting it delivered ----
+    case 'p3_to_dispatch':
+      say = 'Paid but still sitting here. Every day of silence costs trust.';
+      msg = `${hi} Your order is packed and going out shortly. I will send the tracking details today.`;
+      break;
+    case 'p3_dispatched':
+      say = 'On its way. Give him the tracking so he stops wondering.';
+      msg = `${hi} Good news, your ${boughtWhat(l)} has been dispatched. It should reach you in a few days.`;
+      break;
+    case 'p3_pending_delivery':
+      say = 'The courier is late or he has not confirmed. Check before he complains.';
+      msg = `${hi} Just checking, has your order reached you yet?`;
+      break;
+    case 'p3_delivered':
+      say = 'Delivered. Fill in the delivery date, that is what starts his reorder clock.';
+      msg = `${hi} I can see your order has been delivered. Please start the course as Dr. Madhu explained, and message me any time if you have a question.`;
+      break;
+
+    // ---- PHASE 4, bringing him back ----
+    case 'p4_reorder_due':
+      if(/trial/i.test(l.bought||'')){
+        say = 'He took the TRIAL pack and it is running out. Ask how he feels first, then offer the full course.';
+        msg = `${hi} Your trial pack should be finishing around now. How have you been feeling on it? Dr. Madhu usually suggests continuing for a full course to see the real benefit. Shall I get your next pack ready?`;
+      } else {
+        say = 'His course is running out. Ask how he is doing, then offer the refill.';
+        msg = `${hi} Your course should be finishing around now. How have you been feeling? Shall I get your next pack ready so you do not have a gap?`;
+      }
+      break;
+    case 'p4_callback':
+      say = 'He asked you to ring back about the refill.';
+      msg = `${hi} You asked me to call about your next pack. Is this a good time?`;
+      break;
+    case 'p4_followup':
+      say = 'He has not reordered yet. Ask about him, not about the sale.';
+      msg = `${hi} Just checking in on how you are doing since your course. Anything you want to ask Dr. Madhu?`;
+      break;
+    case 'p4_appt_booked':
+      say = 'Follow-up appointment is set. Confirm it.';
+      msg = `${hi} Confirming your follow-up with Dr. Madhu. Please reply YES if the time works.`;
+      break;
+    case 'p4_appt_done':
+      say = 'He has seen the doctor again. Ask for the reorder now, while it is fresh.';
+      msg = `${hi} I hope the follow-up with Dr. Madhu went well. Shall I prepare the course he suggested?`;
+      break;
+    case 'p4_payment_pending':
+      say = 'He said yes to the refill and has not paid. Send the link.';
+      msg = `${hi} Your next pack is ready. You can pay here and we will send it out: ${PAY_MEDICINE}`;
+      break;
+    case 'p4_paid':
+      say = 'Refill paid. Get it dispatched.';
+      msg = `${hi} Payment received, thank you. Your next pack is being packed now.`;
+      break;
+    case 'p4_not_interested':
+      say = 'He does not want a refill. Close it and leave the door open.';
+      msg = `${hi} Understood, thank you for letting me know. We are here whenever you need us.`;
+      break;
+
+    default:
+      say = 'No script for this one yet. Ask how he is doing and what he needs.';
+      msg = `${hi} Just checking in. Is there anything we can help you with?`;
+  }
+  return { say, msg: msg + sign(l) };
+}
+
 function paintDesk(){
   const list = document.getElementById('deskList');
   if(!list) return;
@@ -1071,9 +1237,10 @@ function paintDesk(){
   list.innerHTML = closedBar + rows.slice(0,400).map(l=>{
     const phone10 = (l.phone||'').slice(-10);
     const wa = (l.phone||'').length>=10 ? ((l.phone.length===10?'91':'')+l.phone) : '';
+    const play = playbook(l);
     const links = [
       l.phone ? `<a class="act-call" href="tel:+${wa}">Call ${phone10}</a>` : '<span style="color:var(--orange);font-size:13px;font-weight:600">no phone</span>',
-      wa ? `<a class="act-wa" href="https://wa.me/${wa}" target="_blank">WhatsApp</a>` : ''
+      wa ? `<a class="act-wa" href="https://wa.me/${wa}?text=${encodeURIComponent(play.msg)}" target="_blank">WhatsApp</a>` : ''
     ].filter(Boolean).join(' ');
     const dueCls = (l.next_followup && l.next_followup <= deskToday()) ? 'due' : '';
     const boughtBit = l.bought ? ` · <span style="color:var(--gold)">${l.bought} · ${fmtINR(l.total_paid)}</span>` : '';
@@ -1120,6 +1287,9 @@ function paintDesk(){
           : `<a href="mailto:${l.email}" style="color:var(--text-dim);text-decoration:none;word-break:break-all">${l.email}</a>`}${boughtBit}
       </div>
       ${detail?`<div class="lead-detail">${detail}</div>`:''}
+      ${closed?'':`<div class="lead-play"><span class="pl-tag">Say this</span>${play.say}
+        <button class="pl-peek" onclick="peekMsg('${l.id}')">See the WhatsApp message</button>
+        <div class="pl-msg" id="msg-${l.id}">${play.msg.replace(/</g,'&lt;')}</div></div>`}
       <div class="lead-edit">
         <select style="color:${stCol}" onchange="saveLead('${l.id}')">
           ${opts}
@@ -1139,6 +1309,14 @@ function paintDesk(){
       </div>
     </div>`;
   }).join('') + (rows.length>400?`<div class="loading">Showing 400 of ${rows.length} — narrow the search.</div>`:'');
+}
+
+// Let the caller read the message before sending, so they can adjust it.
+function peekMsg(id){
+  const el = document.getElementById('msg-'+id); if(!el) return;
+  el.classList.toggle('open');
+  const btn = el.previousElementSibling;
+  if(btn) btn.textContent = el.classList.contains('open') ? 'Hide the message' : 'See the WhatsApp message';
 }
 
 // moving a patient to another phase drops them on that phase's first status
