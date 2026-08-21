@@ -13,8 +13,13 @@ const KIT_TAGS = [
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
 
+  // Two keys open this door, same as /api/data. The client's key and our own
+  // ops key. Before 21 Aug only the client's key worked here, so logging in
+  // with the ops key showed an empty Lead Tracking tab and every add, update
+  // and sync failed silently with a 401.
   const pass = req.headers['x-pulse-pass'] || '';
-  if (pass !== process.env.PULSE_PASSWORD) {
+  const OPS = process.env.OPS_PASSWORD;
+  if (pass !== process.env.PULSE_PASSWORD && !(OPS && pass === OPS)) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 
