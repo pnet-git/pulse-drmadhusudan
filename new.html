@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title><!-- v2.8 -->
+<title>Pulse · Dr. Madhu Sudan</title><!-- v2.9 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -489,22 +489,31 @@ function login(){
     .then(d=>{ localStorage.setItem('pulse_p',p); boot(d); })
     .catch(()=>{ $('gateErr').textContent='Wrong access key. Try again.'; });
 }
-function signOut(){ localStorage.removeItem('pulse_p'); sessionStorage.removeItem('pulse_p'); location.reload(); }
+function signOut(){ ['pulse_p','pulse_role','pulse_cache'].forEach(k=>localStorage.removeItem(k)); sessionStorage.removeItem('pulse_p'); location.reload(); }
+let BOOTED=false;
 function boot(d){
   DATA = d; ROLE = d.role || (d.ops ? 'ops' : 'team');
+  try{ localStorage.setItem('pulse_role', ROLE); }catch(e){}
   if(ROLE==='team' && ['health','content'].includes(TAB)) TAB='today';
   $('gate').style.display='none';
   $('app').style.display='block';
   buildTabs();
   renderMe();
+  if(BOOTED){ if(['health','content'].includes(TAB)) render(); return; }   // fresh numbers arrived behind a cached open
+  BOOTED=true;
+  const c = cachedDesk();
+  if(c){ applyDesk(c); LAST_SYNC = 0; }
+  render();
   // the list comes first, the sync runs behind it
   loadDesk(()=>{ if(TAB!=='add' || !$('afName') || !$('afName').value) render(); if(Date.now()-LAST_SYNC>5*60*1000) syncDesk(false); });
-  render();
 }
 window.addEventListener('load',()=>{
   const p = pass();
   if(!p) return;
-  fetch('/api/data',{headers:{'x-pulse-pass':p}}).then(r=>r.ok?r.json():Promise.reject()).then(boot).catch(()=>{});
+  // seen before on this device: open at once, and let the server confirm the key behind
+  const role = localStorage.getItem('pulse_role');
+  if(role && cachedDesk()) boot({role, ops: role==='ops'});
+  fetch('/api/data',{headers:{'x-pulse-pass':p}}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(boot).catch(st=>{ if(st===401) signOut(); });
 });
 document.addEventListener('click',e=>{ if(!e.target.closest('.me-wrap')) toggleMe(false); });
 function toggleMe(on){ const m=$('meMenu'); m.classList.toggle('open', on===undefined ? !m.classList.contains('open') : on); }
@@ -543,17 +552,23 @@ function render(){
 // ─────────────────────────────────────────────────────────────────────────────
 function barStart(){ const b=$('syncBar'), i=b.querySelector('i'); let p=8; i.style.width=p+'%'; b.style.display='block'; clearInterval(BAR_TIMER); BAR_TIMER=setInterval(()=>{ p+=(92-p)*.06; i.style.width=p+'%'; },250); }
 function barDone(){ clearInterval(BAR_TIMER); const b=$('syncBar'), i=b.querySelector('i'); i.style.width='100%'; setTimeout(()=>{ b.style.display='none'; i.style.width='8%'; },400); }
+// The list is the slow part on a phone, so the last copy is kept on the device and painted
+// at once. The fresh copy arrives behind it a second or two later.
+function applyDesk(d){
+  DESK = d.leads||[];
+  if(d.team&&d.team.length) TEAM=d.team;
+  if(d.statuses&&d.statuses.length) STATUSES=d.statuses;
+  VISITS = d.visits||[]; VISITS_ON = !!d.visits_on;
+  MEDICINES = d.medicines||[]; MEDS_ON = !!d.medicines_on;
+  renderMe(); computeBadge();
+}
+function cachedDesk(){ try{ const c=JSON.parse(localStorage.getItem('pulse_cache')||'null'); return c && c.leads ? c : null; }catch(e){ return null; } }
 function loadDesk(then){
-  fetch('/api/desk',{headers:{'x-pulse-pass':pass()}}).then(r=>r.json()).then(d=>{
-    DESK = d.leads||[];
-    if(d.team&&d.team.length) TEAM=d.team;
-    if(d.statuses&&d.statuses.length) STATUSES=d.statuses;
-    VISITS = d.visits||[]; VISITS_ON = !!d.visits_on;
-    MEDICINES = d.medicines||[]; MEDS_ON = !!d.medicines_on;
-    renderMe();
-    computeBadge();
+  fetch('/api/desk',{headers:{'x-pulse-pass':pass()}}).then(r=>{ if(r.status===401) throw new Error('401'); return r.json(); }).then(d=>{
+    applyDesk(d);
+    try{ localStorage.setItem('pulse_cache', JSON.stringify({leads:d.leads||[],team:d.team||[],statuses:d.statuses||[],visits:d.visits||[],visits_on:!!d.visits_on,medicines:d.medicines||[],medicines_on:!!d.medicines_on,at:Date.now()})); }catch(e){}
     if(then) then(); else if(TAB!=='add') render();
-  }).catch(()=>{ if(DESK===null) $('content').innerHTML='<div class="loading">Could not open the list. Check the internet and try again.</div>'; });
+  }).catch(e=>{ if(String(e.message)==='401'){ signOut(); return; } if(DESK===null) $('content').innerHTML='<div class="loading">Could not open the list. Check the internet and try again.</div>'; });
 }
 function syncDesk(fromButton){
   if(SYNCING) return;
