@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title><!-- v2.5 -->
+<title>Pulse · Dr. Madhu Sudan</title><!-- v2.6 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -1024,7 +1024,7 @@ function renderAdd(){
       <div class="fgrid" style="margin-top:14px">
         <label class="field wide req"><span>Name</span><input id="afName" type="text" placeholder="Full name" autocomplete="off"></label>
         <label class="field req"><span>Phone number</span><input id="afPhone" type="tel" placeholder="10 digits" inputmode="numeric" autocomplete="off" oninput="dupCheck()"></label>
-        <label class="field"><span>How did he reach you</span><select id="afSource" onchange="$('step2').classList.toggle('off', this.value!=='Walk-in' && !ADD_ID)"><option value="Walk-in">Walked into the clinic</option><option value="Phone enquiry">Telephoned us</option><option value="Referral">Sent by someone</option></select></label>
+        <label class="field"><span>How did he reach you</span><select id="afSource"><option value="Walk-in">Walked into the clinic</option><option value="Phone enquiry">Telephoned us</option><option value="Referral">Sent by someone</option></select></label>
         <div class="found wide" id="afFound"></div>
         <label class="field wide"><span>What he came for</span></label>
         <div class="seg wide" id="segFor">${['Erectile Dysfunction','Premature Ejaculation','Both ED and PE','Low desire or energy','Not sure','Other'].map(c=>`<button onclick="segPick(this)" data-v="${c}">${c}</button>`).join('')}</div>
@@ -1043,13 +1043,13 @@ function renderAdd(){
         <label class="field wide"><span>Note</span><input id="afNote" type="text" placeholder="What he asked about" autocomplete="off"></label>
       </div>
       <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
-        <button class="btn gold" onclick="submitAdd()">Save him to the list</button>
+        <button class="btn" onclick="submitAdd()">Save just the name and phone</button>
         <span class="msg" id="afMsg"></span>
       </div>
     </div>
-    <div class="step off" id="step2">
+    <div class="step" id="step2">
       <h4>2. What happened today</h4>
-      <div class="hint">Consultation, medicine, or both. Leave anything that did not happen on No.</div>
+      <div class="hint">Consultation, medicine, or both. Leave anything that did not happen on No. Fill this in and press one save at the bottom, it saves him and what happened together.</div>
       <div class="sec" style="margin-top:4px">Consultation</div>
       <div class="fgrid">
         <label class="field"><span>Consultation</span><select id="v-cmode" onchange="vConsultChange()"><option value="">No consultation</option><option value="clinic">At the clinic, today</option><option value="online">Online</option></select></label>
@@ -1062,8 +1062,8 @@ function renderAdd(){
         ${medPickerHTML('v')}
       </div>
       <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap">
-        <button class="btn gold" onclick="submitVisit()">Save what happened</button>
-        <button class="btn ghost" onclick="finishAdd()">Nothing else, done</button>
+        <button class="btn gold" onclick="submitVisit()">Save him and what happened</button>
+        <button class="btn ghost" onclick="finishAdd()">Start again</button>
         <span class="msg" id="vMsg"></span>
       </div>
       ${VISITS_ON?'':'<div class="note">Sales made at the desk are kept on the patient card for now. The full clinic sales record switches on once Akash confirms it.</div>'}
@@ -1082,7 +1082,7 @@ function dupCheck(){
   box.classList.add('open');
 }
 function openPerson(id){ P.q=''; P.queue=''; P.phase=''; P.who='all'; P.door='all'; P.since='all'; OPEN_CARD=id; setTab('patients'); const c=$('card-'+id); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); }
-function submitAdd(){
+function submitAdd(then){
   const g=id=>$(id); const msg=g('afMsg'); msg.className='msg'; msg.textContent='Saving…';
   const forBtn=document.querySelector('#segFor button.on');
   const body={ action:'add', name:g('afName').value, phone:g('afPhone').value, email:g('afEmail').value, source:g('afSource').value,
@@ -1093,12 +1093,14 @@ function submitAdd(){
     msg.className='msg ok'; msg.textContent='Saved. He is on the list.';
     ADD_ID = d.id || null;
     $('step1').classList.add('done');
-    $('step2').classList.remove('off'); $('step2').scrollIntoView({behavior:'smooth',block:'start'});
-    loadDesk(()=>{ if(!ADD_ID){ const hit=DESK.find(l=>(l.phone||'').replace(/[^0-9]/g,'').slice(-10)===body.phone.replace(/[^0-9]/g,'').slice(-10)); if(hit) ADD_ID=hit.id; } computeBadge(); });
+    loadDesk(()=>{ if(!ADD_ID){ const hit=DESK.find(l=>(l.phone||'').replace(/[^0-9]/g,'').slice(-10)===body.phone.replace(/[^0-9]/g,'').slice(-10)); if(hit) ADD_ID=hit.id; } computeBadge(); if(then) then(); });
   }).catch(()=>{ msg.className='msg bad'; msg.textContent='Could not save. Check the internet and try again.'; });
 }
 function submitVisit(){
-  const l=DESK&&DESK.find(x=>x.id===ADD_ID); const msg=$('vMsg');
+  const msg=$('vMsg');
+  // not saved yet: save the person first, then come back here
+  if(!ADD_ID){ if(!$('afName').value.trim()||!$('afPhone').value.trim()){ msg.className='msg bad'; msg.textContent='Name and phone number first, in step 1.'; $('afName').scrollIntoView({behavior:'smooth',block:'center'}); return; } msg.className='msg'; msg.textContent='Saving him first…'; return submitAdd(()=>submitVisit()); }
+  const l=DESK&&DESK.find(x=>x.id===ADD_ID);
   if(!l){ msg.className='msg bad'; msg.textContent='Give it a second, the list is still loading, then press again.'; return; }
   const cmode=$('v-cmode').value, consult=$('v-consult').value, camt=Number($('v-camt').value)||0, appt=$('v-appt').value;
   const med=medRead('v');
