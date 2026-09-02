@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title><!-- v3.4 -->
+<title>Pulse · Dr. Madhu Sudan</title><!-- v3.5 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -1306,7 +1306,8 @@ function renderHealth(){
     <div class="panel">
       ${[['Modak page (medicine)',modak,'var(--gold)'],['Consultation, ₹499 ads page',ads,'var(--violet)'],['Consultation, ₹497 page',org,'var(--green)'],['Other',B('other'),'var(--text-faint)']].map(([n,x,c])=>`
         <div class="bar-row"><div class="bar-head"><span class="bl">${n}</span><span class="bv"><b style="color:var(--text)">${x.count||0}</b> order${x.count===1?'':'s'} · ${fmtINR(x.revenue)} · ${share(Number(x.revenue))}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${win.total?Number(x.revenue)/win.total*100:0}%;background:${c}"></div></div></div>`).join('')}
-      <div class="note">Online payments only. Cash and UPI taken at the clinic are recorded on the patient card by reception and are not in these bars${VISITS_ON?' yet':''}.</div>
+      ${H&&H.clinic?`<div class="bar-row" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)"><div class="bar-head"><span class="bl">Taken at the desk, cash, UPI or card</span><span class="bv"><b style="color:var(--text)">${H.clinic.visits||0}</b> visit${H.clinic.visits===1?'':'s'} · ${fmtINR(Number(H.clinic.consult||0)+Number(H.clinic.medicine||0))} all time · ${fmtINR(H.clinic.this_month||0)} this month</span></div></div>`:''}
+      <div class="note">The bars are online payments. The desk line is what reception records at the clinic, and it starts counting from today.</div>
     </div>
 
     <div class="sec">Month by month</div>
