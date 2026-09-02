@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title>
+<title>Pulse · Dr. Madhu Sudan</title><!-- v2.1 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -355,7 +355,7 @@ let MY_CLINIC = localStorage.getItem('pulse_clinic') || '';
 let LAST_SYNC = 0, SYNCING = false, BAR_TIMER = null;
 let OPEN_CARD = null;       // id of the expanded patient card
 let P = { q:'', queue:'', phase:'', door:'all', who:'mine', since:'all' };   // patients filters
-let HWIN = 'month';         // health window: month | last | total
+let HWIN = '';              // health window: month | last | total. Picked on first open.
 const PHASE_NAMES = {1:'Consultation', 2:'Medicine', 3:'Delivery', 4:'Reorder'};
 const PHASE_HELP  = {1:'Getting him to a paid consultation', 2:'Getting the medicine paid for', 3:'Getting it sent and delivered', 4:'Bringing him back for the next course'};
 const CAME_FROM_LABEL = {'Consultation page':'Consult page','Walk-in':'Walked in','Phone enquiry':'Telephoned','Referral':'Referred','Modak page':'Modak page','Assessment':'Assessment','Routine':'Routine page'};
@@ -759,7 +759,7 @@ function cardHTML(l){
   const wait=daysSince(l.first_seen), waitCol = closed?'var(--text-faint)': wait>30?'var(--rose)': wait>7?'var(--amber)':'var(--text-dim)';
   const bits=[];
   bits.push(`<span class="pill dim">${esc(CAME_FROM_LABEL[l.came_from]||l.came_from||'')}${l.clinic?' · '+esc(l.clinic.replace(' clinic',''))+'':''}</span>`);
-  bits.push(`<span class="st"><span class="n" style="opacity:.7">${ph}</span> ${statusLabel(l.status)||PHASE_NAMES[ph]}</span>`);
+  bits.push(`<span class="st">${PHASE_NAMES[ph]} · ${statusLabel(l.status)||''}</span>`);
   if(l.next_followup&&!closed) bits.push(`<span style="color:${callDue(l)||reorderDue(l)?'var(--rose)':'var(--text-dim)'}">${ph===4?'Reorder':'Call'} ${relDay(l.next_followup)}</span>`);
   if(l.bought) bits.push(`<span style="color:var(--gold)">${esc(l.bought)} · ${fmtINR(l.total_paid)}</span>`);
   if(l.first_seen) bits.push(`<span class="wait" style="color:${waitCol}" title="${niceDateY(l.first_seen)}">${wait<=0?'came today':wait+'d'}</span>`);
@@ -1065,6 +1065,8 @@ function renderHealth(){
   const el=$('content');
   if(!DATA){ el.innerHTML='<div class="loading">Reading the numbers…</div>'; return; }
   const r=DATA.revenue||{}, e=DATA.exec||{}, H=DATA.health||null, s=DATA.stats||{};
+  // in the first days of a month the month view is all zeros, so open on last month or the whole run
+  if(!HWIN) HWIN = (Number(r.month_count)||0) >= 5 ? 'month' : (H && H.last_month ? 'last' : 'total');
   const months=monthSeries(r);
   const thisKey=todayISO().slice(0,7);
   const thisM=months.find(m=>m.key===thisKey)||{key:thisKey,r:0};
