@@ -60,6 +60,7 @@ create table if not exists public.desk_visits (
   quantity integer,
   days integer,
   consult_mode text,
+  recurring boolean,
   created_at timestamptz not null default now()
 );
 create index if not exists desk_visits_lead_idx on public.desk_visits(lead_id);
@@ -69,7 +70,7 @@ revoke all on public.desk_visits from anon, authenticated;
 create or replace function public.desk_add_visit(
   p_key text, p_lead_id uuid, p_clinic text, p_consult_amount numeric, p_medicine text,
   p_medicine_amount numeric, p_pay_mode text, p_entered_by text,
-  p_quantity integer default null, p_days integer default null, p_consult_mode text default null)
+  p_quantity integer default null, p_days integer default null, p_consult_mode text default null, p_recurring boolean default null)
 returns jsonb language plpgsql security definer set search_path to 'public' as '
 declare v_id uuid;
 begin
@@ -77,10 +78,10 @@ begin
   if p_lead_id is null then return jsonb_build_object(''ok'', false, ''error'', ''no such person''); end if;
   if coalesce(p_consult_amount,0) <= 0 and coalesce(p_medicine_amount,0) <= 0 then
     return jsonb_build_object(''ok'', false, ''error'', ''Enter an amount.''); end if;
-  insert into desk_visits (lead_id, clinic, consult_amount, medicine, medicine_amount, pay_mode, entered_by, quantity, days, consult_mode)
+  insert into desk_visits (lead_id, clinic, consult_amount, medicine, medicine_amount, pay_mode, entered_by, quantity, days, consult_mode, recurring)
   values (p_lead_id, nullif(trim(coalesce(p_clinic,'''')),''''), nullif(p_consult_amount,0), nullif(trim(coalesce(p_medicine,'''')),''''),
           nullif(p_medicine_amount,0), nullif(trim(coalesce(p_pay_mode,'''')),''''), nullif(trim(coalesce(p_entered_by,'''')),''''),
-          p_quantity, p_days, nullif(trim(coalesce(p_consult_mode,'''')),''''))
+          p_quantity, p_days, nullif(trim(coalesce(p_consult_mode,'''')),''''), p_recurring)
   returning id into v_id;
   update desk_leads set clinic = coalesce(clinic, nullif(trim(coalesce(p_clinic,'''')),'''')), updated_at = now() where id = p_lead_id;
   return jsonb_build_object(''ok'', true, ''id'', v_id);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title><!-- v3.1 -->
+<title>Pulse · Dr. Madhu Sudan</title><!-- v3.2 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -219,6 +219,7 @@ a{color:inherit;}
 .saved.bad{color:var(--rose);}
 .more{background:none;border:none;color:var(--text-faint);font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0;}
 .moreBox{display:none;margin-top:10px;} .moreBox.open{display:block;}
+.whatsbox.open{display:block !important;}
 .visits{margin-top:12px;font-size:12.5px;color:var(--text-dim);}
 .visits div{padding:6px 0;border-bottom:1px dashed var(--border);} .visits div:last-child{border-bottom:none;}
 
@@ -396,6 +397,7 @@ function medLineHTML(id, n){
     <label class="field"><span>${n===0?'Medicine':'Another medicine'}</span><select id="med-${id}-${n}" onchange="medPick('${id}',${n})"><option value="">Pick one</option>${opts}<option value="__new">+ Add a medicine not in the list</option></select></label>
     <label class="field"><span>Packs</span><input type="number" id="qty-${id}-${n}" inputmode="numeric" value="1" min="1" onchange="medPick('${id}',${n},true)"></label>
     <label class="field"><span>Amount</span><input type="number" id="amt-${id}-${n}" inputmode="numeric" placeholder="₹" oninput="medTotal('${id}')"></label>
+    <div class="seg" style="grid-column:1/-1" id="rec-${id}-${n}"><button type="button" class="on" onclick="segPick(this,true)" data-v="course">Course, reorder when it runs out</button><button type="button" onclick="segPick(this,true)" data-v="once">One time, no reorder</button></div>
     <div id="mednew-${id}-${n}" style="display:none;grid-column:1/-1;display:none;grid-template-columns:2fr 1fr 1fr;gap:10px">
       <label class="field"><span>Medicine name</span><input type="text" id="mednew-name-${id}-${n}" placeholder="As written on the box"></label>
       <label class="field"><span>Price of one pack</span><input type="number" id="mednew-price-${id}-${n}" inputmode="numeric" placeholder="₹" oninput="medPick('${id}',${n},true)"></label>
@@ -445,13 +447,15 @@ function medRead(id){
     } else { const m=medByName(name); if(m){ days=m.days||30; price=m.price; } }
     const qty=Math.max(1,Number(($(`qty-${id}-${i}`)||{}).value)||1);
     const amount=Number(($(`amt-${id}-${i}`)||{}).value)||0;
-    out.push({name, days, price, qty, amount, pay});
+    const recBtn=document.querySelector(`#rec-${id}-${i} button.on`);
+    out.push({name, days, price, qty, amount, pay, recurring: !recBtn || recBtn.dataset.v==='course'});
   }
   return out;
 }
 // the reorder call for a basket: the day the shortest course runs out (five days early on a long one)
-function basketOffset(lines){ return Math.min(...lines.map(m=>reorderOffset(m.days,m.qty))); }
-function basketNote(lines){ return lines.map(m=>`${m.name} x${m.qty} ${fmtINR(m.amount)}`).join(', ')+' '+lines[0].pay; }
+function basketRecurring(lines){ return lines.filter(m=>m.recurring); }
+function basketOffset(lines){ const r=basketRecurring(lines); return r.length ? Math.min(...r.map(m=>reorderOffset(m.days,m.qty))) : null; }
+function basketNote(lines){ return lines.map(m=>`${m.name} x${m.qty} ${fmtINR(m.amount)}${m.recurring?'':' (one time)'}`).join(', ')+' '+lines[0].pay; }
 
 const ICON = {
   today:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18M8 15l2.5 2.5L16 12"/></svg>',
@@ -887,19 +891,45 @@ function toggleCard(id){
   DESK.filter(l=>[id,OPEN_CARD].includes(l.id)).forEach(repaintCard);
 }
 function repaintCard(l){ const old=$('card-'+l.id); if(!old) return; const tmp=document.createElement('div'); tmp.innerHTML=cardHTML(l); old.replaceWith(tmp.firstElementChild); }
+// Which buttons make sense depends on where he is, not just which phase.
+// A man who has just seen the doctor is not asked whether he picked up the phone.
+function whatFor(l){
+  const ph=l.phase||1, all=WHAT[ph], pick=labels=>all.filter(w=>labels.includes(w.l));
+  switch(l.status){
+    case 'p1_fees_pending': return pick(['Did not pick up','Call back later','Paid the consultation','Not interested']);
+    case 'p1_fees_paid':    return pick(['Slot booked','Seen the doctor','Did not pick up','Call back later']);
+    case 'p1_appt_pending': return [ {l:'Seen the doctor',i:'🩺',status:'p1_appt_done',ask:'afterdoc',good:1}, {l:'Change the slot',i:'📅',status:'p1_appt_pending',ask:'appt'}, {l:'Did not turn up',i:'📵',status:'p1_callback',days:1} ];
+    case 'p1_appt_done':    return [ {l:'Bought at the clinic',i:'🏥',ask:'visit',good:1}, {l:'Will pay online, sent link',i:'🔗',status:'p2_payment_pending',days:1}, {l:'Thinking about it',i:'💭',status:'p2_followup',days:3}, {l:'Did not pick up',i:'📵',status:'p2_callback',days:1}, {l:'Not interested',i:'✖',status:'p2_not_interested',days:0,close:1} ];
+    case 'p3_dispatched': case 'p3_pending_delivery': return pick(['Delivered','Courier delayed','Did not pick up']);
+    default: return all;
+  }
+}
+// A card whose next date is still ahead rests. It says when it is due and folds the buttons away.
+function restingLine(l){
+  if(isClosed(l) || !l.next_followup) return '';
+  const n=daysUntil(l.next_followup); if(n===null || n<=0) return '';
+  if(l.phase===4) return `On a course${l.delivered_on?' since '+niceDate(l.delivered_on):''}. Reorder call on <b>${niceDate(l.next_followup)}</b>, ${relDay(l.next_followup)}. Nothing to do until then.`;
+  if(l.appointment_at && new Date(l.appointment_at).getTime()>Date.now()) return `Appointment <b>${niceDate(l.appointment_at)} ${niceTime(l.appointment_at)}</b>${l.appointment_mode?', '+esc(l.appointment_mode):''}. Nothing to do until then.`;
+  return `Next call on <b>${niceDate(l.next_followup)}</b>, ${relDay(l.next_followup)}. Nothing to do until then.`;
+}
 function cardBody(l){
   const ph=l.phase||1, closed=isClosed(l), play=playbook(l);
   const detail=[l.came_for, l.age&&l.age+' yrs', l.location, l.marital_status, l.lead_source&&'heard via '+l.lead_source, l.email&&!String(l.email).endsWith('@no-email.local')&&l.email].filter(Boolean).map(esc).join(' · ');
   const myVisits = VISITS.filter(v=>v.lead_id===l.id);
+  const rest=restingLine(l);
+  const btns=whatFor(l);
   const whats = closed ? '' : `
+    ${rest?`<div class="say" style="background:var(--green-wash);border-color:rgba(74,222,128,.3)"><span class="lab" style="color:var(--green);background:rgba(74,222,128,.15)">Resting</span>${rest} <button class="peek" style="display:inline;margin:0 0 0 6px" onclick="this.closest('.cbody').querySelector('.whatsbox').classList.toggle('open');this.textContent=this.textContent.startsWith('Something')?'Hide':'Something happened?'">Something happened?</button></div>`:''}
+    <div class="whatsbox ${rest?'':'open'}" style="${rest?'display:none':''}">
     <div class="wh">What happened?</div>
-    <div class="whats">${WHAT[ph].map((w,i)=>`<button class="${w.good?'good':''} ${w.close?'close':''}" onclick="what('${l.id}',${i})"><i>${w.i}</i>${w.l}</button>`).join('')}</div>
+    <div class="whats">${btns.map((w,i)=>`<button class="${w.good?'good':''} ${w.close?'close':''}" onclick="what('${l.id}',${i})"><i>${w.i}</i>${w.l}</button>`).join('')}</div>
+    </div>
     <div class="ask" id="ask-${l.id}"></div>`;
   const wantsAppt=['p1_fees_paid','p1_appt_pending','p1_appt_done','p4_appt_booked','p4_appt_done'].includes(l.status);
   const apptVal = l.appointment_at ? new Date(new Date(l.appointment_at).getTime()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : '';
   return `
     ${detail?`<div class="note" style="margin-top:12px">${detail}</div>`:''}
-    ${closed?'':`<div class="say"><span class="lab">Say this</span>${esc(play.say)}<button class="peek" onclick="peek('${l.id}',this)">See the WhatsApp message</button><pre id="pre-${l.id}">${esc(play.msg)}</pre></div>`}
+    ${closed||rest?'':`<div class="say"><span class="lab">Say this</span>${esc(play.say)}<button class="peek" onclick="peek('${l.id}',this)">See the WhatsApp message</button><pre id="pre-${l.id}">${esc(play.msg)}</pre></div>`}
     ${whats}
     ${myVisits.length?`<div class="visits">${myVisits.map(v=>`<div>🏥 ${esc(v.clinic||'')} · ${niceDate(v.visited_at)} · ${v.consult_amount?'consult '+fmtINR(v.consult_amount)+' · ':''}${v.medicine?esc(v.medicine)+' '+fmtINR(v.medicine_amount||0):''}${v.pay_mode?' · '+esc(v.pay_mode):''}</div>`).join('')}</div>`:''}
     <div class="cedit">
@@ -937,7 +967,7 @@ function fullState(l, over){
     assigned_to: g('f-owner-'+l.id)?g('f-owner-'+l.id).value||null:(l.assigned_to||null),
     dispatched_on: g('f-disp-'+l.id)?g('f-disp-'+l.id).value||null:(l.dispatched_on||null),
     delivered_on: g('f-deliv-'+l.id)?g('f-deliv-'+l.id).value||null:(l.delivered_on||null),
-    appointment_at: g('f-appt-'+l.id)?(g('f-appt-'+l.id).value||''):undefined,
+    appointment_at: g('f-appt-'+l.id)?(g('f-appt-'+l.id).value?new Date(g('f-appt-'+l.id).value).toISOString():''):undefined,
     appointment_mode: g('f-mode-'+l.id)?g('f-mode-'+l.id).value||null:null
   };
   return Object.assign(s, over||{});
@@ -975,7 +1005,7 @@ function setStatus(id, code){
 }
 function what(id, i){
   const l=DESK.find(x=>x.id===id); if(!l) return;
-  const w=WHAT[l.phase||1][i];
+  const w=whatFor(l)[i]; if(!w) return;
   if(w.ask){ return askBox(l, w); }
   const over={};
   if(w.status) over.status=w.status;
@@ -1027,8 +1057,8 @@ function finishAsk(id, kind){
   const g=k=>$(`ask-${k}-${id}`);
   const over={}; if(!l.assigned_to && ME) over.assigned_to=ME;
   const done=()=>{ const b=$('ask-'+id); if(b){ b.classList.remove('open'); b.innerHTML=''; } repaintCard(l); };
-  if(kind==='date'){ over.status = (WHAT[l.phase||1].find(w=>w.ask==='date')||{}).status || l.status; over.next_followup=g('date').value||plusDays(1); return saveState(l, fullState(l,over), done); }
-  if(kind==='appt'){ over.status = l.phase===4?'p4_appt_booked':'p1_appt_pending'; over.appointment_at=g('appt').value||''; over.appointment_mode=g('mode').value; over.next_followup = dOnly(g('appt').value)||null; return saveState(l, fullState(l,over), done); }
+  if(kind==='date'){ over.status = (whatFor(l).find(w=>w.ask==='date')||{}).status || l.status; over.next_followup=g('date').value||plusDays(1); return saveState(l, fullState(l,over), done); }
+  if(kind==='appt'){ over.status = l.phase===4?'p4_appt_booked':'p1_appt_pending'; over.appointment_at=g('appt').value?new Date(g('appt').value).toISOString():''; over.appointment_mode=g('mode').value; over.next_followup = dOnly(g('appt').value)||null; return saveState(l, fullState(l,over), done); }
   if(kind==='ship'){ over.status='p3_dispatched'; over.dispatched_on=g('ship').value||todayISO(); over.next_followup=plusDays(3, over.dispatched_on); return saveState(l, fullState(l,over), done); }
   if(kind==='delivered'){ const m=medByName(g('pack').value)||{days:30}; over.status='p4_reorder_due'; over.delivered_on=g('deliv').value||todayISO(); over.next_followup=plusDays(reorderOffset(m.days,1), over.delivered_on); return saveState(l, fullState(l,over), done); }
   if(kind==='paidhow'){
@@ -1044,9 +1074,10 @@ function finishAsk(id, kind){
     const ms=medRead('c'+id), err=$('ask-err-'+id);
     if(ms.error){ if(err) err.textContent=ms.error; return; }
     if(!ms.length){ if(err) err.textContent='Pick at least one medicine.'; return; }
-    const clinic=g('clinic').value;
-    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(basketOffset(ms));
-    ms.forEach(m=>recordVisit(l,{clinic, medicine:m.name, medicine_amount:m.amount, pay_mode:m.pay, quantity:m.qty, days:m.days}));
+    const clinic=g('clinic').value, off=basketOffset(ms);
+    if(off!==null){ over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(off); }
+    else { over.status = l.phase===4 ? 'p4_followup' : 'p1_appt_done'; over.next_followup=plusDays(7); }
+    ms.forEach(m=>recordVisit(l,{clinic, medicine:m.name, medicine_amount:m.amount, pay_mode:m.pay, quantity:m.qty, days:m.days, recurring:m.recurring}));
     // until the clinic sales record is switched on, the sale is kept in the note so nothing is lost
     if(!VISITS_ON){ const line=`Bought at ${clinic} ${niceDate(new Date())}: ${basketNote(ms)}`; const cur=($('f-note-'+id)||{}).value||l.note||''; if($('f-note-'+id)) $('f-note-'+id).value=(cur?cur+' · ':'')+line; }
     return saveState(l, fullState(l,over), done);
@@ -1121,7 +1152,7 @@ function renderAdd(){
 }
 function setClinic(c){ MY_CLINIC=c; localStorage.setItem('pulse_clinic',c); document.querySelectorAll('#segClinic button').forEach(b=>b.classList.toggle('on', b.textContent===c)); }
 function vConsultChange(){ const m=$('v-cmode').value; $('v-when-wrap').style.display = m==='online' ? '' : 'none'; $('v-consult').disabled=!m; $('v-camt').disabled=!m; if(m==='online' && $('v-consult').value==='Cash') $('v-consult').value='Online link'; }
-function segPick(btn){ const on=btn.classList.contains('on'); btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on')); if(!on) btn.classList.add('on'); }
+function segPick(btn, keepOne){ const on=btn.classList.contains('on'); btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on')); if(!on||keepOne) btn.classList.add('on'); }
 function dupCheck(){
   const p=($('afPhone').value||'').replace(/[^0-9]/g,''); const box=$('afFound');
   if(p.length<10||!DESK){ box.classList.remove('open'); return; }
@@ -1160,20 +1191,22 @@ function submitVisit(){
     const paid = consult!=='unpaid';
     if(cmode==='clinic'){
       // seen today at the desk: the appointment is now, the status says the doctor has seen him
-      over.appointment_at=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16); over.appointment_mode=MY_CLINIC||'At the clinic';
+      over.appointment_at=new Date().toISOString(); over.appointment_mode=MY_CLINIC||'At the clinic';
       over.status = paid ? 'p1_appt_done' : 'p1_fees_pending'; over.next_followup = paid ? plusDays(2) : plusDays(1);
       noteBits.push(`Consulted at ${MY_CLINIC||'clinic'}${paid?' '+fmtINR(camt)+' '+consult:', fee not paid'}`);
     } else {
-      over.appointment_mode='Online'; if(appt) over.appointment_at=appt;
+      over.appointment_mode='Online'; if(appt) over.appointment_at=new Date(appt).toISOString();
       over.status = paid ? (appt ? 'p1_appt_pending' : 'p1_fees_paid') : 'p1_fees_pending'; over.next_followup = appt ? dOnly(appt) : plusDays(1);
       noteBits.push(`Online consultation${appt?' '+niceDate(appt):''}${paid?' '+fmtINR(camt)+' '+consult:', fee not paid'}`);
     }
     if(paid) recordVisit(l,{clinic:MY_CLINIC, consult_amount:camt, pay_mode:consult, consult_mode:cmode==='clinic'?(MY_CLINIC||'At the clinic'):'Online'});
   }
   if(meds.length){
-    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(basketOffset(meds));
+    const off=basketOffset(meds);
+    if(off!==null){ over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(off); }
+    else { over.status = cmode ? 'p1_appt_done' : l.status; over.next_followup=plusDays(7); }   // one-time medicine: check on him in a week, no reorder
     noteBits.push(basketNote(meds));
-    meds.forEach(m=>recordVisit(l,{clinic:MY_CLINIC, medicine:m.name, medicine_amount:m.amount, pay_mode:m.pay, quantity:m.qty, days:m.days}));
+    meds.forEach(m=>recordVisit(l,{clinic:MY_CLINIC, medicine:m.name, medicine_amount:m.amount, pay_mode:m.pay, quantity:m.qty, days:m.days, recurring:m.recurring}));
   }
   if(!VISITS_ON && noteBits.length){ over.note = ((l.note||'')+(l.note?' · ':'')+`${niceDate(new Date())}: `+noteBits.join(', ')); }
   if(!Object.keys(over).length){ finishAdd(); return; }

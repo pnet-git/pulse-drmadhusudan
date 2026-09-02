@@ -99,7 +99,8 @@ export default async function handler(req, res) {
         p_entered_by: body.entered_by || null,
         p_quantity: body.quantity || null,
         p_days: body.days || null,
-        p_consult_mode: body.consult_mode || null
+        p_consult_mode: body.consult_mode || null,
+        p_recurring: body.recurring === undefined ? null : !!body.recurring
       });
       if (r.status === 404) return res.status(200).json({ ok: false, error: 'Clinic sales are not switched on yet.' });
       const out = await r.json();
