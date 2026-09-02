@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title><!-- v2.6 -->
+<title>Pulse · Dr. Madhu Sudan</title><!-- v2.7 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -289,6 +289,12 @@ a{color:inherit;}
   .cacts a,.cacts button{min-height:50px;font-size:15px;}
   .ptools{top:0;}
 }
+@media (max-width:780px){
+  .medline{grid-template-columns:1fr 1fr !important;}
+  .medline > label:first-child{grid-column:1/-1;}
+  .medline > div[id^="mednew-"]{grid-template-columns:1fr 1fr !important;}
+  .medline > div[id^="mednew-"] > label:first-child{grid-column:1/-1;}
+}
 @media (max-width:380px){ .whats{grid-template-columns:1fr;} }
 </style>
 </head>
@@ -382,85 +388,70 @@ function medByName(n){ return medList().find(m=>m.name===n)||null; }
 function reorderOffset(days, qty){ const total=Math.max(1,(Number(days)||30)*(Math.max(1,Number(qty)||1))); return total<=7 ? total : total-5; }
 function guessMed(l){ const b=l.bought||''; if(/90/.test(b)) return 'Kamdev Modak, 3 months'; if(/30/.test(b)) return 'Kamdev Modak, 1 month'; if(/trial/i.test(b)) return 'Kamdev Modak, 7 day trial'; return 'Kamdev Modak, 1 month'; }
 // one picker used by reception and by the patient card. id keeps the fields apart.
-function medPickerHTML(id, selected){
-  const opts = medList().map(m=>`<option value="${esc(m.name)}" ${m.name===selected?'selected':''}>${esc(m.name)}${m.price?' · ₹'+m.price:''}</option>`).join('');
-  return `<label class="field"><span>Which medicine</span><select id="med-${id}" onchange="medPick('${id}')"><option value="">Pick one</option>${opts}<option value="__new">+ Add a medicine not in the list</option></select></label>
-    <div class="fgrid wide" id="mednew-${id}" style="display:none">
-      <label class="field wide"><span>Medicine name</span><input type="text" id="mednew-name-${id}" placeholder="As written on the box"></label>
-      <label class="field"><span>Usual price of one pack</span><input type="number" id="mednew-price-${id}" inputmode="numeric" placeholder="₹"></label>
-      <label class="field"><span>Days one pack lasts</span><input type="number" id="mednew-days-${id}" inputmode="numeric" value="30"></label>
+// Any number of medicine lines. Each line has its own medicine, packs and amount.
+// One paid-by for the whole lot. The reorder call is set for whichever runs out first.
+function medLineHTML(id, n){
+  const opts = medList().map(m=>`<option value="${esc(m.name)}">${esc(m.name)}${m.price?' · ₹'+m.price:''}</option>`).join('');
+  return `<div class="medline" id="medline-${id}-${n}" style="grid-column:1/-1;display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;align-items:end;padding:10px 0;border-top:1px dashed var(--border)">
+    <label class="field"><span>${n===0?'Medicine':'Another medicine'}</span><select id="med-${id}-${n}" onchange="medPick('${id}',${n})"><option value="">Pick one</option>${opts}<option value="__new">+ Add a medicine not in the list</option></select></label>
+    <label class="field"><span>Packs</span><input type="number" id="qty-${id}-${n}" inputmode="numeric" value="1" min="1" onchange="medPick('${id}',${n},true)"></label>
+    <label class="field"><span>Amount</span><input type="number" id="amt-${id}-${n}" inputmode="numeric" placeholder="₹" oninput="medTotal('${id}')"></label>
+    <div id="mednew-${id}-${n}" style="display:none;grid-column:1/-1;display:none;grid-template-columns:2fr 1fr 1fr;gap:10px">
+      <label class="field"><span>Medicine name</span><input type="text" id="mednew-name-${id}-${n}" placeholder="As written on the box"></label>
+      <label class="field"><span>Price of one pack</span><input type="number" id="mednew-price-${id}-${n}" inputmode="numeric" placeholder="₹" oninput="medPick('${id}',${n},true)"></label>
+      <label class="field"><span>Days one pack lasts</span><input type="number" id="mednew-days-${id}-${n}" inputmode="numeric" value="30"></label>
     </div>
-    <label class="field"><span>How many packs</span><input type="number" id="qty-${id}" inputmode="numeric" value="1" min="1" onchange="medPick('${id}',true)"></label>
-    <label class="field"><span>Amount taken</span><input type="number" id="amt-${id}" inputmode="numeric" placeholder="₹"></label>
-    <label class="field"><span>Paid by</span><select id="pay-${id}"><option>Cash</option><option>UPI</option><option>Card</option></select></label>`;
+  </div>`;
 }
-function medPick(id, qtyOnly){
-  const sel=$('med-'+id), box=$('mednew-'+id); if(!sel) return;
-  if(!qtyOnly) box.style.display = sel.value==='__new' ? 'grid' : 'none';
-  const qty=Math.max(1,Number(($('qty-'+id)||{}).value)||1);
-  const m = sel.value==='__new' ? {price:Number(($('mednew-price-'+id)||{}).value)||0} : medByName(sel.value);
-  if(m && m.price && $('amt-'+id)) $('amt-'+id).value = m.price*qty;
-  if(sel.value==='__new' && !qtyOnly){ const n=$('mednew-name-'+id); if(n) n.focus(); const pr=$('mednew-price-'+id); if(pr) pr.oninput=()=>medPick(id,true); }
+function medPickerHTML(id){
+  return `<div id="medlines-${id}" style="grid-column:1/-1;display:grid;gap:0">${medLineHTML(id,0)}</div>
+    <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn ghost" type="button" onclick="medAddLine('${id}')">+ Add another medicine</button>
+      <span class="note" id="medtotal-${id}" style="margin:0"></span>
+    </div>
+    <label class="field"><span>Medicine paid by</span><select id="pay-${id}"><option>Cash</option><option>UPI</option><option>Card</option></select></label>`;
 }
-// reads the picker; a new medicine is added to the shared list (or kept on this phone until the list exists)
+function medAddLine(id){ const box=$('medlines-'+id); if(!box) return; const n=box.querySelectorAll('.medline').length; box.insertAdjacentHTML('beforeend', medLineHTML(id,n)); const sel=$(`med-${id}-${n}`); if(sel) sel.focus(); }
+function medPick(id, n, qtyOnly){
+  const sel=$(`med-${id}-${n}`), box=$(`mednew-${id}-${n}`); if(!sel) return;
+  if(!qtyOnly && box) box.style.display = sel.value==='__new' ? 'grid' : 'none';
+  const qty=Math.max(1,Number(($(`qty-${id}-${n}`)||{}).value)||1);
+  const m = sel.value==='__new' ? {price:Number(($(`mednew-price-${id}-${n}`)||{}).value)||0} : medByName(sel.value);
+  if(m && m.price && $(`amt-${id}-${n}`)) $(`amt-${id}-${n}`).value = m.price*qty;
+  if(sel.value==='__new' && !qtyOnly){ const nm=$(`mednew-name-${id}-${n}`); if(nm) nm.focus(); }
+  medTotal(id);
+}
+function medTotal(id){
+  const box=$('medlines-'+id), out=$('medtotal-'+id); if(!box||!out) return;
+  let tot=0, lines=0; box.querySelectorAll('.medline').forEach((el,i)=>{ const sel=$(`med-${id}-${i}`); if(sel&&sel.value){ lines++; tot+=Number(($(`amt-${id}-${i}`)||{}).value)||0; } });
+  out.textContent = lines ? `${lines} medicine${lines===1?'':'s'} · total ${fmtINR(tot)}` : '';
+}
+// reads every line. A new medicine is added to the shared list, or kept on this phone until the list exists.
+// returns [] when nothing was picked, or {error} when a line is half filled.
 function medRead(id){
-  const sel=$('med-'+id); if(!sel||!sel.value) return null;
-  let name=sel.value, days=30, price=null;
-  if(name==='__new'){
-    name=(($('mednew-name-'+id)||{}).value||'').trim(); if(!name) return {error:'Enter the medicine name.'};
-    price=Number(($('mednew-price-'+id)||{}).value)||null; days=Number(($('mednew-days-'+id)||{}).value)||30;
-    const rec={name,price,days};
-    if(MEDS_ON){ post({action:'medicine_add', name, price, days}).then(d=>{ if(d&&d.ok) MEDICINES.push(rec); }); }
-    else { const L=localMeds(); if(!L.some(x=>x.name===name)){ L.push(rec); localStorage.setItem('pulse_meds_local',JSON.stringify(L)); } }
-  } else { const m=medByName(name); if(m){ days=m.days||30; price=m.price; } }
-  const qty=Math.max(1,Number(($('qty-'+id)||{}).value)||1);
-  const amount=Number(($('amt-'+id)||{}).value)||0;
+  const box=$('medlines-'+id); if(!box) return [];
   const pay=($('pay-'+id)||{}).value||'Cash';
-  return {name, days, price, qty, amount, pay};
+  const out=[];
+  const n=box.querySelectorAll('.medline').length;
+  for(let i=0;i<n;i++){
+    const sel=$(`med-${id}-${i}`); if(!sel||!sel.value) continue;
+    let name=sel.value, days=30, price=null;
+    if(name==='__new'){
+      name=(($(`mednew-name-${id}-${i}`)||{}).value||'').trim(); if(!name) return {error:'Enter the medicine name on the new line.'};
+      price=Number(($(`mednew-price-${id}-${i}`)||{}).value)||null; days=Number(($(`mednew-days-${id}-${i}`)||{}).value)||30;
+      const rec={name,price,days};
+      if(MEDS_ON){ post({action:'medicine_add', name, price, days}).then(d=>{ if(d&&d.ok) MEDICINES.push(rec); }); }
+      else { const L=localMeds(); if(!L.some(x=>x.name===name)){ L.push(rec); localStorage.setItem('pulse_meds_local',JSON.stringify(L)); } }
+    } else { const m=medByName(name); if(m){ days=m.days||30; price=m.price; } }
+    const qty=Math.max(1,Number(($(`qty-${id}-${i}`)||{}).value)||1);
+    const amount=Number(($(`amt-${id}-${i}`)||{}).value)||0;
+    out.push({name, days, price, qty, amount, pay});
+  }
+  return out;
 }
-
-const ICON = {
-  today:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18M8 15l2.5 2.5L16 12"/></svg>',
-  patients:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5c3 0 6 1.7 6 5.5"/></svg>',
-  add:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 8v8M8 12h8"/></svg>',
-  health:'<svg viewBox="0 0 24 24"><path d="M3 12h4l2.5-7 4 14 2.5-7h5"/></svg>',
-  content:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>',
-  phone:'<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
-  wa:'<svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.8A8.5 8.5 0 1 1 8.4 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1a4 4 0 0 1-2-2l1-1-1-2z"/></svg>'
-};
-const TABS = [
-  {id:'today',    label:'Today',    icon:ICON.today},
-  {id:'patients', label:'Patients', icon:ICON.patients},
-  {id:'add',      label:'New',      icon:ICON.add, cls:'add'},
-  {id:'health',   label:'Health',   icon:ICON.health},
-  {id:'content',  label:'Content',  icon:ICON.content}
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SMALL HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
-const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const fmtINR = n => '₹' + (Number(n)||0).toLocaleString('en-IN');
-const fmtK = n => { n=Number(n)||0; return n>=10000000 ? (n/10000000).toFixed(2)+' Cr' : n>=100000 ? (n/100000).toFixed(1)+' L' : n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+'K' : String(n); };
-const todayISO = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
-const plusDays = (n, from) => { const d = from ? new Date(from+'T00:00:00') : new Date(); d.setDate(d.getDate()+n); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
-const dOnly = iso => iso ? String(iso).slice(0,10) : '';
-const niceDate = iso => { if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); };
-const niceDateY = iso => { if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); };
-const niceTime = iso => { const d=new Date(iso); return d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); };
-const daysSince = iso => iso ? Math.floor((Date.now()-new Date(iso).getTime())/86400000) : 0;
-const daysUntil = ymd => ymd ? Math.round((new Date(ymd+'T00:00:00').getTime()-new Date(todayISO()+'T00:00:00').getTime())/86400000) : null;
-function relDay(ymd){ const n=daysUntil(ymd); if(n===null) return ''; if(n===0) return 'today'; if(n===1) return 'tomorrow'; if(n===-1) return 'yesterday'; if(n<0) return Math.abs(n)+' days ago'; return 'in '+n+' days'; }
-function pass(){ return localStorage.getItem('pulse_p') || sessionStorage.getItem('pulse_p') || ''; }
-function meName(){ const t=TEAM.find(t=>t.id===ME); return t?t.name:''; }
-function ownerName(l){ const t=TEAM.find(t=>t.id===l.assigned_to); return t?t.name:''; }
-function statusMeta(code){ return STATUSES.find(s=>s.code===code)||null; }
-function statusLabel(code){ const m=statusMeta(code); return m?m.label:(code||''); }
-function isClosed(l){ const m=statusMeta(l.status); return !!(m&&m.closes); }
-function firstName(l){ return ((l.name||'').trim().split(/\s+/)[0])||'there'; }
-function waPhone(l){ const p=(l.phone||'').replace(/[^0-9]/g,''); if(p.length<10) return ''; return (p.length===10?'91':'')+p; }
-function isMine(l){ return !ME || l.assigned_to===ME || !l.assigned_to; }
+// the reorder call for a basket: the day the shortest course runs out (five days early on a long one)
+function basketOffset(lines){ return Math.min(...lines.map(m=>reorderOffset(m.days,m.qty))); }
+function basketNote(lines){ return lines.map(m=>`${m.name} x${m.qty} ${fmtINR(m.amount)}`).join(', ')+' '+lines[0].pay; }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LOGIN, SHELL, TABS
@@ -992,14 +983,14 @@ function finishAsk(id, kind){
   if(kind==='afterdoc-online'){ over.status='p2_payment_pending'; over.next_followup=plusDays(1); return saveState(l, fullState(l,over), done); }
   if(kind==='afterdoc-clinic'){ const b=$('ask-'+id); b.innerHTML=visitForm(l); return; }
   if(kind==='visit'){
-    const m=medRead('c'+id), err=$('ask-err-'+id);
-    if(!m){ if(err) err.textContent='Pick the medicine.'; return; }
-    if(m.error){ if(err) err.textContent=m.error; return; }
+    const ms=medRead('c'+id), err=$('ask-err-'+id);
+    if(ms.error){ if(err) err.textContent=ms.error; return; }
+    if(!ms.length){ if(err) err.textContent='Pick at least one medicine.'; return; }
     const clinic=g('clinic').value;
-    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(reorderOffset(m.days,m.qty));
-    recordVisit(l,{clinic, medicine:m.name, medicine_amount:m.amount, pay_mode:m.pay, quantity:m.qty, days:m.days});
+    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(basketOffset(ms));
+    ms.forEach(m=>recordVisit(l,{clinic, medicine:m.name, medicine_amount:m.amount, pay_mode:m.pay, quantity:m.qty, days:m.days}));
     // until the clinic sales record is switched on, the sale is kept in the note so nothing is lost
-    if(!VISITS_ON){ const line=`Bought at ${clinic} ${niceDate(new Date())}: ${m.name} x${m.qty} ${fmtINR(m.amount)} ${m.pay}`; const cur=($('f-note-'+id)||{}).value||l.note||''; if($('f-note-'+id)) $('f-note-'+id).value=(cur?cur+' · ':'')+line; }
+    if(!VISITS_ON){ const line=`Bought at ${clinic} ${niceDate(new Date())}: ${basketNote(ms)}`; const cur=($('f-note-'+id)||{}).value||l.note||''; if($('f-note-'+id)) $('f-note-'+id).value=(cur?cur+' · ':'')+line; }
     return saveState(l, fullState(l,over), done);
   }
 }
@@ -1103,8 +1094,8 @@ function submitVisit(){
   const l=DESK&&DESK.find(x=>x.id===ADD_ID);
   if(!l){ msg.className='msg bad'; msg.textContent='Give it a second, the list is still loading, then press again.'; return; }
   const cmode=$('v-cmode').value, consult=$('v-consult').value, camt=Number($('v-camt').value)||0, appt=$('v-appt').value;
-  const med=medRead('v');
-  if(med && med.error){ msg.className='msg bad'; msg.textContent=med.error; return; }
+  const meds=medRead('v');
+  if(meds.error){ msg.className='msg bad'; msg.textContent=meds.error; return; }
   const over={}; if(!l.assigned_to&&ME) over.assigned_to=ME;
   const noteBits=[];
   if(cmode){
@@ -1121,10 +1112,10 @@ function submitVisit(){
     }
     if(paid) recordVisit(l,{clinic:MY_CLINIC, consult_amount:camt, pay_mode:consult, consult_mode:cmode==='clinic'?(MY_CLINIC||'At the clinic'):'Online'});
   }
-  if(med){
-    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(reorderOffset(med.days,med.qty));
-    noteBits.push(`${med.name} x${med.qty} ${fmtINR(med.amount)} ${med.pay}`);
-    recordVisit(l,{clinic:MY_CLINIC, medicine:med.name, medicine_amount:med.amount, pay_mode:med.pay, quantity:med.qty, days:med.days});
+  if(meds.length){
+    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(basketOffset(meds));
+    noteBits.push(basketNote(meds));
+    meds.forEach(m=>recordVisit(l,{clinic:MY_CLINIC, medicine:m.name, medicine_amount:m.amount, pay_mode:m.pay, quantity:m.qty, days:m.days}));
   }
   if(!VISITS_ON && noteBits.length){ over.note = ((l.note||'')+(l.note?' · ':'')+`${niceDate(new Date())}: `+noteBits.join(', ')); }
   if(!Object.keys(over).length){ finishAdd(); return; }
