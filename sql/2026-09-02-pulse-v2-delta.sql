@@ -1,5 +1,5 @@
 -- PULSE v2 DATABASE DELTA. Dr Madhu's live client database praswrwxhdvtnlcevmtz.
--- NOT APPLIED. Waits for the King's yes. Read the delta table in the session first.
+-- APPLIED 2 Sep 2026 on the King's yes, all items, in this order, with execute_sql. Kept as the record.
 -- Four items. Each one is additive: nothing existing is dropped, renamed or changed in meaning.
 -- Run DDL and DML as separate statements. No dollar-quoting inside function bodies.
 
