@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title><!-- v2.1 -->
+<title>Pulse · Dr. Madhu Sudan</title><!-- v2.2 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -1105,12 +1105,12 @@ function renderHealth(){
 
   // verdicts, by rule
   const V=[];
-  if(modak.revenue>=ads.revenue&&modak.revenue>0) V.push(`<span class="g">Working:</span> the Modak page. ${modak.count} orders, ${fmtINR(modak.revenue)}, ${share(modak.revenue)}% of the money ${win.label.toLowerCase()}. People are buying medicine who have never met you.`);
+  if(modak.revenue>=ads.revenue&&modak.revenue>0) V.push(`<span class="g">Working:</span> the Modak page. ${modak.count} orders, ${fmtINR(modak.revenue)}, ${share(modak.revenue)}% of the money, ${HWIN==='total'?'since June':win.label.toLowerCase()}. People are buying medicine who have never met you.`);
   if(ads.count>0) V.push(`<span class="${share(ads.revenue)>=30?'a':'g'}">Steady:</span> the ₹499 ads page. ${ads.count} consultations, ${fmtINR(ads.revenue)}. It brings the most people, at the lowest value each. It stops the day the ads stop.`);
-  if(org.count>=0) V.push(`<span class="${org.count<5?'a':'g'}">${org.count<5?'Quiet:':'Working:'}</span> the ₹497 consultation page. ${org.count} paid ${win.label.toLowerCase()}. It only fills when a reel points at it.`);
+  if(org.count>=0) V.push(`<span class="${org.count<5?'a':'g'}">${org.count<5?'Quiet:':'Working:'}</span> the ₹497 consultation page. ${org.count} paid ${HWIN==='total'?'since June':win.label.toLowerCase()}. It only fills when a reel points at it.`);
   V.push(`<span class="r">Weak:</span> the assessment. ${dAss.people} people took it, ${dAss.paid} paid, about ${fmtINR(dAss.per)} per person. It is a good conversation starter and a poor seller on its own.`);
   if(dCon.paid>0) V.push(`<span class="r">The gap:</span> ${dCon.paid} people paid for a consultation online and <b>not one</b> of them bought medicine online afterwards. Either they bought at the clinic and it was never written down, or they were never asked. The desk now records both.`);
-  if(onCourse.length) V.push(`<span class="${reDue+reOverdue>0?'a':'g'}">Reorders:</span> ${onCourse.length} people are on a course. ${reDue} are due this week${reOverdue?`, ${reOverdue} already overdue`:''}. ${repeat!==null?`Only ${repeat} ${repeat===1?'person has':'people have'} ever bought a second pack online.`:''} This is where the next lakh sits, and it costs nothing to reach them.`);
+  if(onCourse.length) V.push(`<span class="${reDue+reOverdue>0?'a':'g'}">Reorders:</span> ${onCourse.length} ${onCourse.length===1?'person is':'people are'} on a course. ${reDue} ${reDue===1?'is':'are'} due this week${reOverdue?`, ${reOverdue} already overdue`:''}. ${repeat!==null?`Only ${repeat} ${repeat===1?'person has':'people have'} ever bought a second pack online.`:''} This is where the next lakh sits, and it costs nothing to reach them.`);
 
   el.innerHTML = `
     <div class="head"><div><div class="h1">Business health</div><div class="sub">Live from payments, the patient list and the content sheet. Ranges move daily, read the direction not the last rupee.</div></div>
@@ -1120,7 +1120,7 @@ function renderHealth(){
       <div class="stat gold"><div class="k">${win.label}</div><div class="v">${fmtINR(win.total)}</div><div class="s">${win.count} payment${win.count===1?'':'s'} online${HWIN==='month'&&lastM?` · last month ${fmtINR(lastM.r)}`:''}</div></div>
       <div class="stat"><div class="k">People on the list</div><div class="v">${D.length}</div><div class="s">${e.customers||0} have paid · ${walk.length} walked in or phoned</div></div>
       <div class="stat green"><div class="k">On a medicine course</div><div class="v">${onCourse.length}</div><div class="s">${reDue} due for a reorder this week</div></div>
-      <div class="stat ${untouched>20?'rose':''}"><div class="k">Waiting for a first call</div><div class="v">${untouched}</div><div class="s">${overdue} calls overdue · ${touched7} cards worked this week</div></div>
+      <div class="stat ${untouched>20?'rose':''}"><div class="k">Waiting for a first call</div><div class="v">${untouched}</div><div class="s">${overdue} ${overdue===1?"call":"calls"} overdue · ${touched7} ${touched7===1?"card":"cards"} worked this week</div></div>
     </div>
 
     <div class="sec">What is working, and what is not</div>
@@ -1156,7 +1156,7 @@ function renderHealth(){
     <div class="grid2">
       <div class="panel"><h3>Cards worked in the last 7 days <small>· by owner</small></h3>
         ${byOwner.map(o=>`<div class="bar-row"><div class="bar-head"><span class="bl">${esc(o.name)}</span><span class="bv"><b style="color:var(--text)">${o.w}</b> worked · ${o.n} owned</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,o.w/Math.max(1,touched7)*100)}%;background:var(--gold)"></div></div></div>`).join('')}
-        <div class="note">${touched7?`${touched7} cards moved this week.`:'No card has been moved this week.'} ${untouched?`${untouched} people are still waiting for a first call.`:''} ${noPhone?`${noPhone} have no phone number and cannot be rung.`:''}</div>
+        <div class="note">${touched7?`${touched7} cards moved this week.`:'No card has been moved this week.'} ${untouched?`${untouched} people are still waiting for a first call.`:''} ${noPhone?`${noPhone} ${noPhone===1?'has':'have'} no phone number and cannot be rung.`:''}</div>
       </div>
       <div class="panel"><h3>Waiting right now</h3>
         <div class="bar-row"><div class="bar-head"><span class="bl">Paid, no slot booked</span><span class="bv"><b style="color:${bookQ?'var(--rose)':'var(--green)'}">${bookQ}</b></span></div></div>
