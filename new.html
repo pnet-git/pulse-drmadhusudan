@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title><!-- v2.7 -->
+<title>Pulse · Dr. Madhu Sudan</title><!-- v2.8 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -452,6 +452,32 @@ function medRead(id){
 // the reorder call for a basket: the day the shortest course runs out (five days early on a long one)
 function basketOffset(lines){ return Math.min(...lines.map(m=>reorderOffset(m.days,m.qty))); }
 function basketNote(lines){ return lines.map(m=>`${m.name} x${m.qty} ${fmtINR(m.amount)}`).join(', ')+' '+lines[0].pay; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SMALL HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtINR = n => '₹' + (Number(n)||0).toLocaleString('en-IN');
+const fmtK = n => { n=Number(n)||0; return n>=10000000 ? (n/10000000).toFixed(2)+' Cr' : n>=100000 ? (n/100000).toFixed(1)+' L' : n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+'K' : String(n); };
+const todayISO = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const plusDays = (n, from) => { const d = from ? new Date(from+'T00:00:00') : new Date(); d.setDate(d.getDate()+n); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const dOnly = iso => iso ? String(iso).slice(0,10) : '';
+const niceDate = iso => { if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); };
+const niceDateY = iso => { if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); };
+const niceTime = iso => { const d=new Date(iso); return d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); };
+const daysSince = iso => iso ? Math.floor((Date.now()-new Date(iso).getTime())/86400000) : 0;
+const daysUntil = ymd => ymd ? Math.round((new Date(ymd+'T00:00:00').getTime()-new Date(todayISO()+'T00:00:00').getTime())/86400000) : null;
+function relDay(ymd){ const n=daysUntil(ymd); if(n===null) return ''; if(n===0) return 'today'; if(n===1) return 'tomorrow'; if(n===-1) return 'yesterday'; if(n<0) return Math.abs(n)+' days ago'; return 'in '+n+' days'; }
+function pass(){ return localStorage.getItem('pulse_p') || sessionStorage.getItem('pulse_p') || ''; }
+function meName(){ const t=TEAM.find(t=>t.id===ME); return t?t.name:''; }
+function ownerName(l){ const t=TEAM.find(t=>t.id===l.assigned_to); return t?t.name:''; }
+function statusMeta(code){ return STATUSES.find(s=>s.code===code)||null; }
+function statusLabel(code){ const m=statusMeta(code); return m?m.label:(code||''); }
+function isClosed(l){ const m=statusMeta(l.status); return !!(m&&m.closes); }
+function firstName(l){ return ((l.name||'').trim().split(/\s+/)[0])||'there'; }
+function waPhone(l){ const p=(l.phone||'').replace(/[^0-9]/g,''); if(p.length<10) return ''; return (p.length===10?'91':'')+p; }
+function isMine(l){ return !ME || l.assigned_to===ME || !l.assigned_to; }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LOGIN, SHELL, TABS
