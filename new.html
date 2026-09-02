@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title><!-- v3.2 -->
+<title>Pulse · Dr. Madhu Sudan</title><!-- v3.3 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -291,7 +291,7 @@ a{color:inherit;}
   .ptools{top:0;}
 }
 @media (max-width:780px){
-  .medline{grid-template-columns:1fr 1fr !important;}
+  .medline{grid-template-columns:1fr 1fr 1fr !important;}
   .medline > label:first-child{grid-column:1/-1;}
   .medline > div[id^="mednew-"]{grid-template-columns:1fr 1fr !important;}
   .medline > div[id^="mednew-"] > label:first-child{grid-column:1/-1;}
@@ -393,15 +393,16 @@ function guessMed(l){ const b=l.bought||''; if(/90/.test(b)) return 'Kamdev Moda
 // One paid-by for the whole lot. The reorder call is set for whichever runs out first.
 function medLineHTML(id, n){
   const opts = medList().map(m=>`<option value="${esc(m.name)}">${esc(m.name)}${m.price?' · ₹'+m.price:''}</option>`).join('');
-  return `<div class="medline" id="medline-${id}-${n}" style="grid-column:1/-1;display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;align-items:end;padding:10px 0;border-top:1px dashed var(--border)">
+  return `<div class="medline" id="medline-${id}-${n}" style="grid-column:1/-1;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;align-items:end;padding:10px 0;border-top:1px dashed var(--border)">
     <label class="field"><span>${n===0?'Medicine':'Another medicine'}</span><select id="med-${id}-${n}" onchange="medPick('${id}',${n})"><option value="">Pick one</option>${opts}<option value="__new">+ Add a medicine not in the list</option></select></label>
-    <label class="field"><span>Packs</span><input type="number" id="qty-${id}-${n}" inputmode="numeric" value="1" min="1" onchange="medPick('${id}',${n},true)"></label>
+    <label class="field"><span>Quantity</span><input type="number" id="qty-${id}-${n}" inputmode="numeric" value="1" min="1" onchange="medPick('${id}',${n},true)"></label>
+    <label class="field"><span>Days prescribed for</span><input type="number" id="days-${id}-${n}" inputmode="numeric" placeholder="days" min="1" onchange="this.dataset.touched=1"></label>
     <label class="field"><span>Amount</span><input type="number" id="amt-${id}-${n}" inputmode="numeric" placeholder="₹" oninput="medTotal('${id}')"></label>
     <div class="seg" style="grid-column:1/-1" id="rec-${id}-${n}"><button type="button" class="on" onclick="segPick(this,true)" data-v="course">Course, reorder when it runs out</button><button type="button" onclick="segPick(this,true)" data-v="once">One time, no reorder</button></div>
     <div id="mednew-${id}-${n}" style="display:none;grid-column:1/-1;display:none;grid-template-columns:2fr 1fr 1fr;gap:10px">
       <label class="field"><span>Medicine name</span><input type="text" id="mednew-name-${id}-${n}" placeholder="As written on the box"></label>
       <label class="field"><span>Price of one pack</span><input type="number" id="mednew-price-${id}-${n}" inputmode="numeric" placeholder="₹" oninput="medPick('${id}',${n},true)"></label>
-      <label class="field"><span>Days one pack lasts</span><input type="number" id="mednew-days-${id}-${n}" inputmode="numeric" value="30"></label>
+      <label class="field"><span>Days one pack usually lasts</span><input type="number" id="mednew-days-${id}-${n}" inputmode="numeric" value="30" oninput="medPick('${id}',${n},true)"></label>
     </div>
   </div>`;
 }
@@ -418,8 +419,9 @@ function medPick(id, n, qtyOnly){
   const sel=$(`med-${id}-${n}`), box=$(`mednew-${id}-${n}`); if(!sel) return;
   if(!qtyOnly && box) box.style.display = sel.value==='__new' ? 'grid' : 'none';
   const qty=Math.max(1,Number(($(`qty-${id}-${n}`)||{}).value)||1);
-  const m = sel.value==='__new' ? {price:Number(($(`mednew-price-${id}-${n}`)||{}).value)||0} : medByName(sel.value);
+  const m = sel.value==='__new' ? {price:Number(($(`mednew-price-${id}-${n}`)||{}).value)||0, days:Number(($(`mednew-days-${id}-${n}`)||{}).value)||30} : medByName(sel.value);
   if(m && m.price && $(`amt-${id}-${n}`)) $(`amt-${id}-${n}`).value = m.price*qty;
+  const dEl=$(`days-${id}-${n}`); if(m && dEl && !dEl.dataset.touched) dEl.value = (m.days||30)*qty;
   if(sel.value==='__new' && !qtyOnly){ const nm=$(`mednew-name-${id}-${n}`); if(nm) nm.focus(); }
   medTotal(id);
 }
@@ -446,16 +448,18 @@ function medRead(id){
       else { const L=localMeds(); if(!L.some(x=>x.name===name)){ L.push(rec); localStorage.setItem('pulse_meds_local',JSON.stringify(L)); } }
     } else { const m=medByName(name); if(m){ days=m.days||30; price=m.price; } }
     const qty=Math.max(1,Number(($(`qty-${id}-${i}`)||{}).value)||1);
+    const typedDays=Number(($(`days-${id}-${i}`)||{}).value)||0;
+    const prescribed = typedDays>0 ? typedDays : days*qty;     // the course length in days, as the doctor wrote it
     const amount=Number(($(`amt-${id}-${i}`)||{}).value)||0;
     const recBtn=document.querySelector(`#rec-${id}-${i} button.on`);
-    out.push({name, days, price, qty, amount, pay, recurring: !recBtn || recBtn.dataset.v==='course'});
+    out.push({name, days:prescribed, price, qty, amount, pay, recurring: !recBtn || recBtn.dataset.v==='course'});
   }
   return out;
 }
 // the reorder call for a basket: the day the shortest course runs out (five days early on a long one)
 function basketRecurring(lines){ return lines.filter(m=>m.recurring); }
-function basketOffset(lines){ const r=basketRecurring(lines); return r.length ? Math.min(...r.map(m=>reorderOffset(m.days,m.qty))) : null; }
-function basketNote(lines){ return lines.map(m=>`${m.name} x${m.qty} ${fmtINR(m.amount)}${m.recurring?'':' (one time)'}`).join(', ')+' '+lines[0].pay; }
+function basketOffset(lines){ const r=basketRecurring(lines); return r.length ? Math.min(...r.map(m=>reorderOffset(m.days,1))) : null; }
+function basketNote(lines){ return lines.map(m=>`${m.name} x${m.qty}, ${m.days} days, ${fmtINR(m.amount)}${m.recurring?'':' (one time)'}`).join(', ')+' '+lines[0].pay; }
 
 const ICON = {
   today:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18M8 15l2.5 2.5L16 12"/></svg>',
