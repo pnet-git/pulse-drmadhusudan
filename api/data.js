@@ -5,16 +5,19 @@
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
 
-  // password check (sent as header from the gated page)
-  // Two keys open this door. The client's key shows the four normal tabs.
-  // Our own key does the same AND flags ops:true, which reveals the private
-  // Opportunities tab. The client never learns the second key exists.
+  // THREE KEYS, THREE ROLES (2 Sep 2026).
+  //   team   = PULSE_PASSWORD.  The clinic staff. They get the patient list and
+  //            reception only, so this endpoint hands them no dashboard numbers.
+  //   doctor = DOCTOR_PASSWORD. Dr Madhu himself. Everything the team sees plus
+  //            Health and Content.
+  //   ops    = OPS_PASSWORD.    Us. Everything, plus the private Opportunities box.
   const pass = req.headers['x-pulse-pass'] || (req.query && req.query.p) || '';
-  const OPS = process.env.OPS_PASSWORD;
-  const isOps = !!OPS && pass === OPS;
-  if (pass !== process.env.PULSE_PASSWORD && !isOps) {
-    return res.status(401).json({ error: 'unauthorized' });
-  }
+  const OPS = process.env.OPS_PASSWORD, DOC = process.env.DOCTOR_PASSWORD;
+  const role = (OPS && pass === OPS) ? 'ops' : (DOC && pass === DOC) ? 'doctor'
+             : (pass === process.env.PULSE_PASSWORD) ? 'team' : null;
+  if (!role) return res.status(401).json({ error: 'unauthorized' });
+  const isOps = role === 'ops';
+  if (role === 'team') return res.status(200).json({ ok: true, role, ops: false });
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const KEY = process.env.SUPABASE_KEY;
@@ -38,7 +41,7 @@ export default async function handler(req, res) {
     const exec = await execRes.json();
     const content2 = await content2Res.json();
     const health = healthRes.ok ? await healthRes.json() : null;
-    return res.status(200).json({ ok: true, ops: isOps, stats, recent, revenue, revenue_recent, exec, content2, health });
+    return res.status(200).json({ ok: true, role, ops: isOps, stats, recent, revenue, revenue_recent, exec, content2, health });
   } catch (e) {
     return res.status(500).json({ error: 'fetch_failed', detail: String(e) });
   }

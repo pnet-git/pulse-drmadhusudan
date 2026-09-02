@@ -18,8 +18,9 @@ export default async function handler(req, res) {
   // with the ops key showed an empty Lead Tracking tab and every add, update
   // and sync failed silently with a 401.
   const pass = req.headers['x-pulse-pass'] || '';
-  const OPS = process.env.OPS_PASSWORD;
-  if (pass !== process.env.PULSE_PASSWORD && !(OPS && pass === OPS)) {
+  const OPS = process.env.OPS_PASSWORD, DOC = process.env.DOCTOR_PASSWORD;
+  // team, doctor and ops keys all open the desk (2 Sep 2026)
+  if (pass !== process.env.PULSE_PASSWORD && !(OPS && pass === OPS) && !(DOC && pass === DOC)) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 
@@ -35,12 +36,14 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const [lr, tr, sr, vr] = await Promise.all([
+      const [lr, tr, sr, vr, mr] = await Promise.all([
         rpc('desk_list', { p_key: DESK_KEY }),
         rpc('desk_team_list', { p_key: DESK_KEY }),
         rpc('desk_status_list', { p_key: DESK_KEY }),
-        rpc('desk_visits_list', { p_key: DESK_KEY })   // clinic sales; 404 until the table exists
+        rpc('desk_visits_list', { p_key: DESK_KEY }),   // clinic sales; 404 until the table exists
+        rpc('desk_medicine_list', { p_key: DESK_KEY })  // the medicine list the team can add to; 404 until then
       ]);
+      const medicines = mr.ok ? await mr.json() : [];
       const rows = await lr.json();
       const team = await tr.json();
       const statuses = await sr.json();
@@ -50,7 +53,9 @@ export default async function handler(req, res) {
         team: Array.isArray(team) ? team : [],
         statuses: Array.isArray(statuses) ? statuses : [],
         visits: Array.isArray(visits) ? visits : [],
-        visits_on: vr.ok });
+        visits_on: vr.ok,
+        medicines: Array.isArray(medicines) ? medicines : [],
+        medicines_on: mr.ok });
     }
 
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
@@ -91,7 +96,10 @@ export default async function handler(req, res) {
         p_medicine: body.medicine || null,
         p_medicine_amount: body.medicine_amount || null,
         p_pay_mode: body.pay_mode || null,
-        p_entered_by: body.entered_by || null
+        p_entered_by: body.entered_by || null,
+        p_quantity: body.quantity || null,
+        p_days: body.days || null,
+        p_consult_mode: body.consult_mode || null
       });
       if (r.status === 404) return res.status(200).json({ ok: false, error: 'Clinic sales are not switched on yet.' });
       const out = await r.json();
@@ -161,6 +169,17 @@ export default async function handler(req, res) {
       const out = await r.json();
       if (!r.ok) return res.status(500).json({ error: 'sync_failed', detail: out });
       return res.status(200).json({ ...out, kit_touched: kit_added, kit_error });
+    }
+
+    // A medicine that is not in the list yet. Name, usual price, how many days one pack lasts.
+    if (body.action === 'medicine_add') {
+      const r = await rpc('desk_medicine_add', {
+        p_key: DESK_KEY, p_name: body.name || '', p_price: body.price || null, p_days: body.days || null
+      });
+      if (r.status === 404) return res.status(200).json({ ok: false, error: 'The shared medicine list is not switched on yet.' });
+      const out = await r.json();
+      if (!r.ok) return res.status(500).json({ error: 'medicine_failed', detail: out });
+      return res.status(200).json(out);
     }
 
     return res.status(400).json({ error: 'unknown_action' });

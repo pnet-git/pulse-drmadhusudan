@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pulse · Dr. Madhu Sudan</title><!-- v2.2 -->
+<title>Pulse · Dr. Madhu Sudan</title><!-- v2.3 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
@@ -349,6 +349,9 @@ let STATUSES = [];          // desk_statuses, phase by phase
 let VISITS = [];            // clinic visits, when the table exists
 let VISITS_ON = false;      // true once the server says the visits table is live
 let OPS = null;             // ops_intel, our key only
+let ROLE = 'team';          // team | doctor | ops. The server decides from the key.
+let MEDICINES = [];         // the medicine list reception picks from
+let MEDS_ON = false;        // true once the shared list lives in the database
 let TAB = 'today';
 let ME = localStorage.getItem('pulse_me') || '';         // team id
 let MY_CLINIC = localStorage.getItem('pulse_clinic') || '';
@@ -360,12 +363,61 @@ const PHASE_NAMES = {1:'Consultation', 2:'Medicine', 3:'Delivery', 4:'Reorder'};
 const PHASE_HELP  = {1:'Getting him to a paid consultation', 2:'Getting the medicine paid for', 3:'Getting it sent and delivered', 4:'Bringing him back for the next course'};
 const CAME_FROM_LABEL = {'Consultation page':'Consult page','Walk-in':'Walked in','Phone enquiry':'Telephoned','Referral':'Referred','Modak page':'Modak page','Assessment':'Assessment','Routine':'Routine page'};
 const CLINICS = ['Delhi clinic','Gurgaon clinic'];
-const PACKS = [
-  {key:'Modak trial',  label:'Modak trial (7 days)',   days:7,  due:7,  price:1490},
-  {key:'Modak 30-day', label:'Modak 30 days',          days:30, due:25, price:5550},
-  {key:'Modak 90-day', label:'Modak 90 days',          days:90, due:85, price:15000},
-  {key:'Other',        label:'Other medicine',         days:30, due:25, price:null}
-];
+// Seeded from his own store. The shared list in the database replaces this once it exists,
+// and anything reception adds before then is kept on that phone so it is not typed twice.
+const DEFAULT_MEDS = [
+  ['Kamdev Modak, 7 day trial',1490,7],['Kamdev Modak, 1 month',5550,30],['Kamdev Modak, 3 months',15000,90],
+  ['Gandiva Dhairya Capsules',2650,30],['Gandiva Sanjivani Capsules',3799,30],['Gandiva Shukrabandhan Vati',1850,30],
+  ['Gandiva Stallion Pro Capsule',null,30],['Stallion Ultra Max Capsules',null,30],['Shakti Plus 180gm',7500,30],
+  ['L-69 Capsule',2650,30],['T-69 Capsule',2850,30],['Joyque Max 10 Tablets',880,10],['Joyque 60 Capsules',2880,30],
+  ['NotOut Testosterone Booster',2500,30],['Vajra Shilajit Gold',1950,30],['ReBOOST Plus Powder 180gm',2550,30],
+  ['ReBOOST Capsule',1850,30],['Ashwakanchuki Ras',399,30],['Thyromrit 60 Capsule',1380,30],['Yakritamrit',950,30],
+  ['Lipoma Herbal Mix 60 Dose',5500,30],['Dhanvantari Garbh Dharini 50 Vati',2120,30],['Twachamrit Skin Oil and Drop Combo',2599,30],
+  ['Health Gainer Powder 200gm',2399,30],['Majja Shodhak 60 Tablet',350,30],['Sukuntalam 60 Tablet',375,30]
+].map(m=>({name:m[0],price:m[1],days:m[2]}));
+function localMeds(){ try{ return JSON.parse(localStorage.getItem('pulse_meds_local')||'[]'); }catch(e){ return []; } }
+function medList(){ const base = MEDICINES.length ? MEDICINES : DEFAULT_MEDS; const extra = localMeds().filter(x=>!base.some(b=>b.name===x.name)); return base.concat(extra); }
+function medByName(n){ return medList().find(m=>m.name===n)||null; }
+// the reorder call: the day the last pack runs out, or five days before it on a longer course
+function reorderOffset(days, qty){ const total=Math.max(1,(Number(days)||30)*(Math.max(1,Number(qty)||1))); return total<=7 ? total : total-5; }
+function guessMed(l){ const b=l.bought||''; if(/90/.test(b)) return 'Kamdev Modak, 3 months'; if(/30/.test(b)) return 'Kamdev Modak, 1 month'; if(/trial/i.test(b)) return 'Kamdev Modak, 7 day trial'; return 'Kamdev Modak, 1 month'; }
+// one picker used by reception and by the patient card. id keeps the fields apart.
+function medPickerHTML(id, selected){
+  const opts = medList().map(m=>`<option value="${esc(m.name)}" ${m.name===selected?'selected':''}>${esc(m.name)}${m.price?' · ₹'+m.price:''}</option>`).join('');
+  return `<label class="field"><span>Which medicine</span><select id="med-${id}" onchange="medPick('${id}')"><option value="">Pick one</option>${opts}<option value="__new">+ Add a medicine not in the list</option></select></label>
+    <div class="fgrid wide" id="mednew-${id}" style="display:none">
+      <label class="field wide"><span>Medicine name</span><input type="text" id="mednew-name-${id}" placeholder="As written on the box"></label>
+      <label class="field"><span>Usual price of one pack</span><input type="number" id="mednew-price-${id}" inputmode="numeric" placeholder="₹"></label>
+      <label class="field"><span>Days one pack lasts</span><input type="number" id="mednew-days-${id}" inputmode="numeric" value="30"></label>
+    </div>
+    <label class="field"><span>How many packs</span><input type="number" id="qty-${id}" inputmode="numeric" value="1" min="1" onchange="medPick('${id}',true)"></label>
+    <label class="field"><span>Amount taken</span><input type="number" id="amt-${id}" inputmode="numeric" placeholder="₹"></label>
+    <label class="field"><span>Paid by</span><select id="pay-${id}"><option>Cash</option><option>UPI</option><option>Card</option></select></label>`;
+}
+function medPick(id, qtyOnly){
+  const sel=$('med-'+id), box=$('mednew-'+id); if(!sel) return;
+  if(!qtyOnly) box.style.display = sel.value==='__new' ? 'grid' : 'none';
+  const qty=Math.max(1,Number(($('qty-'+id)||{}).value)||1);
+  const m = sel.value==='__new' ? {price:Number(($('mednew-price-'+id)||{}).value)||0} : medByName(sel.value);
+  if(m && m.price && $('amt-'+id)) $('amt-'+id).value = m.price*qty;
+  if(sel.value==='__new' && !qtyOnly){ const n=$('mednew-name-'+id); if(n) n.focus(); const pr=$('mednew-price-'+id); if(pr) pr.oninput=()=>medPick(id,true); }
+}
+// reads the picker; a new medicine is added to the shared list (or kept on this phone until the list exists)
+function medRead(id){
+  const sel=$('med-'+id); if(!sel||!sel.value) return null;
+  let name=sel.value, days=30, price=null;
+  if(name==='__new'){
+    name=(($('mednew-name-'+id)||{}).value||'').trim(); if(!name) return {error:'Enter the medicine name.'};
+    price=Number(($('mednew-price-'+id)||{}).value)||null; days=Number(($('mednew-days-'+id)||{}).value)||30;
+    const rec={name,price,days};
+    if(MEDS_ON){ post({action:'medicine_add', name, price, days}).then(d=>{ if(d&&d.ok) MEDICINES.push(rec); }); }
+    else { const L=localMeds(); if(!L.some(x=>x.name===name)){ L.push(rec); localStorage.setItem('pulse_meds_local',JSON.stringify(L)); } }
+  } else { const m=medByName(name); if(m){ days=m.days||30; price=m.price; } }
+  const qty=Math.max(1,Number(($('qty-'+id)||{}).value)||1);
+  const amount=Number(($('amt-'+id)||{}).value)||0;
+  const pay=($('pay-'+id)||{}).value||'Cash';
+  return {name, days, price, qty, amount, pay};
+}
 
 const ICON = {
   today:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18M8 15l2.5 2.5L16 12"/></svg>',
@@ -422,7 +474,8 @@ function login(){
 }
 function signOut(){ localStorage.removeItem('pulse_p'); sessionStorage.removeItem('pulse_p'); location.reload(); }
 function boot(d){
-  DATA = d;
+  DATA = d; ROLE = d.role || (d.ops ? 'ops' : 'team');
+  if(ROLE==='team' && ['health','content'].includes(TAB)) TAB='today';
   $('gate').style.display='none';
   $('app').style.display='block';
   buildTabs();
@@ -444,10 +497,12 @@ function renderMe(){
     + `<button class="${!ME?'on':''}" onclick="setMe('')">Everyone (no name)</button>`;
 }
 function setMe(id){ ME=id; localStorage.setItem('pulse_me',id); renderMe(); toggleMe(false); render(); }
+// The clinic team gets three rooms. The doctor and we get all five.
+function myTabs(){ return ROLE==='team' ? TABS.filter(t=>['today','patients','add'].includes(t.id)) : TABS; }
 function buildTabs(){
   const mk = t => `<button class="tab ${t.cls||''} ${TAB===t.id?'active':''}" data-tab="${t.id}" onclick="setTab('${t.id}')">${t.icon}<span>${t.label}</span><span class="badge zero" id="badge-${t.id}"></span></button>`;
-  $('tabs').innerHTML = TABS.map(mk).join('');
-  $('nav').innerHTML = TABS.map(t=>`<button class="${t.cls||''} ${TAB===t.id?'active':''}" data-tab="${t.id}" onclick="setTab('${t.id}')">${t.icon}<span>${t.label}</span><span class="badge zero" id="nbadge-${t.id}"></span></button>`).join('');
+  $('tabs').innerHTML = myTabs().map(mk).join('');
+  $('nav').innerHTML = myTabs().map(t=>`<button class="${t.cls||''} ${TAB===t.id?'active':''}" data-tab="${t.id}" onclick="setTab('${t.id}')">${t.icon}<span>${t.label}</span><span class="badge zero" id="nbadge-${t.id}"></span></button>`).join('');
 }
 function setTab(t){
   TAB=t;
@@ -477,6 +532,7 @@ function loadDesk(then){
     if(d.team&&d.team.length) TEAM=d.team;
     if(d.statuses&&d.statuses.length) STATUSES=d.statuses;
     VISITS = d.visits||[]; VISITS_ON = !!d.visits_on;
+    MEDICINES = d.medicines||[]; MEDS_ON = !!d.medicines_on;
     renderMe();
     computeBadge();
     if(then) then(); else render();
@@ -740,7 +796,7 @@ function paintList(){
   const paid = rows.filter(l=>Number(l.total_paid)>0).length;
   const money = rows.reduce((s,l)=>s+(Number(l.total_paid)||0),0);
   const Q = P.queue ? QUEUES.find(x=>x.id===P.queue) : null;
-  $('psum').innerHTML = `<b>${rows.length}</b> people · <b>${paid}</b> have paid · <b>${fmtINR(money)}</b> collected${Q?` · <span style="color:var(--text-faint)">${esc(Q.why)}</span>`:''}`;
+  $('psum').innerHTML = `<b>${rows.length}</b> people · <b>${paid}</b> have paid${ROLE==='team'?'':` · <b>${fmtINR(money)}</b> collected`}${Q?` · <span style="color:var(--text-faint)">${esc(Q.why)}</span>`:''}`;
   if(!rows.length){ list.innerHTML=`<div class="empty">${Q?esc(Q.empty):'Nobody here. Try another chip or clear the search.'}</div>`; return; }
   list.innerHTML = rows.slice(0,300).map(cardHTML).join('') + (rows.length>300?`<div class="loading">Showing 300 of ${rows.length}. Narrow the search.</div>`:'');
 }
@@ -761,7 +817,7 @@ function cardHTML(l){
   bits.push(`<span class="pill dim">${esc(CAME_FROM_LABEL[l.came_from]||l.came_from||'')}${l.clinic?' · '+esc(l.clinic.replace(' clinic',''))+'':''}</span>`);
   bits.push(`<span class="st">${PHASE_NAMES[ph]} · ${statusLabel(l.status)||''}</span>`);
   if(l.next_followup&&!closed) bits.push(`<span style="color:${callDue(l)||reorderDue(l)?'var(--rose)':'var(--text-dim)'}">${ph===4?'Reorder':'Call'} ${relDay(l.next_followup)}</span>`);
-  if(l.bought) bits.push(`<span style="color:var(--gold)">${esc(l.bought)} · ${fmtINR(l.total_paid)}</span>`);
+  if(l.bought) bits.push(`<span style="color:var(--gold)">${esc(l.bought)}${ROLE==='team'?'':' · '+fmtINR(l.total_paid)}</span>`);
   if(l.first_seen) bits.push(`<span class="wait" style="color:${waitCol}" title="${niceDateY(l.first_seen)}">${wait<=0?'came today':wait+'d'}</span>`);
   if(ownerName(l)) bits.push(`<span>${esc(ownerName(l))}</span>`);
   return `<div class="card s${ph} ${closed?'closed':''} ${callDue(l)?'due':''} ${open?'open':''}" id="card-${l.id}">
@@ -894,7 +950,7 @@ function askBox(l, w){
       <button class="btn gold" onclick="finishAsk('${id}','ship')">Save</button></div>`;
   if(w.ask==='delivered') html=`<b>Delivered on which day?</b> <span class="note" style="display:block;margin:2px 0 0">This starts his reorder clock. Pick the pack if it is not already known.</span><div class="row">
       <label class="field"><span>Delivered</span><input type="date" id="ask-deliv-${id}" value="${t}"></label>
-      <label class="field"><span>Pack</span><select id="ask-pack-${id}">${PACKS.map(p=>`<option value="${p.key}" ${guessPack(l)===p.key?'selected':''}>${p.label}</option>`).join('')}</select></label>
+      <label class="field"><span>Pack</span><select id="ask-pack-${id}">${medList().map(m=>`<option value="${esc(m.name)}" ${guessMed(l)===m.name?'selected':''}>${esc(m.name)}</option>`).join('')}</select></label>
       <button class="btn gold" onclick="finishAsk('${id}','delivered')">Save</button></div>`;
   if(w.ask==='paidhow') html=`<b>How did he pay?</b><div class="row">
       <label class="field"><span>Amount</span><input type="number" id="ask-amt-${id}" value="497" inputmode="numeric"></label>
@@ -908,15 +964,14 @@ function askBox(l, w){
   if(w.ask==='visit') html=visitForm(l);
   box.innerHTML=html; box.classList.add('open'); box.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-function guessPack(l){ const b=l.bought||''; if(/90/.test(b)) return 'Modak 90-day'; if(/30/.test(b)) return 'Modak 30-day'; if(/trial/i.test(b)) return 'Modak trial'; return 'Modak 30-day'; }
 function visitForm(l){
   const id=l.id;
-  return `<b>Bought at the clinic</b> <span class="note" style="display:block;margin:2px 0 0">He walked out with the medicine, so the course starts today and the reorder call gets set on its own.</span><div class="row">
+  return `<b>Bought at the clinic</b> <span class="note" style="display:block;margin:2px 0 0">He walked out with the medicine, so the course starts today and the reorder call gets set on its own.</span>
+    <div class="fgrid" style="margin-top:10px">
       <label class="field"><span>Clinic</span><select id="ask-clinic-${id}">${CLINICS.map(c=>`<option ${c===MY_CLINIC?'selected':''}>${c}</option>`).join('')}</select></label>
-      <label class="field"><span>Which medicine</span><select id="ask-pack-${id}" onchange="const p=PACKS.find(x=>x.key===this.value);if(p&&p.price)document.getElementById('ask-amt-${id}').value=p.price">${PACKS.map(p=>`<option value="${p.key}">${p.label}</option>`).join('')}</select></label>
-      <label class="field"><span>Amount</span><input type="number" id="ask-amt-${id}" value="1490" inputmode="numeric"></label>
-      <label class="field"><span>Paid by</span><select id="ask-pay-${id}"><option>Cash</option><option>UPI</option><option>Card</option></select></label>
-      <button class="btn gold" onclick="finishAsk('${id}','visit')">Save</button></div>`;
+      ${medPickerHTML('c'+id)}
+    </div>
+    <div class="row"><button class="btn gold" onclick="finishAsk('${id}','visit')">Save</button><span class="msg bad" id="ask-err-${id}"></span></div>`;
 }
 function finishAsk(id, kind){
   const l=DESK.find(x=>x.id===id); if(!l) return;
@@ -926,23 +981,25 @@ function finishAsk(id, kind){
   if(kind==='date'){ over.status = (WHAT[l.phase||1].find(w=>w.ask==='date')||{}).status || l.status; over.next_followup=g('date').value||plusDays(1); return saveState(l, fullState(l,over), done); }
   if(kind==='appt'){ over.status = l.phase===4?'p4_appt_booked':'p1_appt_pending'; over.appointment_at=g('appt').value||''; over.appointment_mode=g('mode').value; over.next_followup = dOnly(g('appt').value)||null; return saveState(l, fullState(l,over), done); }
   if(kind==='ship'){ over.status='p3_dispatched'; over.dispatched_on=g('ship').value||todayISO(); over.next_followup=plusDays(3, over.dispatched_on); return saveState(l, fullState(l,over), done); }
-  if(kind==='delivered'){ const pk=PACKS.find(p=>p.key===g('pack').value)||PACKS[1]; over.status='p4_reorder_due'; over.delivered_on=g('deliv').value||todayISO(); over.next_followup=plusDays(pk.due, over.delivered_on); return saveState(l, fullState(l,over), done); }
+  if(kind==='delivered'){ const m=medByName(g('pack').value)||{days:30}; over.status='p4_reorder_due'; over.delivered_on=g('deliv').value||todayISO(); over.next_followup=plusDays(reorderOffset(m.days,1), over.delivered_on); return saveState(l, fullState(l,over), done); }
   if(kind==='paidhow'){
     over.status='p1_fees_paid'; over.next_followup=null;
     const amt=Number(g('amt').value)||0, how=g('pay').value, clinic=g('clinic').value;
-    if(how!=='Online link'){ recordVisit(l,{clinic, consult_amount:amt, pay_mode:how.replace(' at clinic','')}); }
+    if(how!=='Online link'){ recordVisit(l,{clinic, consult_amount:amt, pay_mode:how.replace(' at clinic',''), consult_mode: clinic||'At the clinic'}); }
     return saveState(l, fullState(l,over), done);
   }
   if(kind==='afterdoc-no'){ over.status='p2_followup'; over.next_followup=plusDays(2); return saveState(l, fullState(l,over), done); }
   if(kind==='afterdoc-online'){ over.status='p2_payment_pending'; over.next_followup=plusDays(1); return saveState(l, fullState(l,over), done); }
   if(kind==='afterdoc-clinic'){ const b=$('ask-'+id); b.innerHTML=visitForm(l); return; }
   if(kind==='visit'){
-    const pk=PACKS.find(p=>p.key===g('pack').value)||PACKS[1];
-    const amt=Number(g('amt').value)||0, clinic=g('clinic').value, how=g('pay').value;
-    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(pk.due);
-    recordVisit(l,{clinic, medicine:pk.key, medicine_amount:amt, pay_mode:how});
-    // until the visits table is switched on, the sale is kept in the note so nothing is lost
-    if(!VISITS_ON){ const line=`Bought at ${clinic} ${niceDate(new Date())}: ${pk.key} ${fmtINR(amt)} ${how}`; const cur=($('f-note-'+id)||{}).value||l.note||''; if($('f-note-'+id)) $('f-note-'+id).value=(cur?cur+' · ':'')+line; }
+    const m=medRead('c'+id), err=$('ask-err-'+id);
+    if(!m){ if(err) err.textContent='Pick the medicine.'; return; }
+    if(m.error){ if(err) err.textContent=m.error; return; }
+    const clinic=g('clinic').value;
+    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(reorderOffset(m.days,m.qty));
+    recordVisit(l,{clinic, medicine:m.name, medicine_amount:m.amount, pay_mode:m.pay, quantity:m.qty, days:m.days});
+    // until the clinic sales record is switched on, the sale is kept in the note so nothing is lost
+    if(!VISITS_ON){ const line=`Bought at ${clinic} ${niceDate(new Date())}: ${m.name} x${m.qty} ${fmtINR(m.amount)} ${m.pay}`; const cur=($('f-note-'+id)||{}).value||l.note||''; if($('f-note-'+id)) $('f-note-'+id).value=(cur?cur+' · ':'')+line; }
     return saveState(l, fullState(l,over), done);
   }
 }
@@ -962,12 +1019,12 @@ function renderAdd(){
     <div class="head"><div><div class="h1">New person</div><div class="sub">Someone who walked in, telephoned, or was sent by a friend. Name and phone are enough. Fill the rest if you know it.</div></div></div>
     <div class="step" id="step1">
       <h4>1. Who is he</h4>
-      <div class="hint">Which clinic are you at? It is remembered on this phone.</div>
-      <div class="seg" id="segClinic">${CLINICS.map(c=>`<button class="${MY_CLINIC===c?'on':''}" onclick="setClinic('${c}')">${c}</button>`).join('')}<button class="${MY_CLINIC===''?'on':''}" onclick="setClinic('')">On the phone</button></div>
+      <div class="hint">Which clinic is this? Picked once, remembered on this device.</div>
+      <div class="seg" id="segClinic">${CLINICS.map(c=>`<button class="${MY_CLINIC===c?'on':''}" onclick="setClinic('${c}')">${c}</button>`).join('')}</div>
       <div class="fgrid" style="margin-top:14px">
         <label class="field wide req"><span>Name</span><input id="afName" type="text" placeholder="Full name" autocomplete="off"></label>
         <label class="field req"><span>Phone number</span><input id="afPhone" type="tel" placeholder="10 digits" inputmode="numeric" autocomplete="off" oninput="dupCheck()"></label>
-        <label class="field"><span>How did he reach you</span><select id="afSource"><option value="Walk-in" ${MY_CLINIC?'selected':''}>Walked into the clinic</option><option value="Phone enquiry" ${!MY_CLINIC?'selected':''}>Telephoned us</option><option value="Referral">Sent by someone</option></select></label>
+        <label class="field"><span>How did he reach you</span><select id="afSource" onchange="$('step2').classList.toggle('off', this.value!=='Walk-in' && !ADD_ID)"><option value="Walk-in">Walked into the clinic</option><option value="Phone enquiry">Telephoned us</option><option value="Referral">Sent by someone</option></select></label>
         <div class="found wide" id="afFound"></div>
         <label class="field wide"><span>What he came for</span></label>
         <div class="seg wide" id="segFor">${['Erectile Dysfunction','Premature Ejaculation','Both ED and PE','Low desire or energy','Not sure','Other'].map(c=>`<button onclick="segPick(this)" data-v="${c}">${c}</button>`).join('')}</div>
@@ -991,26 +1048,30 @@ function renderAdd(){
       </div>
     </div>
     <div class="step off" id="step2">
-      <h4>2. What happened at the desk today</h4>
-      <div class="hint">Only for someone standing in front of you. Skip this for a phone enquiry.</div>
+      <h4>2. What happened today</h4>
+      <div class="hint">Consultation, medicine, or both. Leave anything that did not happen on No.</div>
+      <div class="sec" style="margin-top:4px">Consultation</div>
       <div class="fgrid">
-        <label class="field"><span>Paid a consultation?</span><select id="v-consult" onchange="$('v-camt').disabled=!this.value"><option value="">No</option><option>Cash</option><option>UPI</option><option>Card</option><option>Online link</option></select></label>
+        <label class="field"><span>Consultation</span><select id="v-cmode" onchange="vConsultChange()"><option value="">No consultation</option><option value="clinic">At the clinic, today</option><option value="online">Online</option></select></label>
+        <label class="field" id="v-when-wrap" style="display:none"><span>Online, booked for</span><input id="v-appt" type="datetime-local"></label>
+        <label class="field"><span>Paid by</span><select id="v-consult" disabled><option>Cash</option><option>UPI</option><option>Card</option><option>Online link</option><option value="unpaid">Not paid yet</option></select></label>
         <label class="field"><span>Consultation amount</span><input id="v-camt" type="number" value="497" inputmode="numeric" disabled></label>
-        <label class="field"><span>Took medicine?</span><select id="v-med" onchange="const p=PACKS.find(x=>x.key===this.value);$('v-mamt').disabled=!this.value;if(p&&p.price)$('v-mamt').value=p.price"><option value="">No</option>${PACKS.map(p=>`<option value="${p.key}">${p.label}</option>`).join('')}</select></label>
-        <label class="field"><span>Medicine amount</span><input id="v-mamt" type="number" value="" inputmode="numeric" disabled></label>
-        <label class="field"><span>Medicine paid by</span><select id="v-mpay"><option>Cash</option><option>UPI</option><option>Card</option></select></label>
-        <label class="field"><span>Next appointment, if booked</span><input id="v-appt" type="datetime-local"></label>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+      <div class="sec">Medicine</div>
+      <div class="fgrid">
+        ${medPickerHTML('v')}
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap">
         <button class="btn gold" onclick="submitVisit()">Save what happened</button>
         <button class="btn ghost" onclick="finishAdd()">Nothing else, done</button>
         <span class="msg" id="vMsg"></span>
       </div>
-      ${VISITS_ON?'':'<div class="note">Clinic sales are kept on the patient card for now. The full clinic sales record switches on once Akash confirms it.</div>'}
+      ${VISITS_ON?'':'<div class="note">Sales made at the desk are kept on the patient card for now. The full clinic sales record switches on once Akash confirms it.</div>'}
     </div>`;
   setTimeout(()=>{ const n=$('afName'); if(n) n.focus(); },50);
 }
-function setClinic(c){ MY_CLINIC=c; localStorage.setItem('pulse_clinic',c); document.querySelectorAll('#segClinic button').forEach(b=>b.classList.toggle('on', b.textContent===(c||'On the phone'))); const s=$('afSource'); if(s) s.value = c ? 'Walk-in' : 'Phone enquiry'; }
+function setClinic(c){ MY_CLINIC=c; localStorage.setItem('pulse_clinic',c); document.querySelectorAll('#segClinic button').forEach(b=>b.classList.toggle('on', b.textContent===c)); }
+function vConsultChange(){ const m=$('v-cmode').value; $('v-when-wrap').style.display = m==='online' ? '' : 'none'; $('v-consult').disabled=!m; $('v-camt').disabled=!m; if(m==='online' && $('v-consult').value==='Cash') $('v-consult').value='Online link'; }
 function segPick(btn){ const on=btn.classList.contains('on'); btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on')); if(!on) btn.classList.add('on'); }
 function dupCheck(){
   const p=($('afPhone').value||'').replace(/[^0-9]/g,''); const box=$('afFound');
@@ -1032,20 +1093,38 @@ function submitAdd(){
     msg.className='msg ok'; msg.textContent='Saved. He is on the list.';
     ADD_ID = d.id || null;
     $('step1').classList.add('done');
-    if(body.source==='Walk-in'){ $('step2').classList.remove('off'); $('step2').scrollIntoView({behavior:'smooth',block:'start'}); }
+    $('step2').classList.remove('off'); $('step2').scrollIntoView({behavior:'smooth',block:'start'});
     loadDesk(()=>{ if(!ADD_ID){ const hit=DESK.find(l=>(l.phone||'').replace(/[^0-9]/g,'').slice(-10)===body.phone.replace(/[^0-9]/g,'').slice(-10)); if(hit) ADD_ID=hit.id; } computeBadge(); });
   }).catch(()=>{ msg.className='msg bad'; msg.textContent='Could not save. Check the internet and try again.'; });
 }
 function submitVisit(){
   const l=DESK&&DESK.find(x=>x.id===ADD_ID); const msg=$('vMsg');
   if(!l){ msg.className='msg bad'; msg.textContent='Give it a second, the list is still loading, then press again.'; return; }
-  const consult=$('v-consult').value, camt=Number($('v-camt').value)||0, med=$('v-med').value, mamt=Number($('v-mamt').value)||0, mpay=$('v-mpay').value, appt=$('v-appt').value;
+  const cmode=$('v-cmode').value, consult=$('v-consult').value, camt=Number($('v-camt').value)||0, appt=$('v-appt').value;
+  const med=medRead('v');
+  if(med && med.error){ msg.className='msg bad'; msg.textContent=med.error; return; }
   const over={}; if(!l.assigned_to&&ME) over.assigned_to=ME;
   const noteBits=[];
-  if(consult){ over.status='p1_fees_paid'; over.next_followup=null; if(consult!=='Online link') noteBits.push(`Consult ${fmtINR(camt)} ${consult}`); recordVisit(l,{clinic:MY_CLINIC, consult_amount:camt, pay_mode:consult}); }
-  if(med){ const pk=PACKS.find(p=>p.key===med)||PACKS[1]; over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(pk.due); noteBits.push(`${pk.key} ${fmtINR(mamt)} ${mpay}`); recordVisit(l,{clinic:MY_CLINIC, medicine:pk.key, medicine_amount:mamt, pay_mode:mpay}); }
-  if(appt){ over.appointment_at=appt; over.appointment_mode=MY_CLINIC||'Online'; if(!med){ over.status = over.status==='p1_fees_paid'||l.status==='p1_fees_paid' ? 'p1_appt_pending' : l.status; } }
-  if(!VISITS_ON && noteBits.length){ over.note = ((l.note||'')+(l.note?' · ':'')+`At ${MY_CLINIC||'clinic'} ${niceDate(new Date())}: `+noteBits.join(', ')); }
+  if(cmode){
+    const paid = consult!=='unpaid';
+    if(cmode==='clinic'){
+      // seen today at the desk: the appointment is now, the status says the doctor has seen him
+      over.appointment_at=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16); over.appointment_mode=MY_CLINIC||'At the clinic';
+      over.status = paid ? 'p1_appt_done' : 'p1_fees_pending'; over.next_followup = paid ? plusDays(2) : plusDays(1);
+      noteBits.push(`Consulted at ${MY_CLINIC||'clinic'}${paid?' '+fmtINR(camt)+' '+consult:', fee not paid'}`);
+    } else {
+      over.appointment_mode='Online'; if(appt) over.appointment_at=appt;
+      over.status = paid ? (appt ? 'p1_appt_pending' : 'p1_fees_paid') : 'p1_fees_pending'; over.next_followup = appt ? dOnly(appt) : plusDays(1);
+      noteBits.push(`Online consultation${appt?' '+niceDate(appt):''}${paid?' '+fmtINR(camt)+' '+consult:', fee not paid'}`);
+    }
+    if(paid) recordVisit(l,{clinic:MY_CLINIC, consult_amount:camt, pay_mode:consult, consult_mode:cmode==='clinic'?(MY_CLINIC||'At the clinic'):'Online'});
+  }
+  if(med){
+    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(reorderOffset(med.days,med.qty));
+    noteBits.push(`${med.name} x${med.qty} ${fmtINR(med.amount)} ${med.pay}`);
+    recordVisit(l,{clinic:MY_CLINIC, medicine:med.name, medicine_amount:med.amount, pay_mode:med.pay, quantity:med.qty, days:med.days});
+  }
+  if(!VISITS_ON && noteBits.length){ over.note = ((l.note||'')+(l.note?' · ':'')+`${niceDate(new Date())}: `+noteBits.join(', ')); }
   if(!Object.keys(over).length){ finishAdd(); return; }
   msg.className='msg'; msg.textContent='Saving…';
   saveState(l, Object.assign({action:'update', id:l.id, status:l.status, next_followup:l.next_followup||null, note:l.note||null, assigned_to:l.assigned_to||null, dispatched_on:l.dispatched_on||null, delivered_on:l.delivered_on||null}, over)).then(d=>{

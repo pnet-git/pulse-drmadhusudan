@@ -57,6 +57,9 @@ create table if not exists public.desk_visits (
   medicine_amount numeric,
   pay_mode text,
   entered_by text,
+  quantity integer,
+  days integer,
+  consult_mode text,
   created_at timestamptz not null default now()
 );
 create index if not exists desk_visits_lead_idx on public.desk_visits(lead_id);
@@ -65,7 +68,8 @@ revoke all on public.desk_visits from anon, authenticated;
 
 create or replace function public.desk_add_visit(
   p_key text, p_lead_id uuid, p_clinic text, p_consult_amount numeric, p_medicine text,
-  p_medicine_amount numeric, p_pay_mode text, p_entered_by text)
+  p_medicine_amount numeric, p_pay_mode text, p_entered_by text,
+  p_quantity integer default null, p_days integer default null, p_consult_mode text default null)
 returns jsonb language plpgsql security definer set search_path to 'public' as '
 declare v_id uuid;
 begin
@@ -73,9 +77,10 @@ begin
   if p_lead_id is null then return jsonb_build_object(''ok'', false, ''error'', ''no such person''); end if;
   if coalesce(p_consult_amount,0) <= 0 and coalesce(p_medicine_amount,0) <= 0 then
     return jsonb_build_object(''ok'', false, ''error'', ''Enter an amount.''); end if;
-  insert into desk_visits (lead_id, clinic, consult_amount, medicine, medicine_amount, pay_mode, entered_by)
+  insert into desk_visits (lead_id, clinic, consult_amount, medicine, medicine_amount, pay_mode, entered_by, quantity, days, consult_mode)
   values (p_lead_id, nullif(trim(coalesce(p_clinic,'''')),''''), nullif(p_consult_amount,0), nullif(trim(coalesce(p_medicine,'''')),''''),
-          nullif(p_medicine_amount,0), nullif(trim(coalesce(p_pay_mode,'''')),''''), nullif(trim(coalesce(p_entered_by,'''')),''''))
+          nullif(p_medicine_amount,0), nullif(trim(coalesce(p_pay_mode,'''')),''''), nullif(trim(coalesce(p_entered_by,'''')),''''),
+          p_quantity, p_days, nullif(trim(coalesce(p_consult_mode,'''')),''''))
   returning id into v_id;
   update desk_leads set clinic = coalesce(clinic, nullif(trim(coalesce(p_clinic,'''')),'''')), updated_at = now() where id = p_lead_id;
   return jsonb_build_object(''ok'', true, ''id'', v_id);
@@ -86,6 +91,50 @@ returns setof public.desk_visits language plpgsql security definer set search_pa
 begin
   if not desk_check_key(p_key) then raise exception ''not allowed''; end if;
   return query select * from desk_visits order by visited_at desc;
+end;';
+
+-- ITEM 3b. The medicine list reception picks from, and can add to. Seeded from the store's
+-- own product list. Same lock as desk_visits.
+create table if not exists public.desk_medicines (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  price numeric,
+  days integer,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table public.desk_medicines enable row level security;
+revoke all on public.desk_medicines from anon, authenticated;
+insert into public.desk_medicines (name, price, days) values
+  ('Kamdev Modak, 7 day trial', 1490, 7), ('Kamdev Modak, 1 month', 5550, 30), ('Kamdev Modak, 3 months', 15000, 90),
+  ('Gandiva Dhairya Capsules', 2650, 30), ('Gandiva Sanjivani Capsules', 3799, 30), ('Gandiva Shukrabandhan Vati', 1850, 30),
+  ('Gandiva Stallion Pro Capsule', null, 30), ('Stallion Ultra Max Capsules', null, 30),
+  ('Shakti Plus 180gm', 7500, 30), ('L-69 Capsule', 2650, 30), ('T-69 Capsule', 2850, 30),
+  ('Joyque Max 10 Tablets', 880, 10), ('Joyque 60 Capsules', 2880, 30), ('NotOut Testosterone Booster', 2500, 30),
+  ('Vajra Shilajit Gold', 1950, 30), ('ReBOOST Plus Powder 180gm', 2550, 30), ('ReBOOST Capsule', 1850, 30),
+  ('Ashwakanchuki Ras', 399, 30), ('Thyromrit 60 Capsule', 1380, 30), ('Yakritamrit', 950, 30),
+  ('Lipoma Herbal Mix 60 Dose', 5500, 30), ('Dhanvantari Garbh Dharini 50 Vati', 2120, 30),
+  ('Twachamrit Skin Oil and Drop Combo', 2599, 30), ('Health Gainer Powder 200gm', 2399, 30),
+  ('Majja Shodhak 60 Tablet', 350, 30), ('Sukuntalam 60 Tablet', 375, 30)
+on conflict (name) do nothing;
+
+create or replace function public.desk_medicine_list(p_key text)
+returns setof public.desk_medicines language plpgsql security definer set search_path to 'public' as '
+begin
+  if not desk_check_key(p_key) then raise exception ''not allowed''; end if;
+  return query select * from desk_medicines where active order by name;
+end;';
+
+create or replace function public.desk_medicine_add(p_key text, p_name text, p_price numeric, p_days integer)
+returns jsonb language plpgsql security definer set search_path to 'public' as '
+declare v_id uuid;
+begin
+  if not desk_check_key(p_key) then raise exception ''not allowed''; end if;
+  if coalesce(trim(p_name),'''') = '''' then return jsonb_build_object(''ok'', false, ''error'', ''Enter the medicine name.''); end if;
+  insert into desk_medicines (name, price, days) values (trim(p_name), nullif(p_price,0), coalesce(p_days,30))
+  on conflict (name) do update set price = coalesce(excluded.price, desk_medicines.price), active = true
+  returning id into v_id;
+  return jsonb_build_object(''ok'', true, ''id'', v_id);
 end;';
 
 -- ITEM 4. One read-only function for the Health screen: last month by funnel, month by
