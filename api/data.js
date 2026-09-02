@@ -22,13 +22,14 @@ export default async function handler(req, res) {
   const rpc = (fn) => fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: '{}' });
 
   try {
-    const [statsRes, recentRes, revRes, revRecentRes, execRes, content2Res] = await Promise.all([
+    const [statsRes, recentRes, revRes, revRecentRes, execRes, content2Res, healthRes] = await Promise.all([
       rpc('pulse_stats'),
       rpc('pulse_recent'),
       rpc('pulse_revenue'),
       rpc('pulse_revenue_recent'),
       rpc('pulse_exec'),
-      rpc('pulse_content_v2')
+      rpc('pulse_content_v2'),
+      rpc('pulse_health')      // v2: last month by funnel, repeat buyers. 404 until the delta lands.
     ]);
     const stats = await statsRes.json();
     const recent = await recentRes.json();
@@ -36,7 +37,8 @@ export default async function handler(req, res) {
     const revenue_recent = await revRecentRes.json();
     const exec = await execRes.json();
     const content2 = await content2Res.json();
-    return res.status(200).json({ ok: true, ops: isOps, stats, recent, revenue, revenue_recent, exec, content2 });
+    const health = healthRes.ok ? await healthRes.json() : null;
+    return res.status(200).json({ ok: true, ops: isOps, stats, recent, revenue, revenue_recent, exec, content2, health });
   } catch (e) {
     return res.status(500).json({ error: 'fetch_failed', detail: String(e) });
   }

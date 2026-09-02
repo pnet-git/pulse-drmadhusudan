@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pulse · Dr. Madhu Sudan</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700&display=swap" rel="stylesheet">
+<style>
+/* Pulse v2. Same house: dark, gold, Fraunces for the numbers. New spine: five rooms,
+   one job each. Today is the queue, Patients is the list, New is reception,
+   Health is the doctor's screen, Content is the proof. */
+:root{
+  --bg:#0a0a0c; --bg-2:#111114; --panel:#16161a; --panel-2:#1c1c22;
+  --border:#26262e; --border-2:#33333d;
+  --text:#f2f2f5; --text-dim:#9a9aa8; --text-faint:#65656f;
+  --gold:#C9A14A; --gold-light:#E5C77E; --gold-wash:rgba(201,161,74,.12);
+  --green:#4ade80; --green-wash:rgba(74,222,128,.12);
+  --amber:#fbbf24; --amber-wash:rgba(251,191,36,.12);
+  --rose:#fb7185; --rose-wash:rgba(251,113,133,.12);
+  --violet:#a78bfa; --violet-wash:rgba(167,139,250,.14);
+  --ops:#8b7bd8;
+  --nav-h:64px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100dvh;}
+.serif{font-family:'Fraunces',Georgia,serif;}
+button,input,select{font-family:'Inter',system-ui,sans-serif;}
+a{color:inherit;}
+
+/* ===== LOGIN GATE ===== */
+#gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px;}
+.gate-box{width:100%;max-width:360px;text-align:center;}
+.gate-logo{font-family:'Fraunces',serif;font-size:40px;font-weight:700;letter-spacing:-1px;margin-bottom:4px;}
+.gate-logo .dot{color:var(--gold);}
+.gate-sub{color:var(--text-faint);font-size:13px;margin-bottom:34px;}
+.gate-box input{width:100%;padding:15px 18px;background:var(--panel);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;margin-bottom:12px;}
+.gate-box input:focus{outline:none;border-color:var(--gold);}
+.gate-box button{width:100%;min-height:52px;padding:15px;background:var(--gold);color:#1a1a1a;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
+.gate-box button:hover{background:var(--gold-light);}
+.gate-err{color:var(--rose);font-size:13px;margin-top:12px;min-height:18px;}
+
+/* ===== SHELL ===== */
+#app{display:none;max-width:1100px;margin:0 auto;padding:18px 20px calc(var(--nav-h) + 40px);}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.brand{display:flex;align-items:baseline;gap:10px;}
+.brand .logo{font-family:'Fraunces',serif;font-size:28px;font-weight:700;letter-spacing:-0.5px;line-height:1;}
+.brand .logo .dot{color:var(--gold);}
+.brand .who{font-size:12.5px;color:var(--text-faint);}
+.top-right{display:flex;align-items:center;gap:8px;}
+.me-btn{min-height:40px;padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:50px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;}
+.me-btn .beat{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(74,222,128,.4);animation:beat 2s infinite;flex-shrink:0;}
+.me-btn .beat.busy{background:var(--amber);animation:none;}
+@keyframes beat{0%{box-shadow:0 0 0 0 rgba(74,222,128,.4);}70%{box-shadow:0 0 0 9px rgba(74,222,128,0);}100%{box-shadow:0 0 0 0 rgba(74,222,128,0);}}
+.me-menu{display:none;position:absolute;right:0;top:46px;background:var(--panel-2);border:1px solid var(--border-2);border-radius:14px;padding:8px;min-width:230px;z-index:30;box-shadow:0 16px 40px rgba(0,0,0,.6);}
+.me-menu.open{display:block;}
+.me-menu .h{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;padding:8px 10px 4px;}
+.me-menu button{display:block;width:100%;text-align:left;min-height:42px;padding:9px 10px;background:none;border:none;border-radius:9px;color:var(--text);font-size:14px;cursor:pointer;}
+.me-menu button:hover{background:var(--panel);}
+.me-menu button.on{color:var(--gold);font-weight:700;}
+.me-menu .sep{height:1px;background:var(--border);margin:6px 0;}
+.me-wrap{position:relative;}
+
+/* tabs: top on desktop, bottom bar on phone */
+.tabs{display:flex;gap:4px;margin-bottom:22px;border-bottom:1px solid var(--border);}
+.tab{flex:0 0 auto;padding:11px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-faint);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:-1px;display:flex;align-items:center;gap:8px;transition:color .15s;}
+.tab svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.tab.active{color:var(--text);border-bottom-color:var(--gold);}
+.tab .badge{min-width:20px;height:20px;padding:0 6px;border-radius:50px;background:var(--gold);color:#1a1a1a;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;}
+.tab .badge.zero{display:none;}
+.tab.ops{color:var(--ops);}
+.tab.ops.active{border-bottom-color:var(--ops);color:#b8ace9;}
+
+/* ===== shared blocks ===== */
+.h1{font-family:'Fraunces',serif;font-size:26px;font-weight:600;letter-spacing:-0.3px;line-height:1.15;}
+.sub{font-size:13.5px;color:var(--text-dim);margin-top:4px;}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.sec{font-size:12px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin:26px 0 12px;}
+.sec:first-child{margin-top:0;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px 20px;margin-bottom:14px;}
+.panel h3{font-size:12px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:14px;}
+.panel h3 small{color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0;font-size:11.5px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px 18px;min-width:0;}
+.stat .k{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.stat .v{font-family:'Fraunces',serif;font-size:clamp(24px,3.2vw,34px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em;overflow-wrap:anywhere;}
+.stat .s{font-size:12px;color:var(--text-dim);margin-top:7px;}
+.stat.gold .v{color:var(--gold);}
+.stat.green .v{color:var(--green);}
+.stat.rose .v{color:var(--rose);}
+.bar-row{margin-bottom:12px;} .bar-row:last-child{margin-bottom:0;}
+.bar-head{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:5px;}
+.bar-head .bl{color:var(--text);} .bar-head .bv{color:var(--text-dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.bar-track{height:8px;background:var(--bg-2);border-radius:50px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:50px;transition:width .7s ease;}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{text-align:left;color:var(--text-faint);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:8px 8px;border-bottom:1px solid var(--border);}
+.tbl td{padding:10px 8px;border-bottom:1px solid var(--bg-2);color:var(--text-dim);vertical-align:top;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl .nm{color:var(--text);font-weight:600;}
+.tbl .num{font-variant-numeric:tabular-nums;color:var(--text);font-weight:600;white-space:nowrap;}
+.pill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;}
+.pill.ok{background:var(--green-wash);color:var(--green);}
+.pill.warn{background:var(--amber-wash);color:var(--amber);}
+.pill.bad{background:var(--rose-wash);color:var(--rose);}
+.pill.dim{background:var(--bg-2);color:var(--text-dim);}
+.pill.gold{background:var(--gold-wash);color:var(--gold-light);}
+.pill.violet{background:var(--violet-wash);color:var(--violet);}
+.verdict{font-size:14px;color:var(--text-dim);line-height:1.6;}
+.verdict b{color:var(--text);}
+.verdict .g{color:var(--green);font-weight:700;} .verdict .r{color:var(--rose);font-weight:700;} .verdict .a{color:var(--amber);font-weight:700;}
+.loading{text-align:center;color:var(--text-faint);padding:50px 20px;font-size:14px;}
+.empty{text-align:center;color:var(--text-faint);padding:34px 20px;font-size:14px;background:var(--panel);border:1px dashed var(--border-2);border-radius:16px;}
+.note{font-size:12.5px;color:var(--text-faint);margin-top:10px;line-height:1.5;}
+.trend{display:flex;align-items:flex-end;gap:4px;height:130px;margin-top:14px;padding-top:16px;}
+.trend .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%;min-width:0;}
+.trend .val{font-size:10.5px;font-weight:700;color:var(--text);white-space:nowrap;}
+.trend .bar{width:100%;max-width:34px;background:linear-gradient(180deg,var(--gold),rgba(201,161,74,.3));border-radius:4px 4px 0 0;min-height:3px;}
+.trend .day{font-size:10px;color:var(--text-faint);white-space:nowrap;}
+.btn{min-height:44px;padding:10px 18px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--border-2);background:var(--panel);color:var(--text);display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#1a1a1a;}
+.btn.ghost{background:none;color:var(--text-dim);font-weight:600;}
+.btn:disabled{opacity:.5;cursor:default;}
+.chips{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{min-height:40px;padding:8px 14px;background:var(--panel);border:1px solid var(--border);border-radius:50px;color:var(--text-dim);font-size:13.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.chip b{color:var(--text);font-variant-numeric:tabular-nums;}
+.chip.on{background:var(--gold);border-color:var(--gold);color:#1a1a1a;font-weight:700;}
+.chip.on b{color:#1a1a1a;}
+.chip .n{display:inline-block;min-width:16px;height:16px;line-height:16px;text-align:center;border-radius:4px;background:var(--bg-2);color:var(--text-faint);font-size:10px;font-weight:700;}
+.chip.on .n{background:rgba(0,0,0,.2);color:#1a1a1a;}
+.sync-bar{height:3px;background:var(--bg-2);border-radius:50px;overflow:hidden;display:none;margin:0 0 12px;}
+.sync-bar i{display:block;height:100%;width:8%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:50px;transition:width .25s ease;}
+.field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--text-dim);min-width:0;}
+.field input,.field select{min-height:46px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;color-scheme:dark;width:100%;}
+.field select{-webkit-appearance:none;appearance:none;padding-right:32px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--gold);}
+.field.req > span::after{content:' *';color:var(--gold);}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fgrid .wide{grid-column:1/-1;}
+.seg{display:flex;gap:6px;flex-wrap:wrap;}
+.seg button{min-height:44px;padding:8px 14px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text-dim);font-size:14px;font-weight:600;cursor:pointer;flex:1 1 auto;}
+.seg button.on{background:var(--gold-wash);border-color:var(--gold);color:var(--gold-light);}
+.msg{font-size:14px;min-height:20px;}
+.msg.ok{color:var(--green);} .msg.bad{color:var(--rose);}
+
+/* ===== TODAY ===== */
+.q{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:16px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .15s;}
+.q:hover{border-color:var(--border-2);border-left-color:var(--gold);}
+.q .qn{font-family:'Fraunces',serif;font-size:34px;font-weight:700;line-height:1;min-width:58px;text-align:center;font-variant-numeric:tabular-nums;}
+.q .qt{flex:1;min-width:0;}
+.q .qt b{display:block;font-size:15.5px;color:var(--text);}
+.q .qt span{display:block;font-size:13px;color:var(--text-dim);margin-top:2px;}
+.q .go{color:var(--text-faint);font-size:20px;}
+.q.rose{border-left-color:var(--rose);} .q.rose .qn{color:var(--rose);}
+.q.green{border-left-color:var(--green);} .q.green .qn{color:var(--green);}
+.q.amber{border-left-color:var(--amber);} .q.amber .qn{color:var(--amber);}
+.q.violet{border-left-color:var(--violet);} .q.violet .qn{color:var(--violet);}
+.q.zero{opacity:.55;border-left-color:var(--border-2);} .q.zero .qn{color:var(--text-faint);}
+.appt{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bg-2);}
+.appt:last-child{border-bottom:none;}
+.appt .t{font-family:'Fraunces',serif;font-size:20px;font-weight:600;min-width:64px;font-variant-numeric:tabular-nums;}
+.appt .n{flex:1;min-width:0;} .appt .n b{display:block;color:var(--text);} .appt .n span{font-size:12.5px;color:var(--text-dim);}
+.appt a{min-height:40px;padding:0 14px;border-radius:50px;display:inline-flex;align-items:center;text-decoration:none;font-weight:700;font-size:13px;background:var(--gold);color:#1a1a1a;}
+
+/* ===== PATIENTS ===== */
+.ptools{position:sticky;top:0;z-index:6;background:var(--bg);padding:6px 0 10px;box-shadow:0 12px 14px -12px rgba(0,0,0,.9);}
+.search{width:100%;min-height:48px;padding:10px 14px 10px 42px;background:var(--panel);border:1px solid var(--border);border-radius:14px;color:var(--text);font-size:16px;color-scheme:dark;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%239a9aa8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center;}
+.search:focus{outline:none;border-color:var(--gold);}
+.pchips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.pchips::-webkit-scrollbar{display:none;}
+.pfilters{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px;}
+.pfilters select{min-height:42px;padding:8px 30px 8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;color-scheme:dark;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;flex:1;min-width:130px;}
+.psum{font-size:13px;color:var(--text-dim);margin:8px 2px 12px;} .psum b{color:var(--text);font-variant-numeric:tabular-nums;}
+.card{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:16px;margin-bottom:10px;overflow:hidden;}
+.card.s2{border-left-color:var(--amber);} .card.s3{border-left-color:var(--violet);} .card.s4{border-left-color:var(--green);} .card.closed{border-left-color:var(--border-2);opacity:.75;} .card.due{border-left-color:var(--rose);}
+.card.saving{border-color:var(--gold);}
+.chead{padding:14px 16px 12px;cursor:pointer;}
+.crow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.cname{font-weight:700;font-size:16.5px;color:var(--text);display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0;}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;border-radius:50px;padding:2px 8px;white-space:nowrap;}
+.tag.new{background:var(--gold);color:#1a1a1a;} .tag.book{background:var(--green);color:#1a1a1a;} .tag.due{color:var(--rose);border:1px solid rgba(251,113,133,.45);} .tag.reo{background:var(--green-wash);color:var(--green);border:1px solid rgba(74,222,128,.3);} .tag.ship{background:var(--violet-wash);color:var(--violet);}
+.cmeta{font-size:12.5px;color:var(--text-dim);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.cmeta .st{color:var(--gold-light);font-weight:600;}
+.cmeta .wait{font-weight:600;}
+.cacts{display:flex;gap:8px;margin-top:10px;}
+.cacts a,.cacts button{flex:1;min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:12px;text-decoration:none;font-weight:700;font-size:14px;cursor:pointer;}
+.cacts .call{background:var(--gold);color:#1a1a1a;border:1px solid var(--gold);}
+.cacts .wa{background:var(--green-wash);color:var(--green);border:1px solid rgba(74,222,128,.35);}
+.cacts .nophone{background:var(--rose-wash);color:var(--rose);border:1px solid rgba(251,113,133,.3);font-weight:600;font-size:13px;}
+.cacts svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+.cbody{display:none;padding:0 16px 16px;border-top:1px solid var(--bg-2);}
+.card.open .cbody{display:block;}
+.card.open .chead{background:var(--panel-2);}
+.say{background:var(--gold-wash);border:1px solid rgba(201,161,74,.25);border-radius:12px;padding:11px 13px;margin:14px 0 12px;font-size:13.5px;line-height:1.55;color:var(--text-dim);}
+.say .lab{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gold);background:rgba(201,161,74,.18);padding:3px 8px;border-radius:50px;margin-right:8px;vertical-align:1px;}
+.say .peek{display:block;margin-top:8px;background:none;border:none;padding:0;color:var(--gold);font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+.say pre{display:none;white-space:pre-wrap;font-family:inherit;margin-top:9px;padding:11px 13px;background:var(--panel-2);border-radius:9px;font-size:13px;line-height:1.6;color:var(--text-dim);}
+.say pre.open{display:block;}
+.wh{font-size:12px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:6px 0 8px;}
+.whats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+.whats button{min-height:48px;padding:8px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;line-height:1.2;}
+.whats button:hover{border-color:var(--border-2);background:var(--panel-2);}
+.whats button.on{background:var(--gold-wash);border-color:var(--gold);color:var(--gold-light);}
+.whats button.good{color:var(--green);} .whats button.close{color:var(--text-faint);}
+.whats button i{font-style:normal;font-size:16px;width:18px;text-align:center;}
+.ask{background:var(--panel-2);border:1px solid var(--border-2);border-radius:12px;padding:12px;margin-top:10px;display:none;}
+.ask.open{display:block;}
+.ask .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:8px;}
+.ask .field{flex:1;min-width:140px;}
+.cedit{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.cedit .wide{grid-column:1/-1;}
+.cfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;}
+.saved{font-size:13px;color:var(--green);min-height:18px;}
+.saved.bad{color:var(--rose);}
+.more{background:none;border:none;color:var(--text-faint);font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0;}
+.moreBox{display:none;margin-top:10px;} .moreBox.open{display:block;}
+.visits{margin-top:12px;font-size:12.5px;color:var(--text-dim);}
+.visits div{padding:6px 0;border-bottom:1px dashed var(--border);} .visits div:last-child{border-bottom:none;}
+
+/* ===== NEW PERSON ===== */
+.step{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px 20px;margin-bottom:14px;}
+.step h4{font-family:'Fraunces',serif;font-size:19px;font-weight:600;margin-bottom:4px;}
+.step .hint{font-size:13px;color:var(--text-dim);margin-bottom:14px;}
+.step.done{border-color:rgba(74,222,128,.35);}
+.step.off{opacity:.5;pointer-events:none;}
+.found{background:var(--amber-wash);border:1px solid rgba(251,191,36,.35);border-radius:12px;padding:10px 13px;font-size:13.5px;color:var(--amber);margin-top:8px;display:none;}
+.found.open{display:block;}
+.found button{margin-top:6px;}
+
+/* ===== HEALTH ===== */
+.doors{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.door{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px 18px;}
+.door .dn{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
+.door .dn b{font-size:15px;color:var(--text);}
+.door .dv{font-family:'Fraunces',serif;font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;}
+.door .ds{font-size:12.5px;color:var(--text-dim);margin-top:6px;line-height:1.5;}
+.door .dw{font-size:13px;color:var(--text-dim);margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);line-height:1.5;}
+.door .dw b{color:var(--text);}
+.opsbox{background:rgba(139,123,216,.08);border:1px solid rgba(139,123,216,.35);border-radius:16px;padding:16px 18px;margin-bottom:16px;}
+.opsbox h3{color:var(--ops);}
+.opscard{border-left:3px solid var(--ops);padding:10px 14px;margin-bottom:10px;background:var(--panel);border-radius:0 12px 12px 0;}
+.opscard b{display:block;color:var(--text);font-size:14px;}
+.opscard .n{font-family:'Fraunces',serif;font-size:26px;font-weight:700;line-height:1.1;margin:4px 0;}
+.opscard .s{font-size:13px;color:var(--text-dim);line-height:1.5;}
+.opscard .d{font-size:12.5px;color:var(--gold);margin-top:6px;font-weight:600;}
+.opscard.good{border-left-color:var(--green);} .opscard.good .n{color:var(--green);}
+.opscard.warn{border-left-color:var(--rose);} .opscard.warn .n{color:var(--rose);}
+.fold summary{cursor:pointer;list-style:none;font-size:13px;color:var(--gold);font-weight:600;padding:6px 0;}
+.fold summary::-webkit-details-marker{display:none;}
+.fold[open] summary{margin-bottom:10px;}
+
+/* ===== BOTTOM NAV (phone) ===== */
+#nav{display:none;}
+.foot{text-align:center;color:var(--text-faint);font-size:12px;margin-top:40px;}
+.foot .p{color:var(--gold);}
+
+@media (max-width:780px){
+  #app{padding:12px 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 26px);}
+  .brand .logo{font-size:24px;}
+  .brand .who{display:none;}
+  .tabs{display:none;}
+  #nav{display:flex;position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:rgba(17,17,20,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--border);z-index:40;}
+  #nav button{flex:1;min-width:0;background:none;border:none;color:var(--text-faint);font-size:10.5px;font-weight:700;letter-spacing:.2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;position:relative;padding:6px 2px;}
+  #nav button svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  #nav button.active{color:var(--gold);}
+  #nav button.add svg{width:26px;height:26px;}
+  #nav .badge{position:absolute;top:4px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:50px;background:var(--rose);color:#fff;font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  #nav .badge.zero{display:none;}
+  .stats{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .stat{padding:14px 14px;}
+  .stat .v{font-size:clamp(22px,7vw,30px);}
+  .grid2,.doors{grid-template-columns:1fr;}
+  .panel{padding:16px 15px;overflow-x:auto;}
+  .tbl th,.tbl td{padding:9px 6px;font-size:12.5px;}
+  .tbl .hide-m{display:none;}
+  .trend{gap:3px;height:112px;} .trend .val{font-size:9.5px;} .trend .day{font-size:9px;}
+  .h1{font-size:23px;}
+  .q{padding:14px 14px;} .q .qn{font-size:30px;min-width:50px;}
+  .fgrid{grid-template-columns:1fr;}
+  .cedit{grid-template-columns:1fr;}
+  .whats{grid-template-columns:1fr 1fr;}
+  .whats button{min-height:52px;font-size:14px;}
+  .pfilters select{min-width:0;}
+  .cacts a,.cacts button{min-height:50px;font-size:15px;}
+  .ptools{top:0;}
+}
+@media (max-width:380px){ .whats{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-logo">Pulse<span class="dot">.</span></div>
+    <div class="gate-sub">Dr. Madhu Sudan · the clinic desk</div>
+    <input type="password" id="pass" placeholder="Access key" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">Open →</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="top">
+    <div class="brand">
+      <div class="logo">Pulse<span class="dot">.</span></div>
+      <div class="who">Dr. Madhu Sudan</div>
+    </div>
+    <div class="top-right">
+      <div class="me-wrap">
+        <button class="me-btn" onclick="toggleMe()"><span class="beat" id="beat"></span><span id="meLabel">Who am I?</span> ▾</button>
+        <div class="me-menu" id="meMenu">
+          <div class="h">I am</div>
+          <div id="meList"></div>
+          <div class="sep"></div>
+          <button onclick="syncDesk(true);toggleMe(false)">↻ Check for new people</button>
+          <button onclick="signOut()">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- desktop tabs -->
+  <div class="tabs" id="tabs"></div>
+
+  <div class="sync-bar" id="syncBar"><i></i></div>
+  <div id="content"><div class="loading">Opening…</div></div>
+
+  <div class="foot">Powered by <span class="p">Pulse</span> · Peepoye Network</div>
+</div>
+
+<!-- phone nav -->
+<nav id="nav"></nav>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let DATA = null;            // /api/data: stats, recent, revenue, exec, content2, ops, health?
+let DESK = null;            // /api/desk: leads
+let TEAM = [];              // people who can own a patient
+let STATUSES = [];          // desk_statuses, phase by phase
+let VISITS = [];            // clinic visits, when the table exists
+let VISITS_ON = false;      // true once the server says the visits table is live
+let OPS = null;             // ops_intel, our key only
+let TAB = 'today';
+let ME = localStorage.getItem('pulse_me') || '';         // team id
+let MY_CLINIC = localStorage.getItem('pulse_clinic') || '';
+let LAST_SYNC = 0, SYNCING = false, BAR_TIMER = null;
+let OPEN_CARD = null;       // id of the expanded patient card
+let P = { q:'', queue:'', phase:'', door:'all', who:'mine', since:'all' };   // patients filters
+let HWIN = 'month';         // health window: month | last | total
+const PHASE_NAMES = {1:'Consultation', 2:'Medicine', 3:'Delivery', 4:'Reorder'};
+const PHASE_HELP  = {1:'Getting him to a paid consultation', 2:'Getting the medicine paid for', 3:'Getting it sent and delivered', 4:'Bringing him back for the next course'};
+const CAME_FROM_LABEL = {'Consultation page':'Consult page','Walk-in':'Walked in','Phone enquiry':'Telephoned','Referral':'Referred','Modak page':'Modak page','Assessment':'Assessment','Routine':'Routine page'};
+const CLINICS = ['Delhi clinic','Gurgaon clinic'];
+const PACKS = [
+  {key:'Modak trial',  label:'Modak trial (7 days)',   days:7,  due:7,  price:1490},
+  {key:'Modak 30-day', label:'Modak 30 days',          days:30, due:25, price:5550},
+  {key:'Modak 90-day', label:'Modak 90 days',          days:90, due:85, price:15000},
+  {key:'Other',        label:'Other medicine',         days:30, due:25, price:null}
+];
+
+const ICON = {
+  today:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18M8 15l2.5 2.5L16 12"/></svg>',
+  patients:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5c3 0 6 1.7 6 5.5"/></svg>',
+  add:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 8v8M8 12h8"/></svg>',
+  health:'<svg viewBox="0 0 24 24"><path d="M3 12h4l2.5-7 4 14 2.5-7h5"/></svg>',
+  content:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>',
+  phone:'<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
+  wa:'<svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.8A8.5 8.5 0 1 1 8.4 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1a4 4 0 0 1-2-2l1-1-1-2z"/></svg>'
+};
+const TABS = [
+  {id:'today',    label:'Today',    icon:ICON.today},
+  {id:'patients', label:'Patients', icon:ICON.patients},
+  {id:'add',      label:'New',      icon:ICON.add, cls:'add'},
+  {id:'health',   label:'Health',   icon:ICON.health},
+  {id:'content',  label:'Content',  icon:ICON.content}
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SMALL HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtINR = n => '₹' + (Number(n)||0).toLocaleString('en-IN');
+const fmtK = n => { n=Number(n)||0; return n>=10000000 ? (n/10000000).toFixed(2)+' Cr' : n>=100000 ? (n/100000).toFixed(1)+' L' : n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+'K' : String(n); };
+const todayISO = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const plusDays = (n, from) => { const d = from ? new Date(from+'T00:00:00') : new Date(); d.setDate(d.getDate()+n); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const dOnly = iso => iso ? String(iso).slice(0,10) : '';
+const niceDate = iso => { if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); };
+const niceDateY = iso => { if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); };
+const niceTime = iso => { const d=new Date(iso); return d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); };
+const daysSince = iso => iso ? Math.floor((Date.now()-new Date(iso).getTime())/86400000) : 0;
+const daysUntil = ymd => ymd ? Math.round((new Date(ymd+'T00:00:00').getTime()-new Date(todayISO()+'T00:00:00').getTime())/86400000) : null;
+function relDay(ymd){ const n=daysUntil(ymd); if(n===null) return ''; if(n===0) return 'today'; if(n===1) return 'tomorrow'; if(n===-1) return 'yesterday'; if(n<0) return Math.abs(n)+' days ago'; return 'in '+n+' days'; }
+function pass(){ return localStorage.getItem('pulse_p') || sessionStorage.getItem('pulse_p') || ''; }
+function meName(){ const t=TEAM.find(t=>t.id===ME); return t?t.name:''; }
+function ownerName(l){ const t=TEAM.find(t=>t.id===l.assigned_to); return t?t.name:''; }
+function statusMeta(code){ return STATUSES.find(s=>s.code===code)||null; }
+function statusLabel(code){ const m=statusMeta(code); return m?m.label:(code||''); }
+function isClosed(l){ const m=statusMeta(l.status); return !!(m&&m.closes); }
+function firstName(l){ return ((l.name||'').trim().split(/\s+/)[0])||'there'; }
+function waPhone(l){ const p=(l.phone||'').replace(/[^0-9]/g,''); if(p.length<10) return ''; return (p.length===10?'91':'')+p; }
+function isMine(l){ return !ME || l.assigned_to===ME || !l.assigned_to; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOGIN, SHELL, TABS
+// ─────────────────────────────────────────────────────────────────────────────
+function login(){
+  const p = $('pass').value;
+  fetch('/api/data',{headers:{'x-pulse-pass':p}})
+    .then(r=>{ if(!r.ok) throw new Error('bad'); return r.json(); })
+    .then(d=>{ localStorage.setItem('pulse_p',p); boot(d); })
+    .catch(()=>{ $('gateErr').textContent='Wrong access key. Try again.'; });
+}
+function signOut(){ localStorage.removeItem('pulse_p'); sessionStorage.removeItem('pulse_p'); location.reload(); }
+function boot(d){
+  DATA = d;
+  $('gate').style.display='none';
+  $('app').style.display='block';
+  buildTabs();
+  renderMe();
+  // the list comes first, the sync runs behind it
+  loadDesk(()=>{ render(); if(Date.now()-LAST_SYNC>5*60*1000) syncDesk(false); });
+  render();
+}
+window.addEventListener('load',()=>{
+  const p = pass();
+  if(!p) return;
+  fetch('/api/data',{headers:{'x-pulse-pass':p}}).then(r=>r.ok?r.json():Promise.reject()).then(boot).catch(()=>{});
+});
+document.addEventListener('click',e=>{ if(!e.target.closest('.me-wrap')) toggleMe(false); });
+function toggleMe(on){ const m=$('meMenu'); m.classList.toggle('open', on===undefined ? !m.classList.contains('open') : on); }
+function renderMe(){
+  $('meLabel').textContent = ME && meName() ? meName() : 'Who am I?';
+  $('meList').innerHTML = TEAM.map(t=>`<button class="${t.id===ME?'on':''}" onclick="setMe('${t.id}')">${esc(t.name)}</button>`).join('')
+    + `<button class="${!ME?'on':''}" onclick="setMe('')">Everyone (no name)</button>`;
+}
+function setMe(id){ ME=id; localStorage.setItem('pulse_me',id); renderMe(); toggleMe(false); render(); }
+function buildTabs(){
+  const mk = t => `<button class="tab ${t.cls||''} ${TAB===t.id?'active':''}" data-tab="${t.id}" onclick="setTab('${t.id}')">${t.icon}<span>${t.label}</span><span class="badge zero" id="badge-${t.id}"></span></button>`;
+  $('tabs').innerHTML = TABS.map(mk).join('');
+  $('nav').innerHTML = TABS.map(t=>`<button class="${t.cls||''} ${TAB===t.id?'active':''}" data-tab="${t.id}" onclick="setTab('${t.id}')">${t.icon}<span>${t.label}</span><span class="badge zero" id="nbadge-${t.id}"></span></button>`).join('');
+}
+function setTab(t){
+  TAB=t;
+  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
+  window.scrollTo({top:0});
+  render();
+}
+function setBadge(n){
+  ['badge-today','nbadge-today'].forEach(id=>{ const el=$(id); if(!el) return; el.textContent=n; el.classList.toggle('zero', !n); });
+}
+function render(){
+  if(TAB==='today')    return renderToday();
+  if(TAB==='patients') return renderPatients();
+  if(TAB==='add')      return renderAdd();
+  if(TAB==='health')   return renderHealth();
+  if(TAB==='content')  return renderContent();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DESK LOAD + SYNC
+// ─────────────────────────────────────────────────────────────────────────────
+function barStart(){ const b=$('syncBar'), i=b.querySelector('i'); let p=8; i.style.width=p+'%'; b.style.display='block'; clearInterval(BAR_TIMER); BAR_TIMER=setInterval(()=>{ p+=(92-p)*.06; i.style.width=p+'%'; },250); }
+function barDone(){ clearInterval(BAR_TIMER); const b=$('syncBar'), i=b.querySelector('i'); i.style.width='100%'; setTimeout(()=>{ b.style.display='none'; i.style.width='8%'; },400); }
+function loadDesk(then){
+  fetch('/api/desk',{headers:{'x-pulse-pass':pass()}}).then(r=>r.json()).then(d=>{
+    DESK = d.leads||[];
+    if(d.team&&d.team.length) TEAM=d.team;
+    if(d.statuses&&d.statuses.length) STATUSES=d.statuses;
+    VISITS = d.visits||[]; VISITS_ON = !!d.visits_on;
+    renderMe();
+    computeBadge();
+    if(then) then(); else render();
+  }).catch(()=>{ if(DESK===null) $('content').innerHTML='<div class="loading">Could not open the list. Check the internet and try again.</div>'; });
+}
+function syncDesk(fromButton){
+  if(SYNCING) return;
+  SYNCING=true; $('beat').classList.add('busy'); barStart();
+  fetch('/api/desk',{method:'POST',headers:{'x-pulse-pass':pass(),'Content-Type':'application/json'},body:JSON.stringify({action:'sync'})})
+    .catch(()=>{}).then(()=>{ LAST_SYNC=Date.now(); SYNCING=false; $('beat').classList.remove('busy'); barDone(); loadDesk(); });
+}
+function post(body){
+  return fetch('/api/desk',{method:'POST',headers:{'x-pulse-pass':pass(),'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE QUEUES. One definition, used by Today, by the Patients chips, and by the badge.
+// ─────────────────────────────────────────────────────────────────────────────
+function needsBooking(l){ return ['p1_fees_paid','p1_appt_pending'].includes(l.status) && !l.appointment_at; }
+function isNewUntouched(l){ return l.status==='p1_new' && !isClosed(l) && !l.next_followup; }
+function isToday(iso){ if(!iso) return false; const d=new Date(iso), n=new Date(); return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate(); }
+function callDue(l){ return !!(l.next_followup && l.next_followup<=todayISO() && !isClosed(l) && l.phase!==4); }
+function reorderDue(l){ return l.phase===4 && !isClosed(l) && !!l.next_followup && l.next_followup<=plusDays(5); }
+function toShip(l){ return ['p3_to_dispatch','p3_dispatched','p3_pending_delivery'].includes(l.status); }
+function apptToday(l){ return !!l.appointment_at && isToday(l.appointment_at); }
+function apptUpcoming(l){ if(!l.appointment_at) return false; const t=new Date(l.appointment_at).getTime(); return t>=Date.now()-3600000 && t<=Date.now()+7*86400000; }
+const QUEUES = [
+  {id:'fresh',  test:l=>isNewUntouched(l)&&daysSince(l.first_seen)<=7, cls:'rose',   title:'New people, not yet called', why:'Came in this week. The first call is worth the most when it is quick.', empty:'Everyone who came in this week has been called.'},
+  {id:'book',   test:needsBooking,                                   cls:'green',  title:'Paid, waiting for a slot',    why:'He has paid for a consultation and has no appointment yet. Book him today.', empty:'Every paid consultation has a slot.'},
+  {id:'due',    test:callDue,                                        cls:'amber',  title:'Calls due',                   why:'A call date was set and it is today or already past.', empty:'No calls due. You are caught up.'},
+  {id:'ship',   test:toShip,                                         cls:'violet', title:'Paid, not yet delivered',     why:'Medicine is paid for. Send it, then fill the delivery date so the reorder clock starts.', empty:'Nothing waiting to be sent.'},
+  {id:'reorder',test:reorderDue,                                     cls:'green',  title:'Reorders due this week',      why:'His course is about to run out. Ask how he feels, then offer the next pack.', empty:'No reorders due this week.'},
+  {id:'old',    test:l=>isNewUntouched(l)&&daysSince(l.first_seen)>7, cls:'',      title:'Older people never called',   why:'Came in more than a week ago and nobody has rung yet. Work through a few each day.', empty:'Nobody old is waiting.'}
+];
+function queueRows(q, mineOnly){ if(!DESK) return []; const Q=QUEUES.find(x=>x.id===q); return DESK.filter(l=>Q.test(l)&&(!mineOnly||isMine(l))); }
+function computeBadge(){
+  if(!DESK) return;
+  const n = ['fresh','book','due','ship','reorder'].reduce((s,q)=>s+queueRows(q,true).length,0);
+  setBadge(n);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TODAY
+// ─────────────────────────────────────────────────────────────────────────────
+let TODAY_ALL = false;
+function renderToday(){
+  const el=$('content');
+  if(DESK===null){ el.innerHTML='<div class="loading">Opening the list…</div>'; return; }
+  const mine = !TODAY_ALL && !!ME;
+  const rows = QUEUES.map(q=>({q, rows:queueRows(q.id, mine)}));
+  const total = rows.filter(r=>r.q.id!=='old').reduce((s,r)=>s+r.rows.length,0);
+  const appts = DESK.filter(l=>apptUpcoming(l)&&(!mine||isMine(l))).sort((a,b)=>new Date(a.appointment_at)-new Date(b.appointment_at));
+  const who = mine ? `${esc(meName())}'s list` : 'Everyone';
+  el.innerHTML = `
+    <div class="head">
+      <div><div class="h1">${total ? total+' things to do today' : 'Nothing waiting'}</div>
+        <div class="sub">${mine?`Showing ${who}, plus people nobody owns yet.`:'Showing everyone. Pick your name at the top to see only your list.'}</div></div>
+      ${ME?`<button class="btn ghost" onclick="TODAY_ALL=!TODAY_ALL;renderToday()">${mine?'Show everyone':'Show only mine'}</button>`:''}
+    </div>
+    ${rows.map(({q,rows})=>`
+      <div class="q ${q.cls} ${rows.length?'':'zero'}" onclick="openQueue('${q.id}')">
+        <div class="qn">${rows.length}</div>
+        <div class="qt"><b>${q.title}</b><span>${rows.length?q.why:q.empty}</span></div>
+        <div class="go">›</div>
+      </div>`).join('')}
+    <div class="sec">Appointments, next 7 days</div>
+    <div class="panel">
+      ${appts.length ? appts.map(l=>`
+        <div class="appt">
+          <div class="t">${niceTime(l.appointment_at)}</div>
+          <div class="n"><b>${esc(l.name||'(no name)')}</b><span>${isToday(l.appointment_at)?'Today':niceDate(l.appointment_at)} · ${esc(l.appointment_mode||'Where not set')}${l.came_for?' · '+esc(l.came_for):''}</span></div>
+          ${l.phone?`<a href="tel:+${waPhone(l)}">Call</a>`:''}
+        </div>`).join('')
+      : '<div class="loading" style="padding:20px">No appointments booked for the next 7 days. Book a slot on a patient card and it lands here.</div>'}
+    </div>
+    <div class="note">Numbers refresh on their own every five minutes. To check for new people right now, open your name at the top.</div>`;
+}
+function openQueue(q){ P.queue=q; P.phase=''; P.q=''; P.who = (!TODAY_ALL && ME) ? 'mine' : 'all'; setTab('patients'); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE PLAYBOOK. What to say on the phone, and the WhatsApp message already typed.
+// Wording is a DRAFT until Manish or Dr. Madhu approves it. Nothing claims a result.
+// ─────────────────────────────────────────────────────────────────────────────
+const CLINIC = "Dr. Madhu Sudan's clinic";
+const PAY_CONSULT = 'https://drmadhusudan.com/appointment';
+const PAY_MEDICINE = 'https://drmadhusudan.com/modak';
+function sign(l){ return ownerName(l) ? '' : `\n\n${CLINIC}`; }
+function playbook(l){
+  const n=firstName(l), src=l.came_from||'', want=l.came_for?` about ${l.came_for.toLowerCase()}`:'';
+  const hi=`Hello ${n}, this is ${ownerName(l)||'the team'} from ${CLINIC}.`;
+  let say='', msg='';
+  switch(l.status){
+    case 'p1_new':
+      if(src==='Assessment'){ say='He filled the assessment, so he already told you his problem. Open with his result, not with a price.'; msg=`${hi} You completed the wellness assessment with us and I have your result here. Is now a good time to talk through what it means for you?`; }
+      else if(src==='Modak page'){ say='He was reading the Modak page. He is close. Ask what he wants to know before he buys.'; msg=`${hi} I saw you were looking at Modak on our website. Would you like me to explain how the course works and what it costs?`; }
+      else if(src==='Consultation page'){ say='He opened the consultation page and did not pay. Find out what stopped him.'; msg=`${hi} I saw you started booking a consultation with Dr. Madhu. Shall I hold a slot for you?`; }
+      else { say='He came to you directly, so he is warm. Ask plainly what he needs help with.'; msg=`${hi} Thank you for getting in touch${want}. What would you like help with first?`; }
+      break;
+    case 'p1_callback': say='He asked you to ring back. Keep it to one question: is now a good time.'; msg=`${hi} You asked me to call back. Is this a good time, or shall I try later today?`; break;
+    case 'p1_followup': say='He has not decided yet. Do not repeat the pitch, ask what is holding him back.'; msg=`${hi} Just checking in${want}. Is there anything you want to know before you book the consultation?`; break;
+    case 'p1_fees_pending': say='He said yes but has not paid. Send the link in the same message, do not make him ask.'; msg=`${hi} Your consultation with Dr. Madhu is ready to book. You can pay here and I will confirm your slot straight away: ${PAY_CONSULT}`; break;
+    case 'p1_fees_paid': say='He has paid and has no slot. This is urgent, book him today.'; msg=`${hi} Your consultation payment is received, thank you. Which day suits you this week? I will book Dr. Madhu for you.`; break;
+    case 'p1_appt_pending': say='Slot is set. Confirm the time so he turns up.'; msg=`${hi} Confirming your consultation with Dr. Madhu. Please reply YES so I know the time works for you.`; break;
+    case 'p1_appt_done': say='He has seen the doctor. Now move him to the medicine, gently.'; msg=`${hi} I hope your consultation with Dr. Madhu went well. Would you like me to explain the course he suggested for you?`; break;
+    case 'p1_not_interested': say='Closed. Leave him alone unless he comes back on his own.'; msg=`${hi} No problem at all. If you ever want to talk to Dr. Madhu, we are here.`; break;
+    case 'p2_payment_pending': say='The doctor has already advised him. He is one payment away. Send the link.'; msg=`${hi} Dr. Madhu has prepared your course. You can pay here and we will pack it for you: ${PAY_MEDICINE}`; break;
+    case 'p2_followup': say='He is thinking about the money. Ask which pack suits him rather than pushing the biggest one.'; msg=`${hi} Just following up on the course Dr. Madhu suggested. Would you like to start with the trial pack or go straight for the full course?`; break;
+    case 'p2_callback': say='He asked you to ring back about the medicine. One question only.'; msg=`${hi} You asked me to call about your course. Is this a good time?`; break;
+    case 'p2_paid': say='Paid. Tell him it is moving, then get it dispatched.'; msg=`${hi} Payment received, thank you. We are packing your order now and I will send you the tracking as soon as it leaves.`; break;
+    case 'p2_not_interested': say='He has stepped back from the medicine. Do not chase.'; msg=`${hi} Understood. If you change your mind, your consultation notes are safe with us.`; break;
+    case 'p3_to_dispatch': say='Paid but still sitting here. Every day of silence costs trust.'; msg=`${hi} Your order is packed and going out shortly. I will send the tracking details today.`; break;
+    case 'p3_dispatched': say='On its way. Give him the tracking so he stops wondering.'; msg=`${hi} Good news, your ${l.bought||'medicine'} has been dispatched. It should reach you in a few days.`; break;
+    case 'p3_pending_delivery': say='The courier is late or he has not confirmed. Check before he complains.'; msg=`${hi} Just checking, has your order reached you yet?`; break;
+    case 'p3_delivered': say='Delivered. Fill in the delivery date, that is what starts his reorder clock.'; msg=`${hi} I can see your order has been delivered. Please start the course as Dr. Madhu explained, and message me any time if you have a question.`; break;
+    case 'p4_reorder_due':
+      if(/trial/i.test(l.bought||'')){ say='He took the TRIAL pack and it is running out. Ask how he feels first, then offer the full course.'; msg=`${hi} Your trial pack should be finishing around now. How have you been feeling on it? Dr. Madhu usually suggests continuing for a full course to see the real benefit. Shall I get your next pack ready?`; }
+      else { say='His course is running out. Ask how he is doing, then offer the refill.'; msg=`${hi} Your course should be finishing around now. How have you been feeling? Shall I get your next pack ready so you do not have a gap?`; }
+      break;
+    case 'p4_callback': say='He asked you to ring back about the refill.'; msg=`${hi} You asked me to call about your next pack. Is this a good time?`; break;
+    case 'p4_followup': say='He has not reordered yet. Ask about him, not about the sale.'; msg=`${hi} Just checking in on how you are doing since your course. Anything you want to ask Dr. Madhu?`; break;
+    case 'p4_appt_booked': say='Follow-up appointment is set. Confirm it.'; msg=`${hi} Confirming your follow-up with Dr. Madhu. Please reply YES if the time works.`; break;
+    case 'p4_appt_done': say='He has seen the doctor again. Ask for the reorder now, while it is fresh.'; msg=`${hi} I hope the follow-up with Dr. Madhu went well. Shall I prepare the course he suggested?`; break;
+    case 'p4_payment_pending': say='He said yes to the refill and has not paid. Send the link.'; msg=`${hi} Your next pack is ready. You can pay here and we will send it out: ${PAY_MEDICINE}`; break;
+    case 'p4_paid': say='Refill paid. Get it dispatched.'; msg=`${hi} Payment received, thank you. Your next pack is being packed now.`; break;
+    case 'p4_not_interested': say='He does not want a refill. Close it and leave the door open.'; msg=`${hi} Understood, thank you for letting me know. We are here whenever you need us.`; break;
+    default: say='No script for this one yet. Ask how he is doing and what he needs.'; msg=`${hi} Just checking in. Is there anything we can help you with?`;
+  }
+  return {say, msg: msg+sign(l)};
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHAT HAPPENED. The team taps what happened on the call; the system sets the
+// status, the next call date and the phase. Nobody has to read 24 statuses.
+//   status: the code to set       days: next call in N days (null keeps, 0 clears)
+//   ask: 'date' | 'appt' | 'ship' | 'delivered' | 'visit'   opens a small box first
+// ─────────────────────────────────────────────────────────────────────────────
+const WHAT = {
+  1: [
+    {l:'Did not pick up',       i:'📵', status:'p1_callback',      days:1},
+    {l:'Call back later',       i:'🕒', status:'p1_callback',      ask:'date'},
+    {l:'Thinking about it',     i:'💭', status:'p1_followup',      days:3},
+    {l:'Will pay, sent link',   i:'🔗', status:'p1_fees_pending',  days:1},
+    {l:'Paid the consultation', i:'✅', status:'p1_fees_paid',     days:0, good:1, ask:'paidhow'},
+    {l:'Slot booked',           i:'📅', status:'p1_appt_pending',  ask:'appt', good:1},
+    {l:'Seen the doctor',       i:'🩺', status:'p1_appt_done',     ask:'afterdoc', good:1},
+    {l:'Not interested',        i:'✖', status:'p1_not_interested', days:0, close:1}
+  ],
+  2: [
+    {l:'Did not pick up',       i:'📵', status:'p2_callback',      days:1},
+    {l:'Call back later',       i:'🕒', status:'p2_callback',      ask:'date'},
+    {l:'Thinking about it',     i:'💭', status:'p2_followup',      days:3},
+    {l:'Sent the payment link', i:'🔗', status:'p2_payment_pending', days:1},
+    {l:'Paid online',           i:'✅', status:'p3_to_dispatch',   days:0, good:1},
+    {l:'Bought at the clinic',  i:'🏥', ask:'visit', good:1},
+    {l:'Not interested',        i:'✖', status:'p2_not_interested', days:0, close:1}
+  ],
+  3: [
+    {l:'Sent it (dispatched)',  i:'📦', status:'p3_dispatched',    ask:'ship'},
+    {l:'Delivered',             i:'🏠', ask:'delivered', good:1},
+    {l:'Courier delayed',       i:'⏳', status:'p3_pending_delivery', days:2},
+    {l:'Did not pick up',       i:'📵', days:1}
+  ],
+  4: [
+    {l:'Did not pick up',       i:'📵', status:'p4_callback',      days:1},
+    {l:'Call back later',       i:'🕒', status:'p4_callback',      ask:'date'},
+    {l:'Wants next pack, sent link', i:'🔗', status:'p4_payment_pending', days:1, good:1},
+    {l:'Paid online',           i:'✅', status:'p3_to_dispatch',   days:0, good:1},
+    {l:'Bought at the clinic',  i:'🏥', ask:'visit', good:1},
+    {l:'Wants to see doctor first', i:'🩺', status:'p4_appt_booked', ask:'appt'},
+    {l:'Not now, ask later',    i:'💤', status:'p4_followup',      days:14},
+    {l:'Stopped the medicine',  i:'✖', status:'p4_not_interested', days:0, close:1}
+  ]
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATIENTS
+// ─────────────────────────────────────────────────────────────────────────────
+function baseMatch(l){
+  if(P.door!=='all'){
+    if(P.door==='bmodak'){ if(!(l.bought||'').includes('Modak')) return false; }
+    else if(P.door==='b497'){ if(!(l.bought||'').includes('organic 497')) return false; }
+    else if(P.door==='b499'){ if(!(l.bought||'').includes('ads 499')) return false; }
+    else if(P.door==='clinic-delhi'){ if(l.clinic!=='Delhi clinic') return false; }
+    else if(P.door==='clinic-ggn'){ if(l.clinic!=='Gurgaon clinic') return false; }
+    else if(l.came_from!==P.door) return false;
+  }
+  if(P.since!=='all'){ if(!l.first_seen) return false; if(daysSince(l.first_seen)>Number(P.since)) return false; }
+  if(P.who==='mine'){ if(ME && !isMine(l)) return false; }
+  else if(P.who==='none'){ if(l.assigned_to) return false; }
+  else if(P.who!=='all'){ if(l.assigned_to!==P.who) return false; }
+  if(P.q){ const q=P.q.toLowerCase(); if(!((l.name||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.phone||'').includes(q))) return false; }
+  return true;
+}
+function viewMatch(l){
+  if(P.queue){ const Q=QUEUES.find(x=>x.id===P.queue); return Q.test(l); }
+  if(P.phase==='closed') return isClosed(l);
+  if(P.phase) return l.phase===Number(P.phase) && !isClosed(l);
+  return true;
+}
+function renderPatients(){
+  const el=$('content');
+  if(DESK===null){ el.innerHTML='<div class="loading">Opening the list…</div>'; return; }
+  const base = DESK.filter(baseMatch);
+  const cnt = {};
+  QUEUES.forEach(Q=>cnt[Q.id]=base.filter(Q.test).length);
+  [1,2,3,4].forEach(p=>cnt['p'+p]=base.filter(l=>l.phase===p&&!isClosed(l)).length);
+  cnt.closed=base.filter(isClosed).length; cnt.all=base.length;
+  const chip=(on,label,fn,n,ph)=>`<button class="chip ${on?'on':''}" onclick="${fn}">${ph?`<span class="n">${ph}</span>`:''}${label} <b>${n}</b></button>`;
+  el.innerHTML = `
+    <div class="ptools">
+      <input class="search" type="search" placeholder="Search a name or phone number" value="${esc(P.q)}" oninput="P.q=this.value;paintList()">
+      <div class="pchips">
+        ${chip(!P.queue&&!P.phase,'Everyone',"P.queue='';P.phase='';renderPatients()",cnt.all)}
+        ${chip(P.queue==='fresh','New',"setQ('fresh')",cnt.fresh)}
+        ${chip(P.queue==='book','To book',"setQ('book')",cnt.book)}
+        ${chip(P.queue==='due','Calls due',"setQ('due')",cnt.due)}
+        ${chip(P.queue==='ship','To send',"setQ('ship')",cnt.ship)}
+        ${chip(P.queue==='reorder','Reorders',"setQ('reorder')",cnt.reorder)}
+        ${[1,2,3,4].map(p=>chip(P.phase===String(p),PHASE_NAMES[p],`setPh('${p}')`,cnt['p'+p],p)).join('')}
+        ${chip(P.phase==='closed','Closed',"setPh('closed')",cnt.closed)}
+      </div>
+    </div>
+    <div class="pfilters">
+      <select onchange="P.who=this.value;renderPatients()">
+        ${ME?`<option value="mine" ${P.who==='mine'?'selected':''}>Mine + unowned</option>`:''}
+        <option value="all" ${P.who==='all'?'selected':''}>Everyone's</option>
+        ${TEAM.map(t=>`<option value="${t.id}" ${P.who===t.id?'selected':''}>${esc(t.name)}'s</option>`).join('')}
+        <option value="none" ${P.who==='none'?'selected':''}>Nobody's yet</option>
+      </select>
+      <select onchange="P.door=this.value;renderPatients()">
+        <option value="all">Every door</option>
+        <optgroup label="Came from">
+          ${['Assessment','Consultation page','Modak page','Walk-in','Phone enquiry','Referral'].map(d=>`<option value="${d}" ${P.door===d?'selected':''}>${CAME_FROM_LABEL[d]||d}</option>`).join('')}
+        </optgroup>
+        <optgroup label="Clinic">
+          <option value="clinic-delhi" ${P.door==='clinic-delhi'?'selected':''}>Delhi clinic</option>
+          <option value="clinic-ggn" ${P.door==='clinic-ggn'?'selected':''}>Gurgaon clinic</option>
+        </optgroup>
+        <optgroup label="Bought">
+          <option value="bmodak" ${P.door==='bmodak'?'selected':''}>Bought Modak</option>
+          <option value="b497" ${P.door==='b497'?'selected':''}>Consult ₹497</option>
+          <option value="b499" ${P.door==='b499'?'selected':''}>Consult ₹499</option>
+        </optgroup>
+      </select>
+      <select onchange="P.since=this.value;renderPatients()">
+        <option value="all">Any date</option>
+        <option value="1" ${P.since==='1'?'selected':''}>Last 24 hours</option>
+        <option value="7" ${P.since==='7'?'selected':''}>Last 7 days</option>
+        <option value="30" ${P.since==='30'?'selected':''}>Last 30 days</option>
+      </select>
+    </div>
+    <div class="psum" id="psum"></div>
+    <div id="plist"></div>`;
+  paintList();
+}
+function setQ(q){ P.queue=(P.queue===q?'':q); P.phase=''; renderPatients(); }
+function setPh(p){ P.phase=(P.phase===p?'':p); P.queue=''; renderPatients(); }
+function paintList(){
+  const list=$('plist'); if(!list) return;
+  const rows = DESK.filter(l=>baseMatch(l)&&viewMatch(l));
+  const paid = rows.filter(l=>Number(l.total_paid)>0).length;
+  const money = rows.reduce((s,l)=>s+(Number(l.total_paid)||0),0);
+  const Q = P.queue ? QUEUES.find(x=>x.id===P.queue) : null;
+  $('psum').innerHTML = `<b>${rows.length}</b> people · <b>${paid}</b> have paid · <b>${fmtINR(money)}</b> collected${Q?` · <span style="color:var(--text-faint)">${esc(Q.why)}</span>`:''}`;
+  if(!rows.length){ list.innerHTML=`<div class="empty">${Q?esc(Q.empty):'Nobody here. Try another chip or clear the search.'}</div>`; return; }
+  list.innerHTML = rows.slice(0,300).map(cardHTML).join('') + (rows.length>300?`<div class="loading">Showing 300 of ${rows.length}. Narrow the search.</div>`:'');
+}
+function tagsFor(l){
+  const t=[];
+  if(isToday(l.first_seen)&&l.status==='p1_new'&&!isClosed(l)) t.push('<span class="tag new">New today</span>');
+  if(needsBooking(l)) t.push('<span class="tag book">Paid · book slot</span>');
+  if(callDue(l)) t.push('<span class="tag due">Call due</span>');
+  if(reorderDue(l)) t.push('<span class="tag reo">Reorder due</span>');
+  if(toShip(l)&&l.status==='p3_to_dispatch') t.push('<span class="tag ship">To send</span>');
+  return t.join('');
+}
+function cardHTML(l){
+  const ph=l.phase||1, closed=isClosed(l), open=OPEN_CARD===l.id;
+  const wa=waPhone(l), play=playbook(l);
+  const wait=daysSince(l.first_seen), waitCol = closed?'var(--text-faint)': wait>30?'var(--rose)': wait>7?'var(--amber)':'var(--text-dim)';
+  const bits=[];
+  bits.push(`<span class="pill dim">${esc(CAME_FROM_LABEL[l.came_from]||l.came_from||'')}${l.clinic?' · '+esc(l.clinic.replace(' clinic',''))+'':''}</span>`);
+  bits.push(`<span class="st"><span class="n" style="opacity:.7">${ph}</span> ${statusLabel(l.status)||PHASE_NAMES[ph]}</span>`);
+  if(l.next_followup&&!closed) bits.push(`<span style="color:${callDue(l)||reorderDue(l)?'var(--rose)':'var(--text-dim)'}">${ph===4?'Reorder':'Call'} ${relDay(l.next_followup)}</span>`);
+  if(l.bought) bits.push(`<span style="color:var(--gold)">${esc(l.bought)} · ${fmtINR(l.total_paid)}</span>`);
+  if(l.first_seen) bits.push(`<span class="wait" style="color:${waitCol}" title="${niceDateY(l.first_seen)}">${wait<=0?'came today':wait+'d'}</span>`);
+  if(ownerName(l)) bits.push(`<span>${esc(ownerName(l))}</span>`);
+  return `<div class="card s${ph} ${closed?'closed':''} ${callDue(l)?'due':''} ${open?'open':''}" id="card-${l.id}">
+    <div class="chead" onclick="toggleCard('${l.id}')">
+      <div class="crow"><div class="cname">${esc(l.name||'(no name)')}${tagsFor(l)}</div><div style="color:var(--text-faint);font-size:18px;flex-shrink:0">${open?'▴':'▾'}</div></div>
+      <div class="cmeta">${bits.join('')}</div>
+      <div class="cacts">
+        ${l.phone ? `<a class="call" href="tel:+${wa}" onclick="event.stopPropagation()">${ICON.phone} Call</a>` : `<span class="nophone">No phone number</span>`}
+        ${wa ? `<a class="wa" href="https://wa.me/${wa}?text=${encodeURIComponent(play.msg)}" target="_blank" onclick="event.stopPropagation()">${ICON.wa} WhatsApp</a>` : ''}
+      </div>
+    </div>
+    <div class="cbody">${open?cardBody(l):''}</div>
+  </div>`;
+}
+function toggleCard(id){
+  OPEN_CARD = OPEN_CARD===id ? null : id;
+  // repaint only the two cards involved
+  DESK.filter(l=>[id,OPEN_CARD].includes(l.id)).forEach(repaintCard);
+}
+function repaintCard(l){ const old=$('card-'+l.id); if(!old) return; const tmp=document.createElement('div'); tmp.innerHTML=cardHTML(l); old.replaceWith(tmp.firstElementChild); }
+function cardBody(l){
+  const ph=l.phase||1, closed=isClosed(l), play=playbook(l);
+  const detail=[l.came_for, l.age&&l.age+' yrs', l.location, l.marital_status, l.lead_source&&'heard via '+l.lead_source, l.email&&!String(l.email).endsWith('@no-email.local')&&l.email].filter(Boolean).map(esc).join(' · ');
+  const myVisits = VISITS.filter(v=>v.lead_id===l.id);
+  const whats = closed ? '' : `
+    <div class="wh">What happened?</div>
+    <div class="whats">${WHAT[ph].map((w,i)=>`<button class="${w.good?'good':''} ${w.close?'close':''}" onclick="what('${l.id}',${i})"><i>${w.i}</i>${w.l}</button>`).join('')}</div>
+    <div class="ask" id="ask-${l.id}"></div>`;
+  const wantsAppt=['p1_fees_paid','p1_appt_pending','p1_appt_done','p4_appt_booked','p4_appt_done'].includes(l.status);
+  const apptVal = l.appointment_at ? new Date(new Date(l.appointment_at).getTime()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : '';
+  return `
+    ${detail?`<div class="note" style="margin-top:12px">${detail}</div>`:''}
+    ${closed?'':`<div class="say"><span class="lab">Say this</span>${esc(play.say)}<button class="peek" onclick="peek('${l.id}',this)">See the WhatsApp message</button><pre id="pre-${l.id}">${esc(play.msg)}</pre></div>`}
+    ${whats}
+    ${myVisits.length?`<div class="visits">${myVisits.map(v=>`<div>🏥 ${esc(v.clinic||'')} · ${niceDate(v.visited_at)} · ${v.consult_amount?'consult '+fmtINR(v.consult_amount)+' · ':''}${v.medicine?esc(v.medicine)+' '+fmtINR(v.medicine_amount||0):''}${v.pay_mode?' · '+esc(v.pay_mode):''}</div>`).join('')}</div>`:''}
+    <div class="cedit">
+      <label class="field"><span>${ph===4?'Reorder call':'Next call'}</span><input type="date" id="f-next-${l.id}" value="${l.next_followup||''}" onchange="saveField('${l.id}')"></label>
+      <label class="field"><span>Owner</span><select id="f-owner-${l.id}" onchange="saveField('${l.id}')"><option value="">Nobody yet</option>${TEAM.map(t=>`<option value="${t.id}" ${l.assigned_to===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>
+      ${wantsAppt?`
+      <label class="field"><span>Appointment</span><input type="datetime-local" id="f-appt-${l.id}" value="${apptVal}" onchange="saveField('${l.id}')"></label>
+      <label class="field"><span>Where</span><select id="f-mode-${l.id}" onchange="saveField('${l.id}')"><option value="">Not set</option>${['Online',...CLINICS].map(m=>`<option ${l.appointment_mode===m?'selected':''}>${m}</option>`).join('')}</select></label>`:''}
+      ${ph===3||ph===4?`
+      <label class="field"><span>Sent on</span><input type="date" id="f-disp-${l.id}" value="${l.dispatched_on||''}" onchange="saveField('${l.id}')"></label>
+      <label class="field"><span>Delivered on</span><input type="date" id="f-deliv-${l.id}" value="${l.delivered_on||''}" onchange="saveField('${l.id}')"></label>`:''}
+      <label class="field wide"><span>Note after the call</span><input type="text" id="f-note-${l.id}" value="${esc(l.note||'')}" placeholder="What he said" onchange="saveField('${l.id}')"></label>
+    </div>
+    <div class="cfoot">
+      <button class="more" onclick="this.nextElementSibling.classList.toggle('open')">More: set the exact status</button>
+      <div class="moreBox">
+        <select class="field" style="min-height:44px;padding:8px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:15px" onchange="setStatus('${l.id}',this.value)">
+          ${STATUSES.filter(s=>s.phase===ph).map(s=>`<option value="${s.code}" ${s.code===l.status?'selected':''}>${ph}. ${esc(s.label)}</option>`).join('')}
+          <optgroup label="Move to another phase">${[1,2,3,4].filter(p=>p!==ph).map(p=>`<option value="move${p}">${p}. ${PHASE_NAMES[p]}</option>`).join('')}</optgroup>
+        </select>
+      </div>
+      <span class="saved" id="saved-${l.id}"></span>
+    </div>`;
+}
+function peek(id,btn){ const p=$('pre-'+id); p.classList.toggle('open'); btn.textContent=p.classList.contains('open')?'Hide the message':'See the WhatsApp message'; }
+
+// the one save. Always sends the whole card, so nothing gets wiped by accident.
+function fullState(l, over){
+  const g=id=>$(id);
+  const s = {
+    action:'update', id:l.id,
+    status: l.status,
+    next_followup: g('f-next-'+l.id)?g('f-next-'+l.id).value||null:(l.next_followup||null),
+    note: g('f-note-'+l.id)?g('f-note-'+l.id).value||null:(l.note||null),
+    assigned_to: g('f-owner-'+l.id)?g('f-owner-'+l.id).value||null:(l.assigned_to||null),
+    dispatched_on: g('f-disp-'+l.id)?g('f-disp-'+l.id).value||null:(l.dispatched_on||null),
+    delivered_on: g('f-deliv-'+l.id)?g('f-deliv-'+l.id).value||null:(l.delivered_on||null),
+    appointment_at: g('f-appt-'+l.id)?(g('f-appt-'+l.id).value||''):undefined,
+    appointment_mode: g('f-mode-'+l.id)?g('f-mode-'+l.id).value||null:null
+  };
+  return Object.assign(s, over||{});
+}
+function applyLocal(l, s){
+  if(s.status){ l.status=s.status; const m=statusMeta(s.status); if(m) l.phase=m.phase; }
+  if('next_followup' in s) l.next_followup=s.next_followup;
+  if('note' in s) l.note=s.note;
+  if('assigned_to' in s) l.assigned_to=s.assigned_to;
+  if(s.dispatched_on) l.dispatched_on=s.dispatched_on;
+  if(s.delivered_on) l.delivered_on=s.delivered_on;
+  if(s.appointment_at!==undefined) l.appointment_at = s.appointment_at ? new Date(s.appointment_at).toISOString() : null;
+  if(s.appointment_mode) l.appointment_mode=s.appointment_mode;
+}
+function saveState(l, s, after){
+  const card=$('card-'+l.id); if(card) card.classList.add('saving');
+  const tag=$('saved-'+l.id); if(tag){ tag.textContent='Saving…'; tag.className='saved'; }
+  return post(s).then(d=>{
+    if(card) card.classList.remove('saving');
+    if(d.ok){ applyLocal(l,s); if(tag){ tag.textContent='Saved'; setTimeout(()=>{ if(tag.textContent==='Saved') tag.textContent=''; },1800); } if(after) after(); computeBadge(); }
+    else if(tag){ tag.textContent=d.error||'Could not save'; tag.className='saved bad'; }
+    return d;
+  }).catch(()=>{ if(card) card.classList.remove('saving'); if(tag){ tag.textContent='Could not save. Check the internet.'; tag.className='saved bad'; } });
+}
+function saveField(id){
+  const l=DESK.find(x=>x.id===id); if(!l) return;
+  const s=fullState(l);
+  // an owner picked by hand, or a next call typed by hand, is a human choice: keep it exactly
+  saveState(l, s, ()=>{ const c=$('card-'+id); if(c){ const meta=c.querySelector('.cmeta'); const tmp=document.createElement('div'); tmp.innerHTML=cardHTML(l); meta.replaceWith(tmp.querySelector('.cmeta')); c.querySelector('.cname').innerHTML=tmp.querySelector('.cname').innerHTML; } });
+}
+function setStatus(id, code){
+  const l=DESK.find(x=>x.id===id); if(!l) return;
+  if(code.indexOf('move')===0){ const p=Number(code.slice(4)); const first=STATUSES.filter(s=>s.phase===p).sort((a,b)=>a.sort-b.sort)[0]; if(!first) return; code=first.code; }
+  saveState(l, fullState(l,{status:code}), ()=>repaintCard(l));
+}
+function what(id, i){
+  const l=DESK.find(x=>x.id===id); if(!l) return;
+  const w=WHAT[l.phase||1][i];
+  if(w.ask){ return askBox(l, w); }
+  const over={};
+  if(w.status) over.status=w.status;
+  if(w.days!==undefined) over.next_followup = w.days>0 ? plusDays(w.days) : null;
+  if(!l.assigned_to && ME) over.assigned_to=ME;   // the person who worked it owns it, unless somebody already does
+  saveState(l, fullState(l,over), ()=>repaintCard(l));
+}
+function askBox(l, w){
+  const box=$('ask-'+l.id); if(!box) return;
+  const id=l.id, t=todayISO();
+  let html='';
+  if(w.ask==='date') html=`<b>When should we call back?</b><div class="row">
+      <label class="field"><span>Date</span><input type="date" id="ask-date-${id}" value="${plusDays(1)}"></label>
+      <button class="btn gold" onclick="finishAsk('${id}','date')">Save</button></div>`;
+  if(w.ask==='appt') html=`<b>Book the slot</b><div class="row">
+      <label class="field"><span>Date and time</span><input type="datetime-local" id="ask-appt-${id}" value="${plusDays(1)}T11:00"></label>
+      <label class="field"><span>Where</span><select id="ask-mode-${id}">${['Online',...CLINICS].map(m=>`<option ${m===(MY_CLINIC||l.appointment_mode||'Online')?'selected':''}>${m}</option>`).join('')}</select></label>
+      <button class="btn gold" onclick="finishAsk('${id}','appt')">Book</button></div>`;
+  if(w.ask==='ship') html=`<b>Sent on which day?</b><div class="row">
+      <label class="field"><span>Date sent</span><input type="date" id="ask-ship-${id}" value="${t}"></label>
+      <button class="btn gold" onclick="finishAsk('${id}','ship')">Save</button></div>`;
+  if(w.ask==='delivered') html=`<b>Delivered on which day?</b> <span class="note" style="display:block;margin:2px 0 0">This starts his reorder clock. Pick the pack if it is not already known.</span><div class="row">
+      <label class="field"><span>Delivered</span><input type="date" id="ask-deliv-${id}" value="${t}"></label>
+      <label class="field"><span>Pack</span><select id="ask-pack-${id}">${PACKS.map(p=>`<option value="${p.key}" ${guessPack(l)===p.key?'selected':''}>${p.label}</option>`).join('')}</select></label>
+      <button class="btn gold" onclick="finishAsk('${id}','delivered')">Save</button></div>`;
+  if(w.ask==='paidhow') html=`<b>How did he pay?</b><div class="row">
+      <label class="field"><span>Amount</span><input type="number" id="ask-amt-${id}" value="497" inputmode="numeric"></label>
+      <label class="field"><span>Paid by</span><select id="ask-pay-${id}"><option>Online link</option><option>Cash at clinic</option><option>UPI at clinic</option><option>Card at clinic</option></select></label>
+      <label class="field"><span>Clinic</span><select id="ask-clinic-${id}"><option value="">Online / not at clinic</option>${CLINICS.map(c=>`<option ${c===MY_CLINIC?'selected':''}>${c}</option>`).join('')}</select></label>
+      <button class="btn gold" onclick="finishAsk('${id}','paidhow')">Save</button></div>`;
+  if(w.ask==='afterdoc') html=`<b>He has seen the doctor. Did he take medicine?</b><div class="row">
+      <button class="btn" onclick="finishAsk('${id}','afterdoc-no')">Not yet, we will follow up</button>
+      <button class="btn gold" onclick="finishAsk('${id}','afterdoc-clinic')">Yes, bought at the clinic</button>
+      <button class="btn" onclick="finishAsk('${id}','afterdoc-online')">Will pay online, sent link</button></div>`;
+  if(w.ask==='visit') html=visitForm(l);
+  box.innerHTML=html; box.classList.add('open'); box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function guessPack(l){ const b=l.bought||''; if(/90/.test(b)) return 'Modak 90-day'; if(/30/.test(b)) return 'Modak 30-day'; if(/trial/i.test(b)) return 'Modak trial'; return 'Modak 30-day'; }
+function visitForm(l){
+  const id=l.id;
+  return `<b>Bought at the clinic</b> <span class="note" style="display:block;margin:2px 0 0">He walked out with the medicine, so the course starts today and the reorder call gets set on its own.</span><div class="row">
+      <label class="field"><span>Clinic</span><select id="ask-clinic-${id}">${CLINICS.map(c=>`<option ${c===MY_CLINIC?'selected':''}>${c}</option>`).join('')}</select></label>
+      <label class="field"><span>Which medicine</span><select id="ask-pack-${id}" onchange="const p=PACKS.find(x=>x.key===this.value);if(p&&p.price)document.getElementById('ask-amt-${id}').value=p.price">${PACKS.map(p=>`<option value="${p.key}">${p.label}</option>`).join('')}</select></label>
+      <label class="field"><span>Amount</span><input type="number" id="ask-amt-${id}" value="1490" inputmode="numeric"></label>
+      <label class="field"><span>Paid by</span><select id="ask-pay-${id}"><option>Cash</option><option>UPI</option><option>Card</option></select></label>
+      <button class="btn gold" onclick="finishAsk('${id}','visit')">Save</button></div>`;
+}
+function finishAsk(id, kind){
+  const l=DESK.find(x=>x.id===id); if(!l) return;
+  const g=k=>$(`ask-${k}-${id}`);
+  const over={}; if(!l.assigned_to && ME) over.assigned_to=ME;
+  const done=()=>{ const b=$('ask-'+id); if(b){ b.classList.remove('open'); b.innerHTML=''; } repaintCard(l); };
+  if(kind==='date'){ over.status = (WHAT[l.phase||1].find(w=>w.ask==='date')||{}).status || l.status; over.next_followup=g('date').value||plusDays(1); return saveState(l, fullState(l,over), done); }
+  if(kind==='appt'){ over.status = l.phase===4?'p4_appt_booked':'p1_appt_pending'; over.appointment_at=g('appt').value||''; over.appointment_mode=g('mode').value; over.next_followup = dOnly(g('appt').value)||null; return saveState(l, fullState(l,over), done); }
+  if(kind==='ship'){ over.status='p3_dispatched'; over.dispatched_on=g('ship').value||todayISO(); over.next_followup=plusDays(3, over.dispatched_on); return saveState(l, fullState(l,over), done); }
+  if(kind==='delivered'){ const pk=PACKS.find(p=>p.key===g('pack').value)||PACKS[1]; over.status='p4_reorder_due'; over.delivered_on=g('deliv').value||todayISO(); over.next_followup=plusDays(pk.due, over.delivered_on); return saveState(l, fullState(l,over), done); }
+  if(kind==='paidhow'){
+    over.status='p1_fees_paid'; over.next_followup=null;
+    const amt=Number(g('amt').value)||0, how=g('pay').value, clinic=g('clinic').value;
+    if(how!=='Online link'){ recordVisit(l,{clinic, consult_amount:amt, pay_mode:how.replace(' at clinic','')}); }
+    return saveState(l, fullState(l,over), done);
+  }
+  if(kind==='afterdoc-no'){ over.status='p2_followup'; over.next_followup=plusDays(2); return saveState(l, fullState(l,over), done); }
+  if(kind==='afterdoc-online'){ over.status='p2_payment_pending'; over.next_followup=plusDays(1); return saveState(l, fullState(l,over), done); }
+  if(kind==='afterdoc-clinic'){ const b=$('ask-'+id); b.innerHTML=visitForm(l); return; }
+  if(kind==='visit'){
+    const pk=PACKS.find(p=>p.key===g('pack').value)||PACKS[1];
+    const amt=Number(g('amt').value)||0, clinic=g('clinic').value, how=g('pay').value;
+    over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(pk.due);
+    recordVisit(l,{clinic, medicine:pk.key, medicine_amount:amt, pay_mode:how});
+    // until the visits table is switched on, the sale is kept in the note so nothing is lost
+    if(!VISITS_ON){ const line=`Bought at ${clinic} ${niceDate(new Date())}: ${pk.key} ${fmtINR(amt)} ${how}`; const cur=($('f-note-'+id)||{}).value||l.note||''; if($('f-note-'+id)) $('f-note-'+id).value=(cur?cur+' · ':'')+line; }
+    return saveState(l, fullState(l,over), done);
+  }
+}
+function recordVisit(l, v){
+  if(!VISITS_ON) return Promise.resolve();
+  return post(Object.assign({action:'visit', lead_id:l.id, entered_by:ME||null}, v)).then(d=>{ if(d&&d.ok){ VISITS.push(Object.assign({lead_id:l.id, visited_at:new Date().toISOString()}, v)); } });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW PERSON. Reception fills two things: who he is, and what happened at the desk.
+// ─────────────────────────────────────────────────────────────────────────────
+let ADD_ID = null;   // the id of the person just added, so step 2 can attach to him
+function renderAdd(){
+  const el=$('content');
+  const people=TEAM.map(t=>`<option value="${t.id}" ${t.id===ME?'selected':''}>${esc(t.name)}</option>`).join('');
+  el.innerHTML = `
+    <div class="head"><div><div class="h1">New person</div><div class="sub">Someone who walked in, telephoned, or was sent by a friend. Name and phone are enough. Fill the rest if you know it.</div></div></div>
+    <div class="step" id="step1">
+      <h4>1. Who is he</h4>
+      <div class="hint">Which clinic are you at? It is remembered on this phone.</div>
+      <div class="seg" id="segClinic">${CLINICS.map(c=>`<button class="${MY_CLINIC===c?'on':''}" onclick="setClinic('${c}')">${c}</button>`).join('')}<button class="${MY_CLINIC===''?'on':''}" onclick="setClinic('')">On the phone</button></div>
+      <div class="fgrid" style="margin-top:14px">
+        <label class="field wide req"><span>Name</span><input id="afName" type="text" placeholder="Full name" autocomplete="off"></label>
+        <label class="field req"><span>Phone number</span><input id="afPhone" type="tel" placeholder="10 digits" inputmode="numeric" autocomplete="off" oninput="dupCheck()"></label>
+        <label class="field"><span>How did he reach you</span><select id="afSource"><option value="Walk-in" ${MY_CLINIC?'selected':''}>Walked into the clinic</option><option value="Phone enquiry" ${!MY_CLINIC?'selected':''}>Telephoned us</option><option value="Referral">Sent by someone</option></select></label>
+        <div class="found wide" id="afFound"></div>
+        <label class="field wide"><span>What he came for</span></label>
+        <div class="seg wide" id="segFor">${['Erectile Dysfunction','Premature Ejaculation','Both ED and PE','Low desire or energy','Not sure','Other'].map(c=>`<button onclick="segPick(this)" data-v="${c}">${c}</button>`).join('')}</div>
+        <label class="field"><span>Age</span><input id="afAge" type="text" inputmode="numeric" placeholder="Optional" autocomplete="off"></label>
+        <label class="field"><span>Town or sector</span><input id="afLocation" type="text" placeholder="Optional" autocomplete="off"></label>
+        <label class="field"><span>Where did he hear about us</span>
+          <select id="afLeadSource"><option value="">Not known</option>
+            <optgroup label="Social media"><option>Instagram</option><option>YouTube</option><option>Facebook</option></optgroup>
+            <optgroup label="Search and listings"><option>Google search</option><option>Google Maps listing</option><option>Practo</option><option>Our website</option></optgroup>
+            <optgroup label="People and place"><option>Friend or family</option><option>Existing patient</option><option>Passing the clinic</option></optgroup>
+            <optgroup label="Other"><option>WhatsApp</option><option>Newspaper or hoarding</option><option>Other</option></optgroup>
+          </select></label>
+        <label class="field"><span>Married</span><select id="afMarital"><option value="">Not known</option><option>Married</option><option>Unmarried</option></select></label>
+        <label class="field"><span>Email, if he gave one</span><input id="afEmail" type="email" placeholder="Leave blank if none" autocomplete="off"></label>
+        <label class="field"><span>Who will follow up</span><select id="afOwner"><option value="">Decide later</option>${people}</select></label>
+        <label class="field wide"><span>Note</span><input id="afNote" type="text" placeholder="What he asked about" autocomplete="off"></label>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+        <button class="btn gold" onclick="submitAdd()">Save him to the list</button>
+        <span class="msg" id="afMsg"></span>
+      </div>
+    </div>
+    <div class="step off" id="step2">
+      <h4>2. What happened at the desk today</h4>
+      <div class="hint">Only for someone standing in front of you. Skip this for a phone enquiry.</div>
+      <div class="fgrid">
+        <label class="field"><span>Paid a consultation?</span><select id="v-consult" onchange="$('v-camt').disabled=!this.value"><option value="">No</option><option>Cash</option><option>UPI</option><option>Card</option><option>Online link</option></select></label>
+        <label class="field"><span>Consultation amount</span><input id="v-camt" type="number" value="497" inputmode="numeric" disabled></label>
+        <label class="field"><span>Took medicine?</span><select id="v-med" onchange="const p=PACKS.find(x=>x.key===this.value);$('v-mamt').disabled=!this.value;if(p&&p.price)$('v-mamt').value=p.price"><option value="">No</option>${PACKS.map(p=>`<option value="${p.key}">${p.label}</option>`).join('')}</select></label>
+        <label class="field"><span>Medicine amount</span><input id="v-mamt" type="number" value="" inputmode="numeric" disabled></label>
+        <label class="field"><span>Medicine paid by</span><select id="v-mpay"><option>Cash</option><option>UPI</option><option>Card</option></select></label>
+        <label class="field"><span>Next appointment, if booked</span><input id="v-appt" type="datetime-local"></label>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+        <button class="btn gold" onclick="submitVisit()">Save what happened</button>
+        <button class="btn ghost" onclick="finishAdd()">Nothing else, done</button>
+        <span class="msg" id="vMsg"></span>
+      </div>
+      ${VISITS_ON?'':'<div class="note">Clinic sales are kept on the patient card for now. The full clinic sales record switches on once Akash confirms it.</div>'}
+    </div>`;
+  setTimeout(()=>{ const n=$('afName'); if(n) n.focus(); },50);
+}
+function setClinic(c){ MY_CLINIC=c; localStorage.setItem('pulse_clinic',c); document.querySelectorAll('#segClinic button').forEach(b=>b.classList.toggle('on', b.textContent===(c||'On the phone'))); const s=$('afSource'); if(s) s.value = c ? 'Walk-in' : 'Phone enquiry'; }
+function segPick(btn){ const on=btn.classList.contains('on'); btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on')); if(!on) btn.classList.add('on'); }
+function dupCheck(){
+  const p=($('afPhone').value||'').replace(/[^0-9]/g,''); const box=$('afFound');
+  if(p.length<10||!DESK){ box.classList.remove('open'); return; }
+  const hit=DESK.find(l=>(l.phone||'').replace(/[^0-9]/g,'').slice(-10)===p.slice(-10));
+  if(!hit){ box.classList.remove('open'); return; }
+  box.innerHTML=`Already in the list as <b>${esc(hit.name||'(no name)')}</b>, ${esc(CAME_FROM_LABEL[hit.came_from]||hit.came_from)}, ${statusLabel(hit.status)}. <br><button class="btn" onclick="openPerson('${hit.id}')">Open his card instead</button>`;
+  box.classList.add('open');
+}
+function openPerson(id){ P.q=''; P.queue=''; P.phase=''; P.who='all'; P.door='all'; P.since='all'; OPEN_CARD=id; setTab('patients'); const c=$('card-'+id); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); }
+function submitAdd(){
+  const g=id=>$(id); const msg=g('afMsg'); msg.className='msg'; msg.textContent='Saving…';
+  const forBtn=document.querySelector('#segFor button.on');
+  const body={ action:'add', name:g('afName').value, phone:g('afPhone').value, email:g('afEmail').value, source:g('afSource').value,
+    note:g('afNote').value, assigned_to:g('afOwner').value, age:g('afAge').value, location:g('afLocation').value,
+    marital_status:g('afMarital').value, lead_source:g('afLeadSource').value, came_for:forBtn?forBtn.dataset.v:'', clinic: g('afSource').value==='Walk-in' ? MY_CLINIC : '' };
+  post(body).then(d=>{
+    if(!d.ok){ msg.className='msg bad'; msg.textContent=d.error||'Could not save.'; return; }
+    msg.className='msg ok'; msg.textContent='Saved. He is on the list.';
+    ADD_ID = d.id || null;
+    $('step1').classList.add('done');
+    if(body.source==='Walk-in'){ $('step2').classList.remove('off'); $('step2').scrollIntoView({behavior:'smooth',block:'start'}); }
+    loadDesk(()=>{ if(!ADD_ID){ const hit=DESK.find(l=>(l.phone||'').replace(/[^0-9]/g,'').slice(-10)===body.phone.replace(/[^0-9]/g,'').slice(-10)); if(hit) ADD_ID=hit.id; } computeBadge(); });
+  }).catch(()=>{ msg.className='msg bad'; msg.textContent='Could not save. Check the internet and try again.'; });
+}
+function submitVisit(){
+  const l=DESK&&DESK.find(x=>x.id===ADD_ID); const msg=$('vMsg');
+  if(!l){ msg.className='msg bad'; msg.textContent='Give it a second, the list is still loading, then press again.'; return; }
+  const consult=$('v-consult').value, camt=Number($('v-camt').value)||0, med=$('v-med').value, mamt=Number($('v-mamt').value)||0, mpay=$('v-mpay').value, appt=$('v-appt').value;
+  const over={}; if(!l.assigned_to&&ME) over.assigned_to=ME;
+  const noteBits=[];
+  if(consult){ over.status='p1_fees_paid'; over.next_followup=null; if(consult!=='Online link') noteBits.push(`Consult ${fmtINR(camt)} ${consult}`); recordVisit(l,{clinic:MY_CLINIC, consult_amount:camt, pay_mode:consult}); }
+  if(med){ const pk=PACKS.find(p=>p.key===med)||PACKS[1]; over.status='p4_reorder_due'; over.delivered_on=todayISO(); over.next_followup=plusDays(pk.due); noteBits.push(`${pk.key} ${fmtINR(mamt)} ${mpay}`); recordVisit(l,{clinic:MY_CLINIC, medicine:pk.key, medicine_amount:mamt, pay_mode:mpay}); }
+  if(appt){ over.appointment_at=appt; over.appointment_mode=MY_CLINIC||'Online'; if(!med){ over.status = over.status==='p1_fees_paid'||l.status==='p1_fees_paid' ? 'p1_appt_pending' : l.status; } }
+  if(!VISITS_ON && noteBits.length){ over.note = ((l.note||'')+(l.note?' · ':'')+`At ${MY_CLINIC||'clinic'} ${niceDate(new Date())}: `+noteBits.join(', ')); }
+  if(!Object.keys(over).length){ finishAdd(); return; }
+  msg.className='msg'; msg.textContent='Saving…';
+  saveState(l, Object.assign({action:'update', id:l.id, status:l.status, next_followup:l.next_followup||null, note:l.note||null, assigned_to:l.assigned_to||null, dispatched_on:l.dispatched_on||null, delivered_on:l.delivered_on||null}, over)).then(d=>{
+    if(d&&d.ok){ msg.className='msg ok'; msg.textContent='Saved. His card is up to date.'; setTimeout(finishAdd, 900); }
+    else { msg.className='msg bad'; msg.textContent=(d&&d.error)||'Could not save.'; }
+  });
+}
+function finishAdd(){ ADD_ID=null; renderAdd(); window.scrollTo({top:0}); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HEALTH. The doctor's screen. Every block says what the number is, what it means,
+// and what it asks of the team. Verdicts are plain rules, never opinions.
+// ─────────────────────────────────────────────────────────────────────────────
+function monthSeries(r){ return (r.daily||[]).map(d=>({key:d.day.slice(0,7), r:Number(d.r)||0})); }
+function monthLabel(key){ const [y,m]=key.split('-'); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(m)-1]+" '"+y.slice(2); }
+function renderHealth(){
+  const el=$('content');
+  if(!DATA){ el.innerHTML='<div class="loading">Reading the numbers…</div>'; return; }
+  const r=DATA.revenue||{}, e=DATA.exec||{}, H=DATA.health||null, s=DATA.stats||{};
+  const months=monthSeries(r);
+  const thisKey=todayISO().slice(0,7);
+  const thisM=months.find(m=>m.key===thisKey)||{key:thisKey,r:0};
+  const past=months.filter(m=>m.key<thisKey);
+  const lastM=past[past.length-1]||null, prevM=past[past.length-2]||null;
+  const win = HWIN==='month' ? {label:'This month so far', b:(r.buckets&&r.buckets.month)||{}, total:Number(r.month)||0, count:Number(r.month_count)||0}
+            : HWIN==='last' && H && H.last_month ? {label:'Last month', b:H.last_month.buckets||{}, total:Number(H.last_month.total)||0, count:Number(H.last_month.count)||0}
+            : {label:'Since June', b:(r.buckets&&r.buckets.total)||{}, total:Number(r.total)||0, count:Number(r.total_count)||0};
+  const B=k=>win.b[k]||{count:0,revenue:0};
+  const modak={count:B('modak-trial').count+B('modak-monthly').count+B('modak-quarterly').count, revenue:Number(B('modak-trial').revenue)+Number(B('modak-monthly').revenue)+Number(B('modak-quarterly').revenue)};
+  const ads=B('consult-paid-ads'), org=B('consult');
+  const share=v=>win.total>0?Math.round(v/win.total*100):0;
+
+  // the desk gives us people, doors, reorders, and whether the team is working
+  const D=DESK||[];
+  const door=name=>D.filter(l=>l.came_from===name);
+  const doorStat=name=>{ const rows=door(name); const paid=rows.filter(l=>Number(l.total_paid)>0); const money=rows.reduce((s,l)=>s+(Number(l.total_paid)||0),0); return {people:rows.length, paid:paid.length, money, per:rows.length?Math.round(money/rows.length):0}; };
+  const dAss=doorStat('Assessment'), dCon=doorStat('Consultation page'), dMod=doorStat('Modak page');
+  const walk=D.filter(l=>['Walk-in','Phone enquiry','Referral'].includes(l.came_from));
+  const walkWeek=walk.filter(l=>daysSince(l.first_seen)<=7).length;
+  const walkDelhi=walk.filter(l=>l.clinic==='Delhi clinic').length, walkGgn=walk.filter(l=>l.clinic==='Gurgaon clinic').length;
+  const onCourse=D.filter(l=>l.phase===4&&!isClosed(l));
+  const reDue=D.filter(reorderDue).length;
+  const reOverdue=D.filter(l=>l.phase===4&&!isClosed(l)&&l.next_followup&&l.next_followup<todayISO()).length;
+  const rePaid=D.filter(l=>['p4_paid','p4_payment_pending','p4_appt_booked','p4_appt_done'].includes(l.status)).length;
+  const repeat=H?Number(H.repeat_buyers)||0:null;
+  const touched7=D.filter(l=>l.status_updated_at&&daysSince(l.status_updated_at)<=7&&l.status!=='p1_new').length;
+  const byOwner=TEAM.map(t=>({name:t.name, n:D.filter(l=>l.assigned_to===t.id).length, w:D.filter(l=>l.assigned_to===t.id&&l.status_updated_at&&daysSince(l.status_updated_at)<=7).length}));
+  const untouched=D.filter(isNewUntouched).length, overdue=D.filter(l=>callDue(l)&&l.next_followup<todayISO()).length;
+  const noPhone=D.filter(l=>!l.phone).length;
+  const bookQ=D.filter(needsBooking).length, shipQ=D.filter(l=>l.status==='p3_to_dispatch').length;
+  const appts7=D.filter(apptUpcoming);
+  const c2=DATA.content2||[]; const cm={}; c2.forEach(x=>{ cm[x.month_start]=(cm[x.month_start]||0)+Number(x.total||0); });
+  const cKeys=Object.keys(cm).sort(); const cLast=cKeys[cKeys.length-1], cPrev=cKeys[cKeys.length-2];
+  const vMax=Math.max(1,...months.map(m=>m.r));
+
+  // verdicts, by rule
+  const V=[];
+  if(modak.revenue>=ads.revenue&&modak.revenue>0) V.push(`<span class="g">Working:</span> the Modak page. ${modak.count} orders, ${fmtINR(modak.revenue)}, ${share(modak.revenue)}% of the money ${win.label.toLowerCase()}. People are buying medicine who have never met you.`);
+  if(ads.count>0) V.push(`<span class="${share(ads.revenue)>=30?'a':'g'}">Steady:</span> the ₹499 ads page. ${ads.count} consultations, ${fmtINR(ads.revenue)}. It brings the most people, at the lowest value each. It stops the day the ads stop.`);
+  if(org.count>=0) V.push(`<span class="${org.count<5?'a':'g'}">${org.count<5?'Quiet:':'Working:'}</span> the ₹497 consultation page. ${org.count} paid ${win.label.toLowerCase()}. It only fills when a reel points at it.`);
+  V.push(`<span class="r">Weak:</span> the assessment. ${dAss.people} people took it, ${dAss.paid} paid, about ${fmtINR(dAss.per)} per person. It is a good conversation starter and a poor seller on its own.`);
+  if(dCon.paid>0) V.push(`<span class="r">The gap:</span> ${dCon.paid} people paid for a consultation online and <b>not one</b> of them bought medicine online afterwards. Either they bought at the clinic and it was never written down, or they were never asked. The desk now records both.`);
+  if(onCourse.length) V.push(`<span class="${reDue+reOverdue>0?'a':'g'}">Reorders:</span> ${onCourse.length} people are on a course. ${reDue} are due this week${reOverdue?`, ${reOverdue} already overdue`:''}. ${repeat!==null?`Only ${repeat} ${repeat===1?'person has':'people have'} ever bought a second pack online.`:''} This is where the next lakh sits, and it costs nothing to reach them.`);
+
+  el.innerHTML = `
+    <div class="head"><div><div class="h1">Business health</div><div class="sub">Live from payments, the patient list and the content sheet. Ranges move daily, read the direction not the last rupee.</div></div>
+      <div class="chips"><button class="chip ${HWIN==='month'?'on':''}" onclick="HWIN='month';renderHealth()">This month</button>${H&&H.last_month?`<button class="chip ${HWIN==='last'?'on':''}" onclick="HWIN='last';renderHealth()">Last month</button>`:''}<button class="chip ${HWIN==='total'?'on':''}" onclick="HWIN='total';renderHealth()">Since June</button></div></div>
+    ${DATA.ops?opsHTML():''}
+    <div class="stats">
+      <div class="stat gold"><div class="k">${win.label}</div><div class="v">${fmtINR(win.total)}</div><div class="s">${win.count} payment${win.count===1?'':'s'} online${HWIN==='month'&&lastM?` · last month ${fmtINR(lastM.r)}`:''}</div></div>
+      <div class="stat"><div class="k">People on the list</div><div class="v">${D.length}</div><div class="s">${e.customers||0} have paid · ${walk.length} walked in or phoned</div></div>
+      <div class="stat green"><div class="k">On a medicine course</div><div class="v">${onCourse.length}</div><div class="s">${reDue} due for a reorder this week</div></div>
+      <div class="stat ${untouched>20?'rose':''}"><div class="k">Waiting for a first call</div><div class="v">${untouched}</div><div class="s">${overdue} calls overdue · ${touched7} cards worked this week</div></div>
+    </div>
+
+    <div class="sec">What is working, and what is not</div>
+    <div class="panel"><div class="verdict">${V.map(v=>`<div style="margin-bottom:9px">${v}</div>`).join('')}</div></div>
+
+    <div class="sec">Where the money comes from · ${win.label.toLowerCase()}</div>
+    <div class="panel">
+      ${[['Modak page (medicine)',modak,'var(--gold)'],['Consultation, ₹499 ads page',ads,'var(--violet)'],['Consultation, ₹497 page',org,'var(--green)'],['Other',B('other'),'var(--text-faint)']].map(([n,x,c])=>`
+        <div class="bar-row"><div class="bar-head"><span class="bl">${n}</span><span class="bv"><b style="color:var(--text)">${x.count||0}</b> order${x.count===1?'':'s'} · ${fmtINR(x.revenue)} · ${share(Number(x.revenue))}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${win.total?Number(x.revenue)/win.total*100:0}%;background:${c}"></div></div></div>`).join('')}
+      <div class="note">Online payments only. Cash and UPI taken at the clinic are recorded on the patient card by reception and are not in these bars${VISITS_ON?' yet':''}.</div>
+    </div>
+
+    <div class="sec">Month by month</div>
+    <div class="panel">
+      <div class="trend">${months.map(m=>`<div class="col"><div class="val">${fmtK(m.r)}</div><div class="bar" style="height:${m.r/vMax*100}%" title="${fmtINR(m.r)}"></div><div class="day">${monthLabel(m.key)}</div></div>`).join('')||'<div class="loading">No payments yet</div>'}</div>
+      ${lastM&&prevM?`<div class="note">${monthLabel(lastM.key)} was ${lastM.r>=prevM.r?'up':'down'} ${Math.abs(Math.round((lastM.r-prevM.r)/Math.max(1,prevM.r)*100))}% on ${monthLabel(prevM.key)}. ${thisM.r?`${monthLabel(thisKey)} so far: ${fmtINR(thisM.r)}.`:`${monthLabel(thisKey)} has just started.`}</div>`:''}
+    </div>
+
+    <div class="sec">The four doors people come through</div>
+    <div class="doors">
+      ${[['Modak page',dMod,'People reading about the medicine online.'],['Consultation page',dCon,'People booking a consultation online, both pages.'],['Assessment',dAss,'The free wellness assessment.']].map(([n,d,why])=>`
+        <div class="door"><div class="dn"><b>${n}</b>${d.per>=500?'<span class="pill ok">Working</span>':d.paid/Math.max(1,d.people)<0.1?'<span class="pill bad">Weak</span>':'<span class="pill warn">Watch</span>'}</div>
+          <div class="dv">${fmtINR(d.money)}</div>
+          <div class="ds">${d.people} people · ${d.paid} paid · about ${fmtINR(d.per)} per person</div>
+          <div class="dw">${why}</div></div>`).join('')}
+      <div class="door"><div class="dn"><b>Walked in or phoned</b><span class="pill gold">Started 31 Aug</span></div>
+        <div class="dv">${walk.length}</div>
+        <div class="ds">${walkWeek} this week${(walkDelhi||walkGgn)?` · Delhi ${walkDelhi} · Gurgaon ${walkGgn}`:''}</div>
+        <div class="dw">Entered by reception. Their consultation and medicine money is recorded on the card, so this door will show money once the clinic sales record is switched on.</div></div>
+    </div>
+
+    <div class="sec">Is the list being worked</div>
+    <div class="grid2">
+      <div class="panel"><h3>Cards worked in the last 7 days <small>· by owner</small></h3>
+        ${byOwner.map(o=>`<div class="bar-row"><div class="bar-head"><span class="bl">${esc(o.name)}</span><span class="bv"><b style="color:var(--text)">${o.w}</b> worked · ${o.n} owned</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,o.w/Math.max(1,touched7)*100)}%;background:var(--gold)"></div></div></div>`).join('')}
+        <div class="note">${touched7?`${touched7} cards moved this week.`:'No card has been moved this week.'} ${untouched?`${untouched} people are still waiting for a first call.`:''} ${noPhone?`${noPhone} have no phone number and cannot be rung.`:''}</div>
+      </div>
+      <div class="panel"><h3>Waiting right now</h3>
+        <div class="bar-row"><div class="bar-head"><span class="bl">Paid, no slot booked</span><span class="bv"><b style="color:${bookQ?'var(--rose)':'var(--green)'}">${bookQ}</b></span></div></div>
+        <div class="bar-row"><div class="bar-head"><span class="bl">Paid, not yet sent</span><span class="bv"><b style="color:${shipQ?'var(--amber)':'var(--green)'}">${shipQ}</b></span></div></div>
+        <div class="bar-row"><div class="bar-head"><span class="bl">Reorders due this week</span><span class="bv"><b style="color:${reDue?'var(--amber)':'var(--green)'}">${reDue}</b></span></div></div>
+        <div class="bar-row"><div class="bar-head"><span class="bl">Reorder calls overdue</span><span class="bv"><b style="color:${reOverdue?'var(--rose)':'var(--green)'}">${reOverdue}</b></span></div></div>
+        <div class="bar-row"><div class="bar-head"><span class="bl">Appointments, next 7 days</span><span class="bv"><b style="color:var(--text)">${appts7.length}</b></span></div></div>
+        <div class="note">Every one of these is a queue on the Today screen.</div>
+      </div>
+    </div>
+
+    <div class="sec">Content</div>
+    <div class="panel">
+      ${cKeys.length?`<div class="verdict">${cLast?`<b>${monthLabel(cLast)}</b>: ${fmtK(cm[cLast])} views.`:''} ${cPrev?`${monthLabel(cPrev)}: ${fmtK(cm[cPrev])}.`:''} The clone reels bring the people; the funnels turn them into patients. Full month by month numbers are on the Content screen.</div>`:'<div class="note">No content numbers yet. Ritesh fills the content sheet every Monday.</div>'}
+    </div>
+
+    <details class="fold"><summary>Assessment details</summary>
+      <div class="grid2">
+        <div class="panel"><h3>Zones <small>· all time</small></h3>${Object.entries(s.zones||{}).map(([z,v])=>`<div class="bar-row"><div class="bar-head"><span class="bl">${esc(z)}</span><span class="bv">${v}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/Math.max(1,...Object.values(s.zones||{}))*100}%;background:${z==='Thriving'?'var(--green)':z==='Growth'?'var(--amber)':'var(--rose)'}"></div></div></div>`).join('')||'<div class="note">No data yet</div>'}</div>
+        <div class="panel"><h3>What they came for</h3>${Object.entries(s.concerns||{}).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar-row"><div class="bar-head"><span class="bl">${esc(k||'Not said')}</span><span class="bv">${v}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/Math.max(1,...Object.values(s.concerns||{}))*100}%;background:var(--gold)"></div></div></div>`).join('')||'<div class="note">No data yet</div>'}</div>
+      </div>
+      <div class="note">${s.total||0} assessments all time, ${s.month||0} in the last 30 days, ${s.today||0} today. Average score ${s.avg_score||0} of 120.</div>
+    </details>`;
+}
+function opsHTML(){
+  if(!OPS){
+    fetch('/api/ops',{headers:{'x-ops-pass':pass()}}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{ OPS=d.intel||{}; if(TAB==='health') renderHealth(); }).catch(()=>{ OPS={}; });
+    return '<div class="opsbox"><h3>Opportunities · ours only</h3><div class="note">Reading…</div></div>';
+  }
+  const o=OPS, pct=(a,b)=>b>0?Math.round((b-a)/b*100):0;
+  const drop30=pct(o.submitted_30||0,o.reached_30||0);
+  const c=(cls,t,n,s,d)=>`<div class="opscard ${cls}"><b>${t}</b><div class="n">${n}</div><div class="s">${s}</div><div class="d">→ ${d}</div></div>`;
+  return `<div class="opsbox"><h3>Opportunities · ours only, never on the client key</h3>
+    ${(o.reached_all||0)===0?c('','Assessment drop-off','Waiting','Counting only started recently.','Check back in a few days.'):c(drop30>=40?'warn':drop30<=20?'good':'','Assessment drop-off, last 30 days',drop30+'%',(o.reached_30||0)+' saw the score screen, '+(o.submitted_30||0)+' gave their details.',drop30>=40?'High. Test a shorter form.':'Healthy. Leave the form alone.')}
+    ${c((o.leads_no_phone||0)>0?'warn':'good','People with no phone number',o.leads_no_phone||0,'Out of '+(o.leads_total||0)+'. They came in before the phone field was made compulsory.',(o.leads_no_phone||0)>0?'Email them once and ask for a number.':'Everyone is callable.')}
+    ${c((o.p1_untouched||0)>20?'warn':'good','Never contacted, no call date',o.p1_untouched||0,'Out of '+(o.p1_total||0)+' in Consultation.',(o.p1_untouched||0)>20?'The tool works, the calling does not. Raise it with Manish.':'The team is working the list.')}
+    ${c('','Scored under 50',o.low_score_total||0,(o.low_score_no_phone||0)+' of them have no phone number.','Give Manish this list first.')}
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTENT. Cloned reels against edited videos, by month and by platform.
+// ─────────────────────────────────────────────────────────────────────────────
+function renderContent(){
+  const el=$('content');
+  if(!DATA){ el.innerHTML='<div class="loading">Reading…</div>'; return; }
+  const rows=DATA.content2||[];
+  if(!rows.length){ el.innerHTML='<div class="head"><div><div class="h1">Content</div></div></div><div class="empty">No content numbers yet. Ritesh fills the content sheet every Monday.</div>'; return; }
+  const months=[], byM={};
+  rows.forEach(r=>{ if(!byM[r.month]){ byM[r.month]={month:r.month,cloned:{v:0,views:0},es:{v:0,views:0},el:{v:0,views:0},ig:0,yt:0,fb:0,total:0}; months.push(r.month);} const m=byM[r.month]; const slot=r.type==='Cloned reel'?m.cloned:r.type==='Edited long'?m.el:m.es; slot.v+=r.videos; slot.views+=r.total; m.ig+=r.ig; m.yt+=r.yt; m.fb+=r.fb; m.total+=r.total; });
+  const tot=rows.reduce((a,r)=>{ a.views+=r.total; a.ig+=r.ig; a.yt+=r.yt; a.fb+=r.fb; if(r.type==='Cloned reel'){a.cv+=r.videos;a.cviews+=r.total;} else if(r.type==='Edited long'){a.lv+=r.videos;a.lviews+=r.total;} else {a.sv+=r.videos;a.sviews+=r.total;} return a; },{views:0,ig:0,yt:0,fb:0,cv:0,cviews:0,sv:0,sviews:0,lv:0,lviews:0});
+  const latest=byM[months[months.length-1]], mMax=Math.max(1,...months.map(k=>byM[k].total));
+  const avg=(v,n)=>n?Math.round(v/n):0;
+  const trend=months.map(k=>{ const m=byM[k]; const parts=[{v:m.el.views,col:'var(--amber)',l:'Long edits'},{v:m.es.views,col:'var(--text-faint)',l:'Short edits'},{v:m.cloned.views,col:'var(--gold)',l:'Cloned reels'}].filter(p=>p.v>0);
+    return `<div class="col"><div class="val">${fmtK(m.total)}</div><div style="width:100%;max-width:34px;display:flex;flex-direction:column;justify-content:flex-end;height:${m.total/mMax*100}%;min-height:3px;">${parts.map((p,i)=>`<div style="height:${p.v/m.total*100}%;background:${p.col};${i===0?'border-radius:4px 4px 0 0;':''}" title="${p.l}: ${p.v.toLocaleString('en-IN')}"></div>`).join('')}</div><div class="day">${k.replace(' 20',"'")}</div></div>`; }).join('');
+  const pMax=Math.max(1,tot.ig,tot.yt,tot.fb);
+  const plat=(l,v,c)=>`<div class="bar-row"><div class="bar-head"><span class="bl">${l}</span><span class="bv">${v.toLocaleString('en-IN')}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/pMax*100}%;background:${c}"></div></div></div>`;
+  el.innerHTML=`
+    <div class="head"><div><div class="h1">Content</div><div class="sub">Cloned reels are made by Dr. Madhu's AI clone, no shooting. Edited videos are his own footage, cut by the team. Numbers come from the weekly content sheet.</div></div></div>
+    <div class="stats">
+      <div class="stat gold"><div class="k">${esc(latest.month)}</div><div class="v">${fmtK(latest.total)}</div><div class="s">${latest.cloned.v} cloned · ${latest.es.v} short + ${latest.el.v} long edits</div></div>
+      <div class="stat"><div class="k">All time views</div><div class="v">${fmtK(tot.views)}</div><div class="s">${tot.views.toLocaleString('en-IN')} across every platform</div></div>
+      <div class="stat"><div class="k">Cloned reels</div><div class="v">${tot.cv}</div><div class="s">about ${fmtK(avg(tot.cviews,tot.cv))} views each</div></div>
+      <div class="stat"><div class="k">Edited videos</div><div class="v">${tot.sv+tot.lv}</div><div class="s">shorts about ${fmtK(avg(tot.sviews,tot.sv))} each · long about ${fmtK(avg(tot.lviews,tot.lv))} each</div></div>
+    </div>
+    <div class="panel"><div class="verdict">A cloned reel gets about <b>${tot.sv?Math.round(avg(tot.cviews,tot.cv)/Math.max(1,avg(tot.sviews,tot.sv))):'–'} times</b> the views of a short he filmed himself${tot.lv?`, and about <b>${Math.round(avg(tot.cviews,tot.cv)/Math.max(1,avg(tot.lviews,tot.lv)))} times</b> a long video`:''}. That is his own data, not a claim.</div></div>
+    <div class="panel"><h3>Views month by month <small>· gold cloned reels, grey short edits, amber long edits</small></h3><div class="trend">${trend}</div></div>
+    <div class="grid2">
+      <div class="panel"><h3>Views by platform · all time</h3>${plat('Instagram',tot.ig,'var(--gold)')}${plat('YouTube',tot.yt,'var(--rose)')}${plat('Facebook',tot.fb,'var(--violet)')}</div>
+      <div class="panel"><h3>Views by platform · ${esc(latest.month)}</h3>${plat('Instagram',latest.ig,'var(--gold)')}${plat('YouTube',latest.yt,'var(--rose)')}${plat('Facebook',latest.fb,'var(--violet)')}</div>
+    </div>
+    <div class="panel"><h3>Month by month</h3><table class="tbl"><thead><tr><th>Month</th><th style="color:var(--gold)">Cloned</th><th>Short</th><th style="color:var(--amber)">Long</th><th class="hide-m">Instagram</th><th class="hide-m">YouTube</th><th class="hide-m">Facebook</th><th style="color:var(--green)">Views</th></tr></thead>
+      <tbody>${months.slice().reverse().map(k=>{ const m=byM[k]; return `<tr><td class="nm">${esc(k)}</td><td class="num" style="color:var(--gold)">${m.cloned.v}</td><td>${m.es.v||'–'}</td><td style="color:var(--amber)">${m.el.v||'–'}</td><td class="hide-m">${m.ig.toLocaleString('en-IN')}</td><td class="hide-m">${m.yt.toLocaleString('en-IN')}</td><td class="hide-m">${m.fb.toLocaleString('en-IN')}</td><td class="num" style="color:var(--green)">${m.total.toLocaleString('en-IN')}</td></tr>`; }).join('')}</tbody></table></div>`;
+}
+</script>
+</body>
+</html>
