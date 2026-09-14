@@ -115,15 +115,6 @@ what is new before a single row is written.
 **The blocker is not ours.** Manish has to send the sheet, September included. It has been
 the blocker on `madhu-migrate-walkins` since 21 August.
 
----
-
-## WHAT IS STILL UNPROVEN, AND ONLY A REAL PAYMENT PROVES IT
-
-No order has ever been paid for. So the chain built on 14 September has never once run:
-a paid order becoming a patient at Delivery, and marking the parcel delivered starting his
-reorder call. Every piece tests clean on its own. The one rupee product in the catalogue
-settles it in five minutes.
-
 ## 11. THE TODAY SCREEN CARRIES A GLANCE AT THE NUMBERS.
 
 Added 14 Sep while he tested pass 1.
@@ -137,3 +128,12 @@ and does not feel premium, so this cannot become another wall of numbers. One gl
 then the list of jobs underneath it.
 
 **Depends on item 9,** because it is the same numbers read from the same place.
+
+---
+
+## WHAT IS STILL UNPROVEN, AND ONLY A REAL PAYMENT PROVES IT
+
+No order has ever been paid for. So the chain built on 14 September has never once run:
+a paid order becoming a patient at Delivery, and marking the parcel delivered starting his
+reorder call. Every piece tests clean on its own. The one rupee product in the catalogue
+settles it in five minutes.
