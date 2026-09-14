@@ -203,6 +203,80 @@ so the three can never be added up on one screen until that is done.
 
 ---
 
+# THE BRIEF. READ THIS FIRST IF YOU DID NOT DO PASSES 1 AND 2.
+
+## WHERE EVERYTHING IS
+
+| Thing | Where |
+|---|---|
+| Pulse, the whole app | `keep-clients/dr-madhu/pulse/index.html`, one file, about 1,450 lines |
+| Its server side | `keep-clients/dr-madhu/pulse/api/` — `desk.js` (patients, orders), `data.js` (money and content), `ops.js` (the Opportunities box) |
+| Its git home | github.com/pnet-git/pulse-drmadhusudan, branch `main` |
+| Live at | pulse.drmadhusudan.com |
+| The shop, for the design to copy | `keep-clients/dr-madhu/store/build/preview/`, live at drmadhusudan.com |
+
+## HOW TO SHIP IT
+
+From `keep-clients/dr-madhu/pulse/`: `vercel --prod --yes`. That is the whole deploy.
+The shop is the same command from `keep-clients/dr-madhu/store/build/preview/`.
+**Check the live site after every deploy. Do not report done from a local file.**
+
+## THE DATABASE, AND THE ONE RULE THAT MATTERS
+
+Supabase project `praswrwxhdvtnlcevmtz`. **This is the client's own live production
+database with real patients and real payments in it.**
+
+- **Reads are free.**
+- **Every write needs the King's explicit yes on a delta table shown to him first.**
+- Never run a migration, never enable row level security, never drop or rename anything.
+- Timestamps come back in London time. Convert before showing him:
+  `to_char(x at time zone 'Asia/Kolkata','YYYY-MM-DD HH24:MI')`.
+
+Tables you will touch: `desk_leads` (the patients and leads, 497 rows), `desk_visits`
+(money taken at the clinic counter), `desk_medicines`, `desk_team` (the name list),
+`shop_orders` (website orders), `revenue` (funnel payments). Everything goes through
+security-definer functions that need a key; the app holds `DESK_KEY` and `SHOP_API_KEY`
+as Vercel environment variables.
+
+## WHO SEES WHAT TODAY
+
+Three keys, all Vercel environment variables on the pulse project.
+`PULSE_PASSWORD` = clinic team, no money. `DOCTOR_PASSWORD` = Dr Madhu, adds Health and
+Content. `OPS_PASSWORD` = us, adds the purple Opportunities box. **Item 8 collapses this
+to two.**
+
+## WHAT PASSES 1 AND 2 ALREADY DID, SO IT IS NOT REDONE
+
+Twenty one changes, shipped and tested on 14 Sep 2026, all in the commit
+"The store feeds the patient desk, and the screens get easier to read".
+
+Validation on the New person form. The Store tab and the whole order flow. Clinic money
+kept apart from shop money on Health. Delhi renamed Kalkaji in what people read. Grey text
+lifted above the readable floor. The sticky search shrunk from 116px to 62px. A clear
+button on the search. The call note turned into a real box. Add to home screen. A dozen
+small text sizes.
+
+## HOW TO WRITE FOR THIS MAN
+
+He is not technical and his time is the price of every clever word. Plain words, short
+lines, no jargon, and never name a table or a column when talking to him. Say what he
+sees, what it costs him, what is being done. The full law is in `CLAUDE.md` at the root of
+the repo and it is not optional.
+
+## THE ORDER TO BUILD IN
+
+1. **Items 2, 3, 4 and 1 together.** The rebrand, the navigation, the look, and the one
+   block of colours and fonts at the top that makes the next doctor a swap. They are one
+   job and doing them separately means doing them twice.
+2. **Item 9, the Results screen**, then **item 11**, the glance at it on Today. He calls
+   this the most important thing on here.
+3. **Items 5, 6, 7**, the small functional gaps.
+4. **Item 8**, the logins, which needs his yes on a database write.
+5. **Item 13 is the gate on all of it.** Walked on a real phone, or it is not done.
+6. **Item 14 last**, the message to the group.
+
+---
+
 ## WHAT IS STILL UNPROVEN, AND ONLY A REAL PAYMENT PROVES IT
 
 No order has ever been paid for. So the chain built on 14 September has never once run:
