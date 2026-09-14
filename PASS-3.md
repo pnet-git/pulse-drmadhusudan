@@ -131,6 +131,21 @@ then the list of jobs underneath it.
 
 ---
 
+## 12. HIS FACE ON IT, AND A WAY TO ASK FOR HELP.
+
+Added 14 Sep while he tested pass 2.
+
+**His photograph somewhere on Pulse.** Today it is a wordmark and nothing else. It should
+look like his clinic's tool, not a tool. Sits with item 2, the rebrand.
+
+**A WhatsApp button that opens the group.** One tap from inside Pulse into the client
+WhatsApp group, so reception can report a fault or ask for a change the moment it happens
+instead of it dying on the floor.
+
+**Waiting on the King for the group link.** Nothing to build until that arrives.
+
+---
+
 ## WHAT IS STILL UNPROVEN, AND ONLY A REAL PAYMENT PROVES IT
 
 No order has ever been paid for. So the chain built on 14 September has never once run:
