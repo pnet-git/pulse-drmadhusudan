@@ -146,6 +146,23 @@ instead of it dying on the floor.
 for it on 14 Sep. An invite link is the right one even though it says invite: anybody
 already in the group who taps it just lands in the group.
 
+## 13. NOTHING SHIPS UNTIL IT HAS BEEN USED ON A PHONE.
+
+Added 14 Sep. **This is a gate on pass 3, not an item in it.**
+
+His instruction: he does not want Dr Madhu or the clinic team hitting a single problem on
+a phone. So pass 3 is not finished when the screens look right on a laptop.
+
+**Walk the whole thing on a real phone before it is called done.** Every screen, every
+button, every form, in portrait, one thumb, on the clinic's own wifi.
+- Add a walk-in start to finish and save it.
+- Work a patient card: open it, press a What happened button, type a note, save it.
+- Move an order along on the Store screen.
+- Read the Results screen without pinching or scrolling sideways.
+- Do it once on a small phone, not only a big one.
+
+**Anything that needs two hands, a pinch, or a sideways scroll is a fault.**
+
 ---
 
 ## WHAT IS STILL UNPROVEN, AND ONLY A REAL PAYMENT PROVES IT
