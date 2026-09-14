@@ -1,5 +1,34 @@
 # PULSE, PASS 3
 
+# BUILT 14 SEP 2026, EVENING. WHAT SHIPPED AND WHAT IS LEFT.
+
+**Live at pulse.drmadhusudan.com.** Commit "Pass 3: Pulse becomes Dr Madhu's, and the Results screen".
+
+| Item | State |
+|---|---|
+| 1 The look | **Done.** Rebuilt in the colours and fonts of drmadhusudan.com. Buttons sized for a finger on a phone and a pointer on a desktop. Lists read at 760px, the numbers screen at 1080px. |
+| 2 Rebrand | **Done.** Paper, cream, wine, olive, gold. His face top left and on the login screen. |
+| 3 Navigation that says what it is for | **Done.** Under every tab on the desktop. Five rooms: Today, Patients, Store, New, Results. |
+| 4 The next doctor is a swap | **Done.** One block at the top of the style holds every colour and font. A BRAND object at the top of the script holds the name, the photo, the site and the group link. |
+| 5 Paid by looks like a choice | **Done.** A row of buttons, shown the moment a consultation is picked. Medicine has its own row. |
+| 6 What happened on an unpaid order | **Done.** Four buttons. Each stamps the card with the date and who pressed it. Newest stamp shows on the closed card. |
+| 7 When a paid order goes wrong | **Done.** Under a fold: cancelled, came back, address is wrong. Cancelled orders leave the never-paid list. |
+| 8 Two logins, one key per clinic | **Built, not switched on.** The app accepts TEAM_KEY_KALKAJI and TEAM_KEY_GURGAON and locks the clinic from the key. The two keys still have to be set on Vercel, and Sohail Khan and Khushi still have to be added to the name list. Both need the King. |
+| 9 Results | **Done.** Three kinds of money kept apart, one ring for the split, funnels by page with organic and paid ads marked, walk-in by clinic, store by medicine, where each door's money lands, views beside the money, and what is waiting to be collected. |
+| 10 Migration | **Waiting on the sheet from Manish.** Nothing to build until it arrives. |
+| 11 Today glance | **Done.** One wine block above the jobs. Money across every door for the doctor and us, counts only for the team. |
+| 12 His face, and a way to ask for help | **Done.** Photo in place. WhatsApp button into the group, top right and in the name menu. |
+| 13 Walked on a phone | **Done at 390 and 360 wide.** No sideways scroll on any screen. Still worth one walk on a real phone in the clinic before the message goes out. |
+| 14 Message to the group | **Not yet.** Waits for item 8 so the message can carry the right keys. |
+| 15 Gateways visible | **Half.** Which gateway sits on which door is on the Results screen in words. Money by gateway needs one read-only function on his database, which needs the King's yes. |
+
+**The two writes that need the King's yes.** One row each for Sohail Khan and Khushi in the name list. And, if he wants money by gateway as a number, one read-only function that groups payments by gateway.
+
+**Not proven, and only a real payment proves it.** No order has ever been paid for. The paid-order chain has still never run.
+
+---
+
+
 Opened 14 Sep 2026, Room 8. Everything the King raised while testing pass 1 and pass 2.
 Nothing here is built. Pass 1 and pass 2 are live and are in the commit before this file.
 
