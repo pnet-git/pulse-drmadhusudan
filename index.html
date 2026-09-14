@@ -80,6 +80,9 @@ a{color:inherit;}
 .gate-box button:hover{background:var(--wine-deep);}
 .gate-err{color:var(--wine);font-size:13px;margin-top:12px;min-height:18px;}
 .gate-foot{margin-top:34px;font-size:12px;color:var(--faint);}
+.gate-foot .made{margin-top:18px;letter-spacing:.02em;}
+.foot a,.gate-foot a{color:var(--wine);text-decoration:none;font-weight:600;}
+.foot a:hover,.gate-foot a:hover{text-decoration:underline;}
 
 /* ===== SHELL ===== */
 #app{display:none;}
@@ -432,7 +435,7 @@ a{color:inherit;}
     <input type="password" id="pass" placeholder="Access key" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     <button onclick="login()">Open</button>
     <div class="gate-err" id="gateErr"></div>
-    <div class="gate-foot">Ask Akash or Ritesh for the key if you do not have one.</div>
+    <div class="gate-foot" id="gateFoot"></div>
   </div>
 </div>
 
@@ -490,7 +493,9 @@ const BRAND = {
   photo:  '/dr-madhu.jpg',                // his face, top left and on the login screen
   site:   'https://drmadhusudan.com',
   whatsappGroup: 'https://chat.whatsapp.com/Cg3tGE9ekGvA1GsXR7vuvx',   // the client group. Empty hides the button.
-  madeBy: 'Peepoye Network',
+  madeBy: 'PhantasyLabs',                 // who makes Pulse
+  madeByUrl: 'https://phantasylabs.com',
+  parent: 'a Peepoye Network company',
   // every page of his, in the globe menu top right. Label, address, one line on what it is.
   sites: [
     ['Website and store',   'https://drmadhusudan.com',            'The main site. Medicines are bought here.'],
@@ -692,7 +697,9 @@ function applyBrand(){
   $('topWho').textContent = BRAND.clinic;
   $('gateSub').textContent = BRAND.clinic + ' · the clinic desk';
   document.title = 'Pulse · ' + BRAND.clinic;
-  $('foot').innerHTML = `<span class="p">Pulse</span> for ${esc(BRAND.clinic)} · made by ${esc(BRAND.madeBy)}`;
+  const made = `<span class="p">Pulse</span> by <a href="${BRAND.madeByUrl}" target="_blank" rel="noopener">${esc(BRAND.madeBy)}</a>, ${esc(BRAND.parent)}`;
+  $('foot').innerHTML = made;
+  $('gateFoot').innerHTML = `Ask Akash or Ritesh for the key if you do not have one.<div class="made">${made}</div>`;
   $('sitesList').innerHTML = (BRAND.sites||[]).map(([l,u,d])=>`<a href="${u}" target="_blank" rel="noopener">${esc(l)}<small>${esc(d)}</small></a>`).join('');
   const wa = BRAND.whatsappGroup;
   ['helpBtn','helpMenu'].forEach(id=>{ const el=$(id); if(!el) return; el.style.display = wa ? '' : 'none'; if(wa) el.href = wa; });
