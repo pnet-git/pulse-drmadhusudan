@@ -330,6 +330,21 @@ a{color:inherit;}
 .clinicline b{color:var(--wine);}
 
 /* ===== RESULTS ===== */
+/* His own three numbers. Big, calm, and the only thing on the first screen. */
+.three{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+.big{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px 24px;box-shadow:var(--shadow);min-width:0;}
+.big:first-child{background:linear-gradient(135deg,var(--wine) 0%,var(--wine-deep) 100%);border-color:transparent;color:#fff;box-shadow:0 18px 40px -20px rgba(123,30,59,.55);}
+.big .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.12em;font-weight:600;color:var(--faint);}
+.big:first-child .k{color:rgba(255,255,255,.72);}
+.big .v{font-family:var(--font-num);font-size:clamp(30px,3.4vw,42px);font-weight:600;letter-spacing:-.03em;line-height:1.05;margin:10px 0 8px;font-variant-numeric:tabular-nums;}
+.big .dir{font-size:14px;font-weight:600;color:var(--muted);}
+.big:first-child .dir{color:rgba(255,255,255,.92);}
+.big .dir.up{color:var(--olive);} .big .dir.down{color:var(--wine);}
+.big:first-child .dir.up,.big:first-child .dir.down{color:#fff;}
+.big .s{font-size:12.5px;color:var(--faint);margin-top:10px;line-height:1.5;}
+.big:first-child .s{color:rgba(255,255,255,.7);}
+.saidit{background:var(--cream);border-left:3px solid var(--gold);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:16px 20px;font-size:15px;line-height:1.7;color:var(--muted);margin-bottom:8px;}
+.saidit b{color:var(--ink);}
 .money3{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px;align-items:stretch;}
 .mtile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;min-width:0;box-shadow:var(--shadow);position:relative;overflow:hidden;}
 .mtile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--gold));}
@@ -401,6 +416,10 @@ a{color:inherit;}
   .stat .v{font-size:clamp(22px,7vw,30px);}
   .money3{grid-template-columns:1fr 1fr;}
   .money3 .mtile:first-child{grid-column:1/-1;}
+  .three{grid-template-columns:1fr;}
+  .big{padding:18px 18px;}
+  .big .v{font-size:clamp(30px,9vw,38px);}
+  .saidit{padding:14px 16px;font-size:14.5px;}
   .untapped{grid-template-columns:1fr 1fr;}
   .gwlist{grid-template-columns:1fr;}
   .grid2,.doors{grid-template-columns:1fr;}
@@ -1811,11 +1830,71 @@ function renderResults(){
   if(dCon.paid>0) Vd.push(`<span class="r">The gap:</span> ${dCon.paid} people paid for a consultation online and <b>not one</b> bought medicine online afterwards. Either they bought at the clinic and it was never written down, or they were never asked.`);
   if(onCourse.length) Vd.push(`<span class="${reDue+reOverdue>0?'a':'g'}">Reorders:</span> ${onCourse.length} people are on a course. ${reDue} due this week${reOverdue?`, ${reOverdue} already overdue`:''}. ${repeat!==null?`Only ${repeat} ${repeat===1?'person has':'people have'} ever bought a second pack online.`:''} This is the next lakh, and it costs nothing to reach them.`);
 
+  // ── HIS THREE NUMBERS ────────────────────────────────────────────────────────
+  // A doctor does not open this to read a split of money by door. He opens it to
+  // find out whether it is working. So: the money, the people, and how far he
+  // reached. Everything else is an operator's view and lives further down.
+  const allV=(VISITS||[]);
+  const monthOf=iso=>String(iso||'').slice(0,7);
+  const nowK=todayISO().slice(0,7);
+  const prevD=new Date(); prevD.setDate(1); prevD.setMonth(prevD.getMonth()-1);
+  const prevK=monthKey(prevD);
+  // every door in one month: the counter and the store both write into the visits
+  // record, the funnels come from the payment records.
+  const everyDoor=k=>allV.filter(x=>monthOf(x.visited_at)===k).reduce((a,x)=>a+vAmt(x),0)
+                    + (months.find(m=>m.key===k)||{r:0}).r;
+  const thisAll=everyDoor(nowK), lastAll=everyDoor(prevK);
+  const dir = lastAll ? Math.round((thisAll-lastAll)/lastAll*100) : null;
+  const bestKey = months.length ? months.reduce((a,b)=>b.r>a.r?b:a).key : null;
+
+  // people. A doctor counts patients, not payments.
+  const everPaid=D.filter(l=>Number(l.total_paid)>0 || allV.some(v=>v.lead_id===l.id)).length;
+  const newThisMonth=D.filter(l=>monthOf(l.first_seen)===nowK).length;
+  const seenCount={}; allV.forEach(v=>{ if(v.lead_id) seenCount[v.lead_id]=(seenCount[v.lead_id]||0)+1; });
+  const cameBack=Object.values(seenCount).filter(n=>n>1).length + (H?Number(H.repeat_buyers)||0:0);
+
+  // reach
+  const cmTop=contentModel();
+  const views=cmTop?cmTop.tot.views:0, viewsLatest=cmTop?cmTop.latest.total:0, viewsMonth=cmTop?cmTop.latest.month:'';
+
+  // one line, in words, about what actually changed. Built from rules, never a mood.
+  const say=[];
+  if(dir!==null && thisAll>0) say.push(`${monthLabel(nowK)} is ${dir>=0?'ahead of':'behind'} ${monthLabel(prevK)} by <b>${Math.abs(dir)}%</b> so far.`);
+  if(bestKey && bestKey!==nowK) say.push(`${monthLabel(bestKey)} is still the best month online.`);
+  const deskAllTime=allV.filter(v=>v.entered_by!=='Shop').reduce((a,v)=>a+vAmt(v),0);
+  const deskDays=Math.max(1, daysSince('2026-09-02'));
+  if(deskAllTime>0) say.push(`The clinic counter has brought <b>${fmtINR(deskAllTime)}</b> in the ${deskDays} days since it started being written down. None of that was visible before.`);
+  if(cameBack>0) say.push(`<b>${cameBack}</b> ${cameBack===1?'patient has':'patients have'} come back for a second course.`);
+
   const chipsWin=`<div class="chips"><button class="chip ${HWIN==='month'?'on':''}" onclick="HWIN='month';renderResults()">This month</button>${H&&H.last_month?`<button class="chip ${HWIN==='last'?'on':''}" onclick="HWIN='last';renderResults()">Last month</button>`:''}<button class="chip ${HWIN==='total'?'on':''}" onclick="HWIN='total';renderResults()">Since June</button></div>`;
 
   el.innerHTML = `
-    <div class="head"><div><div class="h1">Results</div><div class="sub">${tabHelp('results')}. Live from the desk, the website and the payment records. Read the direction, not the last rupee.</div></div>${chipsWin}</div>
-    <div class="sec">Money, ${win.short} · three doors, kept apart</div>
+    <div class="head"><div><div class="h1">Results</div><div class="sub">Live from the clinic desk, the website and the payment records.</div></div></div>
+
+    <div class="three">
+      <div class="big">
+        <div class="k">Money in, ${monthLabel(nowK)}</div>
+        <div class="v">${fmtINR(thisAll)}</div>
+        ${dir!==null?`<div class="dir ${dir>=0?'up':'down'}">${dir>=0?'▲':'▼'} ${Math.abs(dir)}% on ${monthLabel(prevK)}, ${fmtINR(lastAll)}</div>`:`<div class="dir">Nothing to compare against yet</div>`}
+        <div class="s">Every door: the counter, the website and the funnels.</div>
+      </div>
+      <div class="big">
+        <div class="k">Patients</div>
+        <div class="v">${everPaid}</div>
+        <div class="dir">${newThisMonth} new this month</div>
+        <div class="s">${onCourse.length} on a course right now · ${cameBack} have come back for a second one.</div>
+      </div>
+      <div class="big">
+        <div class="k">People reached</div>
+        <div class="v">${fmtK(views)}</div>
+        <div class="dir">${viewsLatest?fmtK(viewsLatest)+' in '+esc(viewsMonth):'Views across every platform'}</div>
+        <div class="s">His reels and videos, on Instagram, YouTube and Facebook.</div>
+      </div>
+    </div>
+    ${say.length?`<div class="saidit">${say.join(' ')}</div>`:''}
+
+    <div class="head" style="margin:34px 0 12px"><div><div class="sec" style="margin:0">Where the money came from</div></div>${chipsWin}</div>
+    <div class="sec" style="margin:0 0 12px;color:var(--faint);text-transform:none;letter-spacing:0;font-size:13px;font-weight:400">Three doors, ${win.short}, kept apart and never added by accident.</div>
     <div class="money3">
       <div class="mtile" style="--c:var(--ink)">
         <div class="donutwrap">
