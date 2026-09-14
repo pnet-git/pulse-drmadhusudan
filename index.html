@@ -276,7 +276,7 @@ a{color:inherit;}
 .crow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
 .cname{font-weight:600;font-size:16.5px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
 .tag{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:99px;padding:2px 9px;white-space:nowrap;}
-.tag.new{background:var(--gold);color:#fff;} .tag.book{background:var(--olive);color:#fff;} .tag.due{color:var(--wine);border:1px solid rgba(123,30,59,.4);} .tag.reo{background:var(--olive-wash);color:var(--olive);border:1px solid rgba(95,108,40,.3);} .tag.ship{background:var(--slate-wash);color:var(--slate);}
+.tag.new{background:var(--gold);color:#fff;} .tag.book{background:var(--olive);color:#fff;} .tag.due{color:var(--wine);border:1px solid rgba(123,30,59,.4);} .tag.reo{background:var(--olive-wash);color:var(--olive);border:1px solid rgba(95,108,40,.3);} .tag.ship{background:var(--slate-wash);color:var(--slate);} .tag.gapt{background:var(--gold-wash);color:var(--gold-light);border:1px solid rgba(185,140,63,.35);}
 .cmeta{font-size:12.5px;color:var(--muted);margin-top:6px;display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center;}
 .cmeta .st{color:var(--gold-light);font-weight:600;}
 .cmeta .wait{font-weight:600;}
@@ -332,6 +332,9 @@ a{color:inherit;}
 .found{background:var(--gold-wash);border:1px solid rgba(185,140,63,.35);border-radius:var(--r-sm);padding:10px 13px;font-size:13.5px;color:var(--gold-light);margin-top:8px;display:none;}
 .found.open{display:block;}
 .found button{margin-top:6px;}
+.gap{background:var(--gold-wash);border:1px solid rgba(185,140,63,.3);border-radius:var(--r-sm);padding:14px 16px;margin-top:14px;}
+.gap b{display:block;font-size:14.5px;color:var(--ink);margin-bottom:4px;}
+.gap span{display:block;font-size:13.5px;color:var(--muted);line-height:1.55;margin-bottom:12px;}
 .clinicline{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);padding:10px 14px;background:var(--cream);border-radius:var(--r-sm);}
 .clinicline b{color:var(--wine);}
 
@@ -1166,6 +1169,7 @@ function tagsFor(l){
   if(callDue(l)) t.push('<span class="tag due">Call due</span>');
   if(reorderDue(l)) t.push('<span class="tag reo">Reorder due</span>');
   if(toShip(l)&&l.status==='p3_to_dispatch') t.push('<span class="tag ship">To send</span>');
+  if(nothingRecorded(l)&&daysSince(l.first_seen)<=30) t.push('<span class="tag gapt">Nothing recorded</span>');
   return t.join('');
 }
 function cardHTML(l){
@@ -1218,6 +1222,14 @@ function restingLine(l){
   if(l.appointment_at && new Date(l.appointment_at).getTime()>Date.now()) return `Appointment <b>${niceDate(l.appointment_at)} ${niceTime(l.appointment_at)}</b>${l.appointment_mode?', '+esc(l.appointment_mode):''}. Nothing to do until then.`;
   return `Next call on <b>${niceDate(l.next_followup)}</b>, ${relDay(l.next_followup)}. Nothing to do until then.`;
 }
+// He walked in or telephoned, and not one rupee or visit was ever written down.
+// Reception saved part 1 and never did part 2.
+function nothingRecorded(l){
+  return ['Walk-in','Phone enquiry','Referral'].includes(l.came_from)
+    && !Number(l.total_paid)
+    && !(VISITS||[]).some(v=>v.lead_id===l.id)
+    && !isClosed(l);
+}
 function cardBody(l){
   const ph=l.phase||1, closed=isClosed(l), play=playbook(l);
   const detail=[l.came_for, l.age&&l.age+' yrs', l.location, l.marital_status, l.lead_source&&'heard via '+l.lead_source, l.email&&!String(l.email).endsWith('@no-email.local')&&l.email].filter(Boolean).map(esc).join(' · ');
@@ -1233,8 +1245,15 @@ function cardBody(l){
     <div class="ask" id="ask-${l.id}"></div>`;
   const wantsAppt=['p1_fees_paid','p1_appt_pending','p1_appt_done','p4_appt_booked','p4_appt_done'].includes(l.status);
   const apptVal = l.appointment_at ? new Date(new Date(l.appointment_at).getTime()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : '';
+  const gap = nothingRecorded(l) ? `
+    <div class="gap">
+      <b>Nothing has been recorded for ${esc(firstName(l))}.</b>
+      <span>He ${l.came_from==='Walk-in'?'walked in':(l.came_from==='Referral'?'was sent by someone':'telephoned')}${l.first_seen?' on '+niceDate(l.first_seen):''} and no consultation fee and no medicine was written down. If he saw the doctor or took anything, put it in now so it counts and so his reorder call gets set.</span>
+      <button class="btn gold" onclick="what('${l.id}', -1)">What happened at the desk</button>
+    </div>` : '';
   return `
     ${detail?`<div class="note" style="margin-top:12px">${detail}</div>`:''}
+    ${gap}
     ${closed||rest?'':`<div class="say"><span class="lab">Say this</span>${esc(play.say)}<button class="peek" onclick="peek('${l.id}',this)">See the WhatsApp message</button><pre id="pre-${l.id}">${esc(play.msg)}</pre></div>`}
     ${whats}
     ${myVisits.length?`<div class="visits">${myVisits.map(v=>`<div>🏥 ${esc(v.clinic||'')} · ${niceDate(v.visited_at)} · ${v.consult_amount?'consult '+fmtINR(v.consult_amount)+' · ':''}${v.medicine?esc(v.medicine)+' '+fmtINR(v.medicine_amount||0):''}${v.pay_mode?' · '+esc(v.pay_mode):''}</div>`).join('')}</div>`:''}
@@ -1311,7 +1330,8 @@ function setStatus(id, code){
 }
 function what(id, i){
   const l=DESK.find(x=>x.id===id); if(!l) return;
-  const w=whatFor(l)[i]; if(!w) return;
+  const w = i===-1 ? {ask:'visit'} : whatFor(l)[i];
+  if(!w) return;
   if(w.ask){ return askBox(l, w); }
   const over={};
   if(w.status) over.status=w.status;
