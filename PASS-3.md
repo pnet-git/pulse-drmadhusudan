@@ -180,6 +180,27 @@ us when something is wrong, which by then is the WhatsApp button inside Pulse it
 **Draft it through the `email` skill, Joanna.** It is going to a client's team, so it is
 not written freehand.
 
+## 15. THE PAYMENT GATEWAYS ARE TRACKED, BUT NOT VISIBLE.
+
+Audited 14 Sep. All three are being captured. The fault is that the gateway's name is
+buried inside a blob of text on each payment, so no screen can show it.
+
+| Gateway | Where | Payments | Money | Running |
+|---|---|---|---|---|
+| Razorpay | funnels | 194 | ₹1,57,306 | 10 Jun to today |
+| Cashfree | Modak funnel | 38 | ₹57,877 | 20 Jul to 13 Aug only |
+| PhonePe | the store | 0 | ₹0 | live, never taken a rupee |
+
+**Why Cashfree stopped, and it is not a fault.** King-stated, 14 Sep: Cashfree needed KYC
+and asked him to move to Razorpay in the meanwhile. So Razorpay carrying the funnels today
+is deliberate. Nothing to chase.
+
+**The store is PhonePe and stays PhonePe.**
+
+**What to build.** Lift the gateway out of the blob into a field of its own, and show money
+by gateway on the Results screen. Note that the store's orders live in their own table,
+so the three can never be added up on one screen until that is done.
+
 ---
 
 ## WHAT IS STILL UNPROVEN, AND ONLY A REAL PAYMENT PROVES IT
