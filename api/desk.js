@@ -19,8 +19,9 @@ export default async function handler(req, res) {
   // and sync failed silently with a 401.
   const pass = req.headers['x-pulse-pass'] || '';
   const OPS = process.env.OPS_PASSWORD, DOC = process.env.DOCTOR_PASSWORD;
-  // team, doctor and ops keys all open the desk (2 Sep 2026)
-  if (pass !== process.env.PULSE_PASSWORD && !(OPS && pass === OPS) && !(DOC && pass === DOC)) {
+  const KAL = process.env.TEAM_KEY_KALKAJI, GGN = process.env.TEAM_KEY_GURGAON;
+  // team, doctor and ops keys all open the desk (2 Sep 2026); one key per clinic (14 Sep 2026)
+  if (pass !== process.env.PULSE_PASSWORD && !(OPS && pass === OPS) && !(DOC && pass === DOC) && !(KAL && pass === KAL) && !(GGN && pass === GGN)) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 

@@ -11,13 +11,19 @@ export default async function handler(req, res) {
   //   doctor = DOCTOR_PASSWORD. Dr Madhu himself. Everything the team sees plus
   //            Health and Content.
   //   ops    = OPS_PASSWORD.    Us. Everything, plus the private Opportunities box.
+  // ONE KEY PER CLINIC (pass 3, 14 Sep 2026). Ritesh's ask: not a login per person, a
+  // login per clinic. TEAM_KEY_KALKAJI and TEAM_KEY_GURGAON each open the team view
+  // and tell the app which clinic it is, so nobody picks it on the phone. The old
+  // PULSE_PASSWORD still works and leaves the clinic to be chosen on the device.
   const pass = req.headers['x-pulse-pass'] || (req.query && req.query.p) || '';
   const OPS = process.env.OPS_PASSWORD, DOC = process.env.DOCTOR_PASSWORD;
+  const KAL = process.env.TEAM_KEY_KALKAJI, GGN = process.env.TEAM_KEY_GURGAON;
+  const clinic = (KAL && pass === KAL) ? 'Delhi clinic' : (GGN && pass === GGN) ? 'Gurgaon clinic' : '';
   const role = (OPS && pass === OPS) ? 'ops' : (DOC && pass === DOC) ? 'doctor'
-             : (pass === process.env.PULSE_PASSWORD) ? 'team' : null;
+             : (clinic || pass === process.env.PULSE_PASSWORD) ? 'team' : null;
   if (!role) return res.status(401).json({ error: 'unauthorized' });
   const isOps = role === 'ops';
-  if (role === 'team') return res.status(200).json({ ok: true, role, ops: false });
+  if (role === 'team') return res.status(200).json({ ok: true, role, ops: false, clinic });
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const KEY = process.env.SUPABASE_KEY;
