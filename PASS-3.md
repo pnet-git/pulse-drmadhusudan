@@ -123,3 +123,17 @@ No order has ever been paid for. So the chain built on 14 September has never on
 a paid order becoming a patient at Delivery, and marking the parcel delivered starting his
 reorder call. Every piece tests clean on its own. The one rupee product in the catalogue
 settles it in five minutes.
+
+## 11. THE TODAY SCREEN CARRIES A GLANCE AT THE NUMBERS.
+
+Added 14 Sep while he tested pass 1.
+
+Today is a list of jobs and nothing else. He wants a small piece of the Results screen
+sitting on it, so opening the app answers "what happened today" before he has to go
+looking. Money taken today, where it came from, drawn as a share rather than typed out.
+
+**Keep it to one block.** The whole complaint about the app today is that it is cluttered
+and does not feel premium, so this cannot become another wall of numbers. One glance,
+then the list of jobs underneath it.
+
+**Depends on item 9,** because it is the same numbers read from the same place.
