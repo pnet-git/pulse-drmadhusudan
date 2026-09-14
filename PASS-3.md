@@ -163,6 +163,23 @@ button, every form, in portrait, one thumb, on the clinic's own wifi.
 
 **Anything that needs two hands, a pinch, or a sideways scroll is a fault.**
 
+## 14. THE MESSAGE TO THE GROUP, WHEN PASS 3 IS DONE.
+
+Added 14 Sep. **Not now. After the work.**
+
+One message into the client WhatsApp group carrying two things:
+
+**1. Put Pulse on your home screen.** The King liked this most of everything today, and it
+is the change that makes them open it daily instead of hunting for a bookmark. Steps for
+an iPhone and for an Android, in plain words, no screenshots needed.
+
+**2. What is new and what they can now do.** Short list, written for reception and for the
+doctor, not a changelog. What they could not do before and can do now. And where to tell
+us when something is wrong, which by then is the WhatsApp button inside Pulse itself.
+
+**Draft it through the `email` skill, Joanna.** It is going to a client's team, so it is
+not written freehand.
+
 ---
 
 ## WHAT IS STILL UNPROVEN, AND ONLY A REAL PAYMENT PROVES IT
