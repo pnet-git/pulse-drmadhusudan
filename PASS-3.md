@@ -142,7 +142,9 @@ look like his clinic's tool, not a tool. Sits with item 2, the rebrand.
 WhatsApp group, so reception can report a fault or ask for a change the moment it happens
 instead of it dying on the floor.
 
-**Waiting on the King for the group link.** Nothing to build until that arrives.
+**Waiting on the link.** Only a group admin can see it. Ritesh is the admin and was asked
+for it on 14 Sep. An invite link is the right one even though it says invite: anybody
+already in the group who taps it just lands in the group.
 
 ---
 
