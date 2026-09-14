@@ -34,20 +34,28 @@ export default async function handler(req, res) {
   const rpc = (fn, body) =>
     fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(body) });
 
+  // The shop keeps its orders behind its own key, separate from the desk key on purpose.
+  // Pulse holds that key too, so the team works orders and patients on one screen.
+  const SHOP_KEY = process.env.SHOP_API_KEY;
+  const shopRpc = (fn, body) =>
+    fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify({ p_key: SHOP_KEY, ...body }) });
+
   try {
     if (req.method === 'GET') {
-      const [lr, tr, sr, vr, mr] = await Promise.all([
+      const [lr, tr, sr, vr, mr, or] = await Promise.all([
         rpc('desk_list', { p_key: DESK_KEY }),
         rpc('desk_team_list', { p_key: DESK_KEY }),
         rpc('desk_status_list', { p_key: DESK_KEY }),
         rpc('desk_visits_list', { p_key: DESK_KEY }),   // clinic sales; 404 until the table exists
-        rpc('desk_medicine_list', { p_key: DESK_KEY })  // the medicine list the team can add to; 404 until then
+        rpc('desk_medicine_list', { p_key: DESK_KEY }), // the medicine list the team can add to; 404 until then
+        SHOP_KEY ? shopRpc('shop_orders_list', { p_limit: 300 }) : Promise.resolve(null)  // store orders; null until the key is set
       ]);
       const medicines = mr.ok ? await mr.json() : [];
       const rows = await lr.json();
       const team = await tr.json();
       const statuses = await sr.json();
       const visits = vr.ok ? await vr.json() : [];
+      const orders = or && or.ok ? await or.json() : [];
       if (!lr.ok) return res.status(500).json({ error: 'list_failed', detail: rows });
       return res.status(200).json({ ok: true, leads: rows,
         team: Array.isArray(team) ? team : [],
@@ -55,7 +63,9 @@ export default async function handler(req, res) {
         visits: Array.isArray(visits) ? visits : [],
         visits_on: vr.ok,
         medicines: Array.isArray(medicines) ? medicines : [],
-        medicines_on: mr.ok });
+        medicines_on: mr.ok,
+        orders: Array.isArray(orders) ? orders : [],
+        orders_on: !!(or && or.ok) });
     }
 
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
@@ -180,6 +190,23 @@ export default async function handler(req, res) {
       if (r.status === 404) return res.status(200).json({ ok: false, error: 'The shared medicine list is not switched on yet.' });
       const out = await r.json();
       if (!r.ok) return res.status(500).json({ error: 'medicine_failed', detail: out });
+      return res.status(200).json(out);
+    }
+
+    // Moving a store order along: packed, sent with a courier and tracking number, or delivered.
+    // Writes back to the shop, so the customer's own tracking page shows the same thing.
+    if (body.action === 'shop_delivery') {
+      if (!SHOP_KEY) return res.status(200).json({ ok: false, error: 'The store is not connected to Pulse yet.' });
+      const r = await shopRpc('shop_set_delivery', {
+        p_merchant_order_id: body.merchant_order_id,
+        p_status: body.status || null,
+        p_courier: body.courier || null,
+        p_tracking_id: body.tracking_id || null,
+        p_tracking_url: body.tracking_url || null,
+        p_note: body.note || null
+      });
+      const out = await r.json();
+      if (!r.ok) return res.status(500).json({ error: 'shop_delivery_failed', detail: out });
       return res.status(200).json(out);
     }
 

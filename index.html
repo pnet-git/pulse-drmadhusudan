@@ -7,6 +7,11 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M8 32h12l5-14 8 28 6-20 4 6h13' fill='none' stroke='%23C9A14A' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='53' cy='32' r='4' fill='%234ade80'/%3E%3C/svg%3E">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pulse">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700&display=swap" rel="stylesheet">
 <style>
@@ -16,7 +21,7 @@
 :root{
   --bg:#0a0a0c; --bg-2:#111114; --panel:#16161a; --panel-2:#1c1c22;
   --border:#26262e; --border-2:#33333d;
-  --text:#f2f2f5; --text-dim:#9a9aa8; --text-faint:#65656f;
+  --text:#f2f2f5; --text-dim:#a3a3b0; --text-faint:#8a8a97;
   --gold:#C9A14A; --gold-light:#E5C77E; --gold-wash:rgba(201,161,74,.12);
   --green:#4ade80; --green-wash:rgba(74,222,128,.12);
   --amber:#fbbf24; --amber-wash:rgba(251,191,36,.12);
@@ -58,7 +63,7 @@ a{color:inherit;}
 @keyframes beat{0%{box-shadow:0 0 0 0 rgba(74,222,128,.4);}70%{box-shadow:0 0 0 9px rgba(74,222,128,0);}100%{box-shadow:0 0 0 0 rgba(74,222,128,0);}}
 .me-menu{display:none;position:absolute;right:0;top:46px;background:var(--panel-2);border:1px solid var(--border-2);border-radius:14px;padding:8px;min-width:230px;z-index:30;box-shadow:0 16px 40px rgba(0,0,0,.6);}
 .me-menu.open{display:block;}
-.me-menu .h{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;padding:8px 10px 4px;}
+.me-menu .h{font-size:12px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;padding:8px 10px 4px;}
 .me-menu button{display:block;width:100%;text-align:left;min-height:42px;padding:9px 10px;background:none;border:none;border-radius:9px;color:var(--text);font-size:14px;cursor:pointer;}
 .me-menu button:hover{background:var(--panel);}
 .me-menu button.on{color:var(--gold);font-weight:700;}
@@ -87,7 +92,7 @@ a{color:inherit;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
 .stat{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px 18px;min-width:0;}
-.stat .k{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.stat .k{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
 .stat .v{font-family:'Fraunces',serif;font-size:clamp(24px,3.2vw,34px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em;overflow-wrap:anywhere;}
 .stat .s{font-size:12px;color:var(--text-dim);margin-top:7px;}
 .stat.gold .v{color:var(--gold);}
@@ -136,6 +141,8 @@ a{color:inherit;}
 .sync-bar{height:3px;background:var(--bg-2);border-radius:50px;overflow:hidden;display:none;margin:0 0 12px;}
 .sync-bar i{display:block;height:100%;width:8%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:50px;transition:width .25s ease;}
 .field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--text-dim);min-width:0;}
+.field textarea{min-height:64px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;font-family:inherit;line-height:1.45;width:100%;resize:vertical;}
+.field textarea:focus{outline:none;border-color:var(--gold);}
 .field input,.field select{min-height:46px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;color-scheme:dark;width:100%;}
 .field select{-webkit-appearance:none;appearance:none;padding-right:32px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
 .field input:focus,.field select:focus{outline:none;border-color:var(--gold);}
@@ -149,7 +156,8 @@ a{color:inherit;}
 .msg.ok{color:var(--green);} .msg.bad{color:var(--rose);}
 
 /* ===== TODAY ===== */
-.q{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:16px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .15s;}
+.q{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:16px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .15s,transform .08s;-webkit-tap-highlight-color:transparent;}
+.q:active{transform:scale(.985);}
 .q:hover{border-color:var(--border-2);border-left-color:var(--gold);}
 .q .qn{font-family:'Fraunces',serif;font-size:34px;font-weight:700;line-height:1;min-width:58px;text-align:center;font-variant-numeric:tabular-nums;}
 .q .qt{flex:1;min-width:0;}
@@ -168,10 +176,15 @@ a{color:inherit;}
 .appt a{min-height:40px;padding:0 14px;border-radius:50px;display:inline-flex;align-items:center;text-decoration:none;font-weight:700;font-size:13px;background:var(--gold);color:#1a1a1a;}
 
 /* ===== PATIENTS ===== */
-.ptools{position:sticky;top:0;z-index:6;background:var(--bg);padding:6px 0 10px;box-shadow:0 12px 14px -12px rgba(0,0,0,.9);}
+.ptools{position:sticky;top:0;z-index:6;background:var(--bg);padding:6px 0 8px;box-shadow:0 10px 12px -11px rgba(0,0,0,.9);}
+.card,.q{scroll-margin-top:64px;}
 .search{width:100%;min-height:48px;padding:10px 14px 10px 42px;background:var(--panel);border:1px solid var(--border);border-radius:14px;color:var(--text);font-size:16px;color-scheme:dark;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%239a9aa8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center;}
 .search:focus{outline:none;border-color:var(--gold);}
-.pchips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.search::-webkit-search-cancel-button{display:none;}
+.searchwrap{position:relative;}
+.searchwrap .searchx{display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:none;background:none;color:var(--text-dim);font-size:24px;line-height:1;cursor:pointer;border-radius:50%;}
+.searchwrap.has .searchx{display:block;}
+.pchips{display:flex;gap:6px;overflow-x:auto;padding:10px 28px 2px 0;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);}
 .pchips::-webkit-scrollbar{display:none;}
 .pfilters{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px;}
 .pfilters select{min-height:42px;padding:8px 30px 8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;color-scheme:dark;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9aa8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;flex:1;min-width:130px;}
@@ -218,6 +231,7 @@ a{color:inherit;}
 .saved{font-size:13px;color:var(--green);min-height:18px;}
 .saved.bad{color:var(--rose);}
 .more{background:none;border:none;color:var(--text-faint);font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0;}
+.linky{background:none;border:none;color:var(--gold);font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:2px 0;}
 .moreBox{display:none;margin-top:10px;} .moreBox.open{display:block;}
 .whatsbox.open{display:block !important;}
 .visits{margin-top:12px;font-size:12.5px;color:var(--text-dim);}
@@ -266,11 +280,11 @@ a{color:inherit;}
   .brand .who{display:none;}
   .tabs{display:none;}
   #nav{display:flex;position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:rgba(17,17,20,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--border);z-index:40;}
-  #nav button{flex:1;min-width:0;background:none;border:none;color:var(--text-faint);font-size:10.5px;font-weight:700;letter-spacing:.2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;position:relative;padding:6px 2px;}
+  #nav button{flex:1;min-width:0;background:none;border:none;color:var(--text-faint);font-size:11.5px;font-weight:700;letter-spacing:.1px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;position:relative;padding:6px 2px;}
   #nav button svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   #nav button.active{color:var(--gold);}
   #nav button.add svg{width:26px;height:26px;}
-  #nav .badge{position:absolute;top:4px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:50px;background:var(--rose);color:#fff;font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  #nav .badge{position:absolute;top:4px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:50px;background:var(--rose);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
   #nav .badge.zero{display:none;}
   .stats{grid-template-columns:repeat(2,1fr);gap:10px;}
   .stat{padding:14px 14px;}
@@ -279,7 +293,7 @@ a{color:inherit;}
   .panel{padding:16px 15px;overflow-x:auto;}
   .tbl th,.tbl td{padding:9px 6px;font-size:12.5px;}
   .tbl .hide-m{display:none;}
-  .trend{gap:3px;height:112px;} .trend .val{font-size:9.5px;} .trend .day{font-size:9px;}
+  .trend{gap:3px;height:112px;} .trend .val{font-size:10.5px;} .trend .day{font-size:10px;}
   .h1{font-size:23px;}
   .q{padding:14px 14px;} .q .qn{font-size:30px;min-width:50px;}
   .fgrid{grid-template-columns:1fr;}
@@ -359,6 +373,9 @@ let OPS = null;             // ops_intel, our key only
 let ROLE = 'team';          // team | doctor | ops. The server decides from the key.
 let MEDICINES = [];         // the medicine list reception picks from
 let MEDS_ON = false;        // true once the shared list lives in the database
+let ORDERS = [];            // orders placed on the website shop
+let ORDERS_ON = false;      // true once Pulse holds the shop's key
+let OPEN_ORDER = null;      // the order card that is open
 let TAB = 'today';
 let ME = localStorage.getItem('pulse_me') || '';         // team id
 let MY_CLINIC = localStorage.getItem('pulse_clinic') || '';
@@ -370,6 +387,9 @@ const PHASE_NAMES = {1:'Consultation', 2:'Medicine', 3:'Delivery', 4:'Reorder'};
 const PHASE_HELP  = {1:'Getting him to a paid consultation', 2:'Getting the medicine paid for', 3:'Getting it sent and delivered', 4:'Bringing him back for the next course'};
 const CAME_FROM_LABEL = {'Consultation page':'Consult page','Walk-in':'Walked in','Phone enquiry':'Telephoned','Referral':'Referred','Modak page':'Modak page','Assessment':'Assessment','Routine':'Routine page'};
 const CLINICS = ['Delhi clinic','Gurgaon clinic'];
+// What is stored stays as it is. What the team reads is the name they use. Kalkaji is the Delhi clinic.
+const CLINIC_LABEL = {'Delhi clinic':'Kalkaji clinic','Gurgaon clinic':'Gurgaon clinic'};
+const clinicLabel = c => CLINIC_LABEL[c] || c || '';
 // Seeded from his own store. The shared list in the database replaces this once it exists,
 // and anything reception adds before then is kept on that phone so it is not typed twice.
 const DEFAULT_MEDS = [
@@ -467,12 +487,14 @@ const ICON = {
   add:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 8v8M8 12h8"/></svg>',
   health:'<svg viewBox="0 0 24 24"><path d="M3 12h4l2.5-7 4 14 2.5-7h5"/></svg>',
   content:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>',
+  store:'<svg viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9M9 13h6"/></svg>',
   phone:'<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
   wa:'<svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.8A8.5 8.5 0 1 1 8.4 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1a4 4 0 0 1-2-2l1-1-1-2z"/></svg>'
 };
 const TABS = [
   {id:'today',    label:'Today',    icon:ICON.today},
   {id:'patients', label:'Patients', icon:ICON.patients},
+  {id:'store',    label:'Store',    icon:ICON.store},
   {id:'add',      label:'New',      icon:ICON.add, cls:'add'},
   {id:'health',   label:'Health',   icon:ICON.health},
   {id:'content',  label:'Content',  icon:ICON.content}
@@ -552,12 +574,14 @@ function renderMe(){
 }
 function setMe(id){ ME=id; localStorage.setItem('pulse_me',id); renderMe(); toggleMe(false); render(); }
 // The clinic team gets three rooms. The doctor and we get all five.
-function myTabs(){ return ROLE==='team' ? TABS.filter(t=>['today','patients','add'].includes(t.id)) : TABS; }
+function myTabs(){ return ROLE==='team' ? TABS.filter(t=>['today','patients','store','add'].includes(t.id)) : TABS; }
 function buildTabs(){
   const mk = t => `<button class="tab ${t.cls||''} ${TAB===t.id?'active':''}" data-tab="${t.id}" onclick="setTab('${t.id}')">${t.icon}<span>${t.label}</span><span class="badge zero" id="badge-${t.id}"></span></button>`;
   $('tabs').innerHTML = myTabs().map(mk).join('');
   $('nav').innerHTML = myTabs().map(t=>`<button class="${t.cls||''} ${TAB===t.id?'active':''}" data-tab="${t.id}" onclick="setTab('${t.id}')">${t.icon}<span>${t.label}</span><span class="badge zero" id="nbadge-${t.id}"></span></button>`).join('');
 }
+// Reading down the list should give the whole screen to the list. Scrolling back up
+// is how he asks for the search box again.
 function setTab(t){
   TAB=t;
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
@@ -567,9 +591,13 @@ function setTab(t){
 function setBadge(n){
   ['badge-today','nbadge-today'].forEach(id=>{ const el=$(id); if(!el) return; el.textContent=n; el.classList.toggle('zero', !n); });
 }
+function setStoreBadge(n){
+  ['badge-store','nbadge-store'].forEach(id=>{ const el=$(id); if(!el) return; el.textContent=n; el.classList.toggle('zero', !n); });
+}
 function render(){
   if(TAB==='today')    return renderToday();
   if(TAB==='patients') return renderPatients();
+  if(TAB==='store')    return renderStore();
   if(TAB==='add')      return renderAdd();
   if(TAB==='health')   return renderHealth();
   if(TAB==='content')  return renderContent();
@@ -594,6 +622,7 @@ function applyDesk(d){
   if(d.statuses&&d.statuses.length) STATUSES=d.statuses;
   VISITS = d.visits||[]; VISITS_ON = !!d.visits_on;
   MEDICINES = d.medicines||[]; MEDS_ON = !!d.medicines_on;
+  ORDERS = d.orders||[]; ORDERS_ON = !!d.orders_on;
   renderMe(); computeBadge();
 }
 function cachedDesk(){ try{ const c=JSON.parse(localStorage.getItem('pulse_cache')||'null'); return c && c.leads ? c : null; }catch(e){ return null; } }
@@ -638,6 +667,7 @@ function computeBadge(){
   if(!DESK) return;
   const n = ['fresh','book','due','ship','reorder'].reduce((s,q)=>s+queueRows(q,true).length,0);
   setBadge(n);
+  setStoreBadge(ordersWaiting().length);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -674,8 +704,9 @@ function renderToday(){
         </div>`).join('')
       : '<div class="loading" style="padding:20px">No appointments booked for the next 7 days. Book a slot on a patient card and it lands here.</div>'}
     </div>
-    <div class="note">Numbers refresh on their own every five minutes. To check for new people right now, open your name at the top.</div>`;
+    <div class="note">Numbers refresh on their own every five minutes. <button class="linky" onclick="syncDesk(true)">Check for new people now</button></div>`;
 }
+function clearSearch(){ P.q=''; const i=$('pSearch'); if(i){ i.value=''; i.focus(); } const w=document.querySelector('.searchwrap'); if(w) w.classList.remove('has'); paintList(); }
 function openQueue(q){ P.queue=q; P.phase=''; P.q=''; P.who = (!TODAY_ALL && ME) ? 'mine' : 'all'; setTab('patients'); }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -809,8 +840,12 @@ function renderPatients(){
   const chip=(on,label,fn,n,ph)=>`<button class="chip ${on?'on':''}" onclick="${fn}">${ph?`<span class="n">${ph}</span>`:''}${label} <b>${n}</b></button>`;
   el.innerHTML = `
     <div class="ptools">
-      <input class="search" type="search" placeholder="Search a name or phone number" value="${esc(P.q)}" oninput="P.q=this.value;paintList()">
-      <div class="pchips">
+      <div class="searchwrap ${P.q?'has':''}">
+        <input class="search" id="pSearch" type="search" placeholder="Search a name or phone number" value="${esc(P.q)}" oninput="P.q=this.value;paintList();document.querySelector('.searchwrap').classList.toggle('has',!!this.value)">
+        <button class="searchx" onclick="clearSearch()" aria-label="Clear the search">&times;</button>
+      </div>
+    </div>
+    <div class="pchips">
         ${chip(!P.queue&&!P.phase,'Everyone',"P.queue='';P.phase='';renderPatients()",cnt.all)}
         ${chip(P.queue==='fresh','New',"setQ('fresh')",cnt.fresh)}
         ${chip(P.queue==='book','To book',"setQ('book')",cnt.book)}
@@ -819,7 +854,6 @@ function renderPatients(){
         ${chip(P.queue==='reorder','Reorders',"setQ('reorder')",cnt.reorder)}
         ${[1,2,3,4].map(p=>chip(P.phase===String(p),PHASE_NAMES[p],`setPh('${p}')`,cnt['p'+p],p)).join('')}
         ${chip(P.phase==='closed','Closed',"setPh('closed')",cnt.closed)}
-      </div>
     </div>
     <div class="pfilters">
       <select onchange="P.who=this.value;renderPatients()">
@@ -834,7 +868,7 @@ function renderPatients(){
           ${['Assessment','Consultation page','Modak page','Walk-in','Phone enquiry','Referral'].map(d=>`<option value="${d}" ${P.door===d?'selected':''}>${CAME_FROM_LABEL[d]||d}</option>`).join('')}
         </optgroup>
         <optgroup label="Clinic">
-          <option value="clinic-delhi" ${P.door==='clinic-delhi'?'selected':''}>Delhi clinic</option>
+          <option value="clinic-delhi" ${P.door==='clinic-delhi'?'selected':''}>Kalkaji clinic</option>
           <option value="clinic-ggn" ${P.door==='clinic-ggn'?'selected':''}>Gurgaon clinic</option>
         </optgroup>
         <optgroup label="Bought">
@@ -880,11 +914,11 @@ function cardHTML(l){
   const wa=waPhone(l), play=playbook(l);
   const wait=daysSince(l.first_seen), waitCol = closed?'var(--text-faint)': wait>30?'var(--rose)': wait>7?'var(--amber)':'var(--text-dim)';
   const bits=[];
-  bits.push(`<span class="pill dim">${esc(CAME_FROM_LABEL[l.came_from]||l.came_from||'')}${l.clinic?' · '+esc(l.clinic.replace(' clinic',''))+'':''}</span>`);
+  bits.push(`<span class="pill dim">${esc(CAME_FROM_LABEL[l.came_from]||l.came_from||'')}${l.clinic?' · '+esc(clinicLabel(l.clinic).replace(' clinic',''))+'':''}</span>`);
   bits.push(`<span class="st">${PHASE_NAMES[ph]} · ${statusLabel(l.status)||''}</span>`);
   if(l.next_followup&&!closed) bits.push(`<span style="color:${callDue(l)||reorderDue(l)?'var(--rose)':'var(--text-dim)'}">${ph===4?'Reorder':'Call'} ${relDay(l.next_followup)}</span>`);
   if(l.bought) bits.push(`<span style="color:var(--gold)">${esc(l.bought)}${ROLE==='team'?'':' · '+fmtINR(l.total_paid)}</span>`);
-  if(l.first_seen) bits.push(`<span class="wait" style="color:${waitCol}" title="${niceDateY(l.first_seen)}">${wait<=0?'came today':wait+'d'}</span>`);
+  if(l.first_seen) bits.push(`<span class="wait" style="color:${waitCol}" title="${niceDateY(l.first_seen)}">${wait<=0?'came today':wait+'d on list'}</span>`);
   if(ownerName(l)) bits.push(`<span>${esc(ownerName(l))}</span>`);
   return `<div class="card s${ph} ${closed?'closed':''} ${callDue(l)?'due':''} ${open?'open':''}" id="card-${l.id}">
     <div class="chead" onclick="toggleCard('${l.id}')">
@@ -954,7 +988,7 @@ function cardBody(l){
       ${ph===3||ph===4?`
       <label class="field"><span>Sent on</span><input type="date" id="f-disp-${l.id}" value="${l.dispatched_on||''}" onchange="saveField('${l.id}')"></label>
       <label class="field"><span>Delivered on</span><input type="date" id="f-deliv-${l.id}" value="${l.delivered_on||''}" onchange="saveField('${l.id}')"></label>`:''}
-      <label class="field wide"><span>Note after the call</span><input type="text" id="f-note-${l.id}" value="${esc(l.note||'')}" placeholder="What he said" onchange="saveField('${l.id}')"></label>
+      <label class="field wide"><span>Note after the call</span><textarea id="f-note-${l.id}" rows="2" placeholder="What he said" onchange="saveField('${l.id}')">${esc(l.note||'')}</textarea></label>
     </div>
     <div class="cfoot">
       <button class="more" onclick="this.nextElementSibling.classList.toggle('open')">More: set the exact status</button>
@@ -1102,6 +1136,177 @@ function recordVisit(l, v){
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// STORE. Orders placed on the website, and getting them out of the door.
+// A paid order already puts the buyer on the Patients list by itself, at Delivery.
+// This screen is where the parcel is moved along. Marking it delivered here is what
+// starts his reorder clock, exactly like a walk-in.
+// ─────────────────────────────────────────────────────────────────────────────
+const ORDER_STAGES = ['paid','packed','dispatched','delivered'];
+const ORDER_STAGE_LABEL = {paid:'Paid, not packed', packed:'Packed, not sent', dispatched:'On its way', delivered:'Delivered', cancelled:'Cancelled', failed:'Payment failed', created:'Not paid', sent_to_phonepe:'Not paid'};
+const orderPaid = o => ORDER_STAGES.includes(o.status);
+// Anything paid for that has not reached him yet is work waiting on somebody.
+const ordersWaiting = () => ORDERS.filter(o => orderPaid(o) && o.status !== 'delivered');
+function orderStagePill(o){
+  if(!orderPaid(o)) return `<span class="pill dim">${ORDER_STAGE_LABEL[o.status]||esc(o.status||'')}</span>`;
+  const cls = {paid:'bad', packed:'warn', dispatched:'violet', delivered:'ok'}[o.status] || 'dim';
+  return `<span class="pill ${cls}">${ORDER_STAGE_LABEL[o.status]}</span>`;
+}
+// The person this order made on the Patients list, so the two screens are never out of step.
+function orderLead(o){ return o.pulse_lead_id ? DESK.find(l=>l.id===o.pulse_lead_id) : null; }
+function orderPhone(o){ const p=String(o.phone||'').replace(/[^0-9]/g,''); if(p.length<10) return ''; return (p.length===10?'91':'')+p; }
+
+function renderStore(){
+  const el=$('content');
+  if(DESK===null){ el.innerHTML='<div class="loading">Opening the list…</div>'; return; }
+  if(!ORDERS_ON){
+    el.innerHTML = `<div class="head"><div><div class="h1">Store orders</div>
+      <div class="sub">The website shop is not connected to this screen yet.</div></div></div>
+      <div class="panel"><div class="note">Orders are being taken on the website, but Pulse has not been given the key to read them. Nothing is lost, they are all saved. Tell Akash and it is a two minute fix.</div></div>`;
+    return;
+  }
+  const waiting = ordersWaiting();
+  const paidAll = ORDERS.filter(orderPaid);
+  const unpaid  = ORDERS.filter(o=>!orderPaid(o));
+  const money   = paidAll.reduce((s,o)=>s+(Number(o.total)||0),0);
+  const byStage = s => paidAll.filter(o=>o.status===s);
+
+  const card = o => {
+    const lead = orderLead(o);
+    const ph = orderPhone(o);
+    const open = OPEN_ORDER===o.merchant_order_id;
+    const cls = {paid:'due', packed:'s2', dispatched:'s3', delivered:'s4'}[o.status] || '';
+    return `
+    <div class="card ${cls} ${open?'open':''}" id="ord-${esc(o.merchant_order_id)}">
+      <div class="chead" onclick="toggleOrder('${esc(o.merchant_order_id)}')">
+        <div class="crow">
+          <div style="min-width:0">
+            <div class="cname">${esc(o.name||'(no name)')} ${orderStagePill(o)}</div>
+            <div class="cmeta">
+              <span class="st">${esc(o.product||'')}${(Number(o.qty)||1)>1?' ×'+o.qty:''}</span>
+              <span>${fmtINR(o.total)}</span>
+              <span>${esc(o.city||'')}${o.pin?' '+esc(o.pin):''}</span>
+              <span>${o.paid_at?'Paid '+niceDate(o.paid_at):niceDate(o.created_at)}</span>
+              ${orderPaid(o)&&o.status!=='delivered'?`<span class="wait" style="color:var(--rose)">${daysSince(o.paid_at||o.created_at)} days since he paid</span>`:''}
+            </div>
+          </div>
+          <div style="color:var(--text-faint);font-size:18px;flex-shrink:0">${open?'▴':'▾'}</div>
+        </div>
+        ${ph?`<div class="cacts" onclick="event.stopPropagation()">
+          <a class="call" href="tel:+${ph}">${ICON.phone} Call</a>
+          <a class="wa" target="_blank" rel="noopener" href="https://wa.me/${ph}">${ICON.wa} WhatsApp</a>
+        </div>`:'<div class="cacts"><span class="nophone">No phone number on this order</span></div>'}
+      </div>
+      <div class="cbody">
+        <div class="wh">Where it goes</div>
+        <div class="panel" style="margin:0 0 12px">
+          <div style="font-size:14px;line-height:1.6">${esc(o.address||'No address given')}<br>${esc(o.city||'')} ${esc(o.pin||'')}${o.landmark?'<br>Near '+esc(String(o.landmark).replace(/^\s*near\s+/i,'')):''}</div>
+          <div class="note" style="margin-top:8px">Order ${esc(o.merchant_order_id)}${o.payment_mode?' · paid by '+esc(o.payment_mode):''}${o.email?' · '+esc(o.email):''}</div>
+        </div>
+
+        ${orderPaid(o)?`
+        <div class="wh">Move it along</div>
+        <div class="whats">
+          <button class="${o.status==='packed'?'on':''}" onclick="orderStage('${esc(o.merchant_order_id)}','packed')"><i>📦</i>Packed</button>
+          <button class="${o.status==='dispatched'?'on':''}" onclick="openShip('${esc(o.merchant_order_id)}')"><i>🚚</i>Sent, add tracking</button>
+          <button class="good ${o.status==='delivered'?'on':''}" onclick="orderStage('${esc(o.merchant_order_id)}','delivered')"><i>✅</i>Delivered</button>
+        </div>
+        <div class="ask" id="ship-${esc(o.merchant_order_id)}">
+          <div style="font-size:13.5px;color:var(--text-dim)">Who is carrying it, and the number he can track it with. He sees this on the website.</div>
+          <div class="row">
+            <label class="field"><span>Courier</span><input id="shipc-${esc(o.merchant_order_id)}" value="${esc(o.courier||'')}" placeholder="Delhivery, Blue Dart…"></label>
+            <label class="field"><span>Tracking number</span><input id="shipt-${esc(o.merchant_order_id)}" value="${esc(o.tracking_id||'')}" placeholder="Number on the slip"></label>
+            <button class="btn gold" onclick="orderStage('${esc(o.merchant_order_id)}','dispatched')">Save and mark sent</button>
+          </div>
+        </div>` : `
+        <div class="note">He never paid, so nothing was shipped and he is not on the patient list. He picked the medicine and stopped at the payment page. Worth one call.</div>`}
+
+        ${o.courier||o.tracking_id?`<div class="visits"><div>Sent by ${esc(o.courier||'courier not named')}${o.tracking_id?', tracking '+esc(o.tracking_id):''}${o.dispatched_at?', on '+niceDate(o.dispatched_at):''}</div></div>`:''}
+
+        <div class="cfoot">
+          <span class="saved" id="osaved-${esc(o.merchant_order_id)}"></span>
+          ${lead?`<button class="more" onclick="openPerson('${lead.id}')">Open his patient card</button>`
+                : orderPaid(o)?'<span class="note" style="margin:0">Not on the patient list yet. It appears within a few minutes of payment.</span>':''}
+        </div>
+      </div>
+    </div>`;
+  };
+
+  const line = !paidAll.length ? 'No paid orders yet'
+             : waiting.length ? waiting.length+(waiting.length===1?' order':' orders')+' to get out'
+             : 'Every paid order has been delivered';
+  const sub = !paidAll.length
+    ? (unpaid.length ? unpaid.length+(unpaid.length===1?' person':' people')+' picked a medicine and stopped at the payment page.' : 'Nothing has been ordered on the website yet.')
+    : `${byStage('delivered').length} delivered · ${fmtINR(money)} taken by the shop${unpaid.length?' · '+unpaid.length+' never paid':''}`;
+  el.innerHTML = `
+    <div class="head">
+      <div><div class="h1">${line}</div><div class="sub">${sub}</div></div>
+    </div>
+    ${waiting.length ? `<div class="sec">Waiting on us</div>${waiting.map(card).join('')}` : ''}
+    ${unpaid.length?`<div class="sec">Picked a medicine, never paid</div>
+      <div class="note" style="margin:-6px 0 10px">They chose a medicine and stopped at the payment page. Not patients, nothing was sent. A call costs nothing.</div>
+      ${unpaid.slice(0,30).map(card).join('')}`:''}
+    ${!waiting.length && !unpaid.length ? '<div class="panel"><div class="loading" style="padding:20px">Nothing here yet. Orders from drmadhusudan.com will appear on this screen the moment they are placed.</div></div>' : ''}
+    <div class="note">Marking an order delivered starts his reorder call, the same as a walk-in.</div>`;
+}
+
+// What the website shop sold. Read off the same sales record the clinic writes to,
+// picked out by who entered it, so the Health screen can keep the two apart.
+function shopMoney(){
+  const rows = (VISITS||[]).filter(v=>v.entered_by==='Shop');
+  const amt = v => Number(v.consult_amount||0) + Number(v.medicine_amount||0);
+  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+  return {
+    visits: rows.length,
+    all: rows.reduce((s,v)=>s+amt(v),0),
+    month: rows.filter(v=>new Date(v.visited_at)>=monthStart).reduce((s,v)=>s+amt(v),0)
+  };
+}
+
+function toggleOrder(id){ OPEN_ORDER = OPEN_ORDER===id ? null : id; renderStore(); const c=$('ord-'+id); if(c&&OPEN_ORDER) c.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+function openShip(id){ const b=$('ship-'+id); if(b) b.classList.toggle('open'); }
+
+// Saving a stage does two things at once: it tells the shop, so the customer's own
+// tracking page changes, and on delivery it starts the reorder clock on his patient card.
+function orderStage(id, stage){
+  const o = ORDERS.find(x=>x.merchant_order_id===id); if(!o) return;
+  const note = $('osaved-'+id);
+  const set = (t,bad) => { if(note){ note.textContent=t; note.classList.toggle('bad',!!bad); } };
+  set('Saving…');
+  const body = {action:'shop_delivery', merchant_order_id:id, status:stage};
+  if(stage==='dispatched'){
+    body.courier = ($('shipc-'+id)||{}).value || null;
+    body.tracking_id = ($('shipt-'+id)||{}).value || null;
+  }
+  post(body).then(d=>{
+    if(!d || d.ok===false){ set(d&&d.error ? d.error : 'Could not save. Try again.', true); return; }
+    o.status = stage;
+    if(stage==='dispatched'){ o.courier=body.courier||o.courier; o.tracking_id=body.tracking_id||o.tracking_id; o.dispatched_at=o.dispatched_at||new Date().toISOString(); }
+    if(stage==='delivered'){ o.delivered_at = o.delivered_at || new Date().toISOString(); }
+    set('Saved');
+    // The patient card has to agree with this screen, or the reorder call never fires.
+    const lead = orderLead(o);
+    if(lead) syncLeadToOrder(lead, o);
+    computeBadge();
+    setTimeout(()=>{ renderStore(); }, 350);
+  }).catch(()=>set('Could not save. Try again.', true));
+}
+
+// Walks his patient card forward to match the parcel. Delivered is the one that matters:
+// it moves him to Reorder and sets the call for the day his course runs out.
+function syncLeadToOrder(lead, o){
+  const over = {};
+  if(o.status==='dispatched'){ over.status='p3_dispatched'; over.dispatched_on=dOnly(o.dispatched_at)||todayISO(); over.next_followup=plusDays(3, over.dispatched_on); }
+  else if(o.status==='delivered'){
+    const v = VISITS.find(v=>v.lead_id===lead.id && v.entered_by==='Shop' && v.medicine===o.product);
+    const days = (v && Number(v.days)) || 30;     // the shop sends the pack length when the order is paid
+    over.status='p4_reorder_due';
+    over.delivered_on = dOnly(o.delivered_at)||todayISO();
+    over.next_followup = plusDays(reorderOffset(days,1), over.delivered_on);
+  } else return;
+  saveState(lead, fullState(lead, over), ()=>{});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // NEW PERSON. Reception fills two things: who he is, and what happened at the desk.
 // ─────────────────────────────────────────────────────────────────────────────
 let ADD_ID = null;   // the id of the person just added, so step 2 can attach to him
@@ -1113,7 +1318,7 @@ function renderAdd(){
     <div class="step" id="step1">
       <h4>1. Who is he</h4>
       <div class="hint">Which clinic is this? Picked once, remembered on this device.</div>
-      <div class="seg" id="segClinic">${CLINICS.map(c=>`<button class="${MY_CLINIC===c?'on':''}" onclick="setClinic('${c}')">${c}</button>`).join('')}</div>
+      <div class="seg" id="segClinic">${CLINICS.map(c=>`<button class="${MY_CLINIC===c?'on':''}" onclick="setClinic('${c}')" data-c="${c}">${clinicLabel(c)}</button>`).join('')}</div>
       <div class="fgrid" style="margin-top:14px">
         <label class="field wide req"><span>Name</span><input id="afName" type="text" placeholder="Full name" autocomplete="off"></label>
         <label class="field req"><span>Phone number</span><input id="afPhone" type="tel" placeholder="10 digits" inputmode="numeric" autocomplete="off" oninput="dupCheck()"></label>
@@ -1121,6 +1326,11 @@ function renderAdd(){
         <div class="found wide" id="afFound"></div>
         <label class="field wide"><span>What he came for</span></label>
         <div class="seg wide" id="segFor">${['Erectile Dysfunction','Premature Ejaculation','Both ED and PE','Low desire or energy','Not sure','Other'].map(c=>`<button onclick="segPick(this)" data-v="${c}">${c}</button>`).join('')}</div>
+        <label class="field"><span>Who will follow up</span><select id="afOwner"><option value="">Decide later</option>${people}</select></label>
+        <label class="field wide"><span>Note</span><input id="afNote" type="text" placeholder="What he asked about" autocomplete="off"></label>
+      </div>
+      <details class="fold" style="margin-top:12px"><summary>More about him, if he told you (age, town, how he heard of us, email)</summary>
+      <div class="fgrid">
         <label class="field"><span>Age</span><input id="afAge" type="text" inputmode="numeric" placeholder="Optional" autocomplete="off"></label>
         <label class="field"><span>Town or sector</span><input id="afLocation" type="text" placeholder="Optional" autocomplete="off"></label>
         <label class="field"><span>Where did he hear about us</span>
@@ -1132,9 +1342,8 @@ function renderAdd(){
           </select></label>
         <label class="field"><span>Married</span><select id="afMarital"><option value="">Not known</option><option>Married</option><option>Unmarried</option></select></label>
         <label class="field"><span>Email, if he gave one</span><input id="afEmail" type="email" placeholder="Leave blank if none" autocomplete="off"></label>
-        <label class="field"><span>Who will follow up</span><select id="afOwner"><option value="">Decide later</option>${people}</select></label>
-        <label class="field wide"><span>Note</span><input id="afNote" type="text" placeholder="What he asked about" autocomplete="off"></label>
       </div>
+      </details>
       <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
         <button class="btn" onclick="submitAdd()">Save just the name and phone</button>
         <span class="msg" id="afMsg"></span>
@@ -1163,7 +1372,7 @@ function renderAdd(){
     </div>`;
   setTimeout(()=>{ const n=$('afName'); if(n) n.focus(); },50);
 }
-function setClinic(c){ MY_CLINIC=c; localStorage.setItem('pulse_clinic',c); document.querySelectorAll('#segClinic button').forEach(b=>b.classList.toggle('on', b.textContent===c)); }
+function setClinic(c){ MY_CLINIC=c; localStorage.setItem('pulse_clinic',c); document.querySelectorAll('#segClinic button').forEach(b=>b.classList.toggle('on', b.dataset.c===c)); }
 function vConsultChange(){ const m=$('v-cmode').value; $('v-when-wrap').style.display = m==='online' ? '' : 'none'; $('v-consult').disabled=!m; $('v-camt').disabled=!m; if(m==='online' && $('v-consult').value==='Cash') $('v-consult').value='Online link'; }
 function segPick(btn, keepOne){ const on=btn.classList.contains('on'); btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on')); if(!on||keepOne) btn.classList.add('on'); }
 function dupCheck(){
@@ -1175,8 +1384,29 @@ function dupCheck(){
   box.classList.add('open');
 }
 function openPerson(id){ P.q=''; P.queue=''; P.phase=''; P.who='all'; P.door='all'; P.since='all'; OPEN_CARD=id; setTab('patients'); const c=$('card-'+id); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); }
+// Checks before anything is sent. Plain words, and the cursor lands in the field that needs fixing.
+function cleanPhone(raw){ let p=String(raw||'').replace(/[^0-9]/g,''); if(p.length===12&&p.startsWith('91')) p=p.slice(2); if(p.length===11&&p.startsWith('0')) p=p.slice(1); return p; }
+function addProblem(){
+  const g=id=>$(id);
+  const name=(g('afName').value||'').trim();
+  if(name.length<2) return {field:'afName', text:'Type his name first.'};
+  if(!/[a-zA-Z\u0900-\u097F]/.test(name)) return {field:'afName', text:'That does not look like a name.'};
+  const p=cleanPhone(g('afPhone').value);
+  if(p.length!==10) return {field:'afPhone', text:'Phone number needs 10 digits. It has '+p.length+'.'};
+  if(!/^[6-9]/.test(p)) return {field:'afPhone', text:'An Indian mobile number starts with 6, 7, 8 or 9.'};
+  if(/^(\d)\1{9}$/.test(p)) return {field:'afPhone', text:'That number is the same digit ten times.'};
+  const email=(g('afEmail').value||'').trim();
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return {field:'afEmail', text:'That email does not look right. Leave it blank if unsure.'};
+  const age=(g('afAge').value||'').trim();
+  if(age && !(/^\d{1,3}$/.test(age) && +age>=10 && +age<=99)) return {field:'afAge', text:'Age should be a number between 10 and 99.'};
+  return null;
+}
 function submitAdd(then){
-  const g=id=>$(id); const msg=g('afMsg'); msg.className='msg'; msg.textContent='Saving…';
+  const g=id=>$(id); const msg=g('afMsg');
+  const bad=addProblem();
+  if(bad){ msg.className='msg bad'; msg.textContent=bad.text; const f=g(bad.field); if(f){ f.focus(); f.scrollIntoView({behavior:'smooth',block:'center'}); } return; }
+  g('afPhone').value=cleanPhone(g('afPhone').value);
+  msg.className='msg'; msg.textContent='Saving…';
   const forBtn=document.querySelector('#segFor button.on');
   const body={ action:'add', name:g('afName').value, phone:g('afPhone').value, email:g('afEmail').value, source:g('afSource').value,
     note:g('afNote').value, assigned_to:g('afOwner').value, age:g('afAge').value, location:g('afLocation').value,
@@ -1206,7 +1436,7 @@ function submitVisit(){
       // seen today at the desk: the appointment is now, the status says the doctor has seen him
       over.appointment_at=new Date().toISOString(); over.appointment_mode=MY_CLINIC||'At the clinic';
       over.status = paid ? 'p1_appt_done' : 'p1_fees_pending'; over.next_followup = paid ? plusDays(2) : plusDays(1);
-      noteBits.push(`Consulted at ${MY_CLINIC||'clinic'}${paid?' '+fmtINR(camt)+' '+consult:', fee not paid'}`);
+      noteBits.push(`Consulted at ${clinicLabel(MY_CLINIC)||'clinic'}${paid?' '+fmtINR(camt)+' '+consult:', fee not paid'}`);
     } else {
       over.appointment_mode='Online'; if(appt) over.appointment_at=new Date(appt).toISOString();
       over.status = paid ? (appt ? 'p1_appt_pending' : 'p1_fees_paid') : 'p1_fees_pending'; over.next_followup = appt ? dOnly(appt) : plusDays(1);
@@ -1248,7 +1478,7 @@ function renderHealth(){
   const thisM=months.find(m=>m.key===thisKey)||{key:thisKey,r:0};
   const past=months.filter(m=>m.key<thisKey);
   const lastM=past[past.length-1]||null, prevM=past[past.length-2]||null;
-  const win = HWIN==='month' ? {label:'This month so far', b:(r.buckets&&r.buckets.month)||{}, total:Number(r.month)||0, count:Number(r.month_count)||0}
+  const win = HWIN==='month' ? {label:'Online, this month so far', b:(r.buckets&&r.buckets.month)||{}, total:Number(r.month)||0, count:Number(r.month_count)||0}
             : HWIN==='last' && H && H.last_month ? {label:'Last month', b:H.last_month.buckets||{}, total:Number(H.last_month.total)||0, count:Number(H.last_month.count)||0}
             : {label:'Since June', b:(r.buckets&&r.buckets.total)||{}, total:Number(r.total)||0, count:Number(r.total_count)||0};
   const B=k=>win.b[k]||{count:0,revenue:0};
@@ -1306,8 +1536,18 @@ function renderHealth(){
     <div class="panel">
       ${[['Modak page (medicine)',modak,'var(--gold)'],['Consultation, ₹499 ads page',ads,'var(--violet)'],['Consultation, ₹497 page',org,'var(--green)'],['Other',B('other'),'var(--text-faint)']].map(([n,x,c])=>`
         <div class="bar-row"><div class="bar-head"><span class="bl">${n}</span><span class="bv"><b style="color:var(--text)">${x.count||0}</b> order${x.count===1?'':'s'} · ${fmtINR(x.revenue)} · ${share(Number(x.revenue))}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${win.total?Number(x.revenue)/win.total*100:0}%;background:${c}"></div></div></div>`).join('')}
-      ${H&&H.clinic?`<div class="bar-row" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)"><div class="bar-head"><span class="bl">Taken at the desk, cash, UPI or card</span><span class="bv"><b style="color:var(--text)">${H.clinic.visits||0}</b> visit${H.clinic.visits===1?'':'s'} · ${fmtINR(Number(H.clinic.consult||0)+Number(H.clinic.medicine||0))} all time · ${fmtINR(H.clinic.this_month||0)} this month</span></div></div>`:''}
-      <div class="note">The bars are online payments. The desk line is what reception records at the clinic, and it starts counting from today.</div>
+      ${H&&H.clinic?(()=>{
+        // The website shop writes into the same sales record as the clinic desk, so its money
+        // has to be taken back out here. Otherwise the desk line says the clinic earned
+        // what the website earned.
+        const s = shopMoney();
+        const deskVisits = Math.max(0, (H.clinic.visits||0) - s.visits);
+        const deskAll = Math.max(0, Number(H.clinic.consult||0) + Number(H.clinic.medicine||0) - s.all);
+        const deskMonth = Math.max(0, Number(H.clinic.this_month||0) - s.month);
+        return `<div class="bar-row" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)"><div class="bar-head"><span class="bl">Taken at the desk, cash, UPI or card</span><span class="bv"><b style="color:var(--text)">${deskVisits}</b> visit${deskVisits===1?'':'s'} · ${deskAll===deskMonth?fmtINR(deskAll)+', all of it this month':fmtINR(deskAll)+' all time · '+fmtINR(deskMonth)+' this month'}</span></div></div>
+        <div class="bar-row"><div class="bar-head"><span class="bl">Bought on the website shop</span><span class="bv"><b style="color:var(--text)">${s.visits}</b> order${s.visits===1?'':'s'} · ${s.all===s.month?fmtINR(s.all)+(s.all?', all of it this month':''):fmtINR(s.all)+' all time · '+fmtINR(s.month)+' this month'}</span></div></div>`;
+      })():''}
+      <div class="note">The bars are online payments through the funnels. Below them, what reception records at the clinic, and what the website shop sells. The three are kept apart on purpose.</div>
     </div>
 
     <div class="sec">Month by month</div>
