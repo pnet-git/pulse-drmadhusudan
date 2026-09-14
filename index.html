@@ -228,6 +228,12 @@ a{color:inherit;}
 .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:var(--r);padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:border-color .15s,transform .08s,box-shadow .15s;-webkit-tap-highlight-color:transparent;box-shadow:var(--shadow);}
 .q:active{transform:scale(.99);}
 .q:hover{box-shadow:0 10px 28px -14px rgba(29,26,23,.25);}
+.q{position:relative;}
+.q .rank{position:absolute;left:-1px;top:-1px;width:22px;height:22px;border-radius:var(--r) 0 var(--r-sm) 0;background:var(--wine);color:#fff;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.q.zero .rank{display:none;}
+.q .here{display:inline-block;margin-left:9px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--wine);background:var(--wine-wash);border-radius:99px;padding:2px 9px;vertical-align:1px;}
+.q .qm{display:block;font-size:13px;font-weight:600;margin-top:5px;}
+.q .qm.held{color:var(--wine);} .q .qm.likely{color:var(--olive);}
 .q .qn{font-family:var(--font-num);font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1;min-width:56px;text-align:center;font-variant-numeric:tabular-nums;color:var(--ink);}
 .q .qt{flex:1;min-width:0;}
 .q .qt b{display:block;font-size:15.5px;color:var(--text);font-weight:600;}
@@ -850,14 +856,38 @@ function reorderDue(l){ return l.phase===4 && !isClosed(l) && !!l.next_followup 
 function toShip(l){ return ['p3_to_dispatch','p3_dispatched','p3_pending_delivery'].includes(l.status); }
 function apptToday(l){ return !!l.appointment_at && isToday(l.appointment_at); }
 function apptUpcoming(l){ if(!l.appointment_at) return false; const t=new Date(l.appointment_at).getTime(); return t>=Date.now()-3600000 && t<=Date.now()+7*86400000; }
+// Written in the order the team should work them, top first. The reason for the order
+// is one rule a new person can learn in ten seconds:
+//   money he has already handed over comes before money he might hand over.
 const QUEUES = [
-  {id:'fresh',  test:l=>isNewUntouched(l)&&daysSince(l.first_seen)<=7, cls:'rose',   title:'New people, not yet called', why:'Came in this week. The first call is worth the most when it is quick.', empty:'Everyone who came in this week has been called.'},
-  {id:'book',   test:needsBooking,                                   cls:'green',  title:'Paid, waiting for a slot',    why:'He has paid for a consultation and has no appointment yet. Book him today.', empty:'Every paid consultation has a slot.'},
-  {id:'due',    test:callDue,                                        cls:'amber',  title:'Calls due',                   why:'A call date was set and it is today or already past.', empty:'No calls due. You are caught up.'},
-  {id:'ship',   test:toShip,                                         cls:'violet', title:'Paid, not yet delivered',     why:'Medicine is paid for. Send it, then fill the delivery date so the reorder clock starts.', empty:'Nothing waiting to be sent.'},
-  {id:'reorder',test:reorderDue,                                     cls:'green',  title:'Reorders due this week',      why:'His course is about to run out. Ask how he feels, then offer the next pack.', empty:'No reorders due this week.'},
-  {id:'old',    test:l=>isNewUntouched(l)&&daysSince(l.first_seen)>7, cls:'',      title:'Older people never called',   why:'Came in more than a week ago and nobody has rung yet. Work through a few each day.', empty:'Nobody old is waiting.'}
+  {id:'ship',   test:toShip,                                         cls:'violet', title:'Paid, not yet delivered',     why:'He has paid and is waiting. Every day of silence is a day closer to a refund.', empty:'Nothing waiting to be sent.', money:'held'},
+  {id:'book',   test:needsBooking,                                   cls:'green',  title:'Paid, waiting for a slot',    why:'He has paid for a consultation and has no appointment yet. Book him today.', empty:'Every paid consultation has a slot.', money:'held'},
+  {id:'reorder',test:reorderDue,                                     cls:'green',  title:'Reorders due this week',      why:'His course is running out. He has bought before, so this is the easiest sale in the clinic.', empty:'No reorders due this week.', money:'likely'},
+  {id:'due',    test:callDue,                                        cls:'amber',  title:'Calls due',                   why:'Somebody was promised a call on a date, and that date has arrived or passed.', empty:'No calls due. You are caught up.'},
+  {id:'fresh',  test:l=>isNewUntouched(l)&&daysSince(l.first_seen)<=7, cls:'rose', title:'New people, not yet called',  why:'Came in this week. Interest fades fast, so the first call is worth the most when it is quick.', empty:'Everyone who came in this week has been called.'},
+  {id:'old',    test:l=>isNewUntouched(l)&&daysSince(l.first_seen)>7, cls:'',      title:'Older people never called',   why:'Came in more than a week ago and nobody has rung. Cold, but free. Work through a few each day.', empty:'Nobody old is waiting.'}
 ];
+// Averages from his own records, so these follow his prices and are never typed in here.
+function avgSale(){
+  const med=(VISITS||[]).filter(v=>Number(v.medicine_amount)>0).map(v=>Number(v.medicine_amount));
+  return med.length ? Math.round(med.reduce((a,b)=>a+b,0)/med.length) : 0;
+}
+// What a queue is worth, and which kind of money it is.
+//   held   = already paid and not yet received. Read straight off their cards. A fact.
+//   likely = may still buy. One in three, said out loud in the sentence, never hidden.
+function queueMoney(q, rows){
+  if(!rows.length) return null;
+  if(q.money==='held'){
+    const v=rows.reduce((a,l)=>a+(Number(l.total_paid)||0),0);
+    return v ? {v, kind:'held', say:`${fmtINR(v)} already paid, waiting on us`} : null;
+  }
+  if(q.money==='likely'){
+    const a=avgSale(); if(!a) return null;
+    const v=Math.round(rows.length*a/3);
+    return {v, kind:'likely', say:`about ${fmtINR(v)} if one in three says yes`};
+  }
+  return null;
+}
 function queueRows(q, mineOnly){ if(!DESK) return []; const Q=QUEUES.find(x=>x.id===q); return DESK.filter(l=>Q.test(l)&&(!mineOnly||isMine(l))); }
 function computeBadge(){
   if(!DESK) return;
@@ -885,12 +915,18 @@ function renderToday(){
         <div class="sub">${mine?`Showing ${who}, plus people nobody owns yet.`:'Showing everyone. Pick your name at the top to see only your list.'}</div></div>
       ${ME?`<button class="btn ghost" onclick="TODAY_ALL=!TODAY_ALL;renderToday()">${mine?'Show everyone':'Show only mine'}</button>`:''}
     </div>
-    ${rows.map(({q,rows})=>`
-      <div class="q ${q.cls} ${rows.length?'':'zero'}" onclick="openQueue('${q.id}')">
-        <div class="qn">${rows.length}</div>
-        <div class="qt"><b>${q.title}</b><span>${rows.length?q.why:q.empty}</span></div>
+    ${(()=>{ let n=0; return rows.map(({q,rows:r})=>{
+      const live=r.length>0; if(live) n++;
+      const m=queueMoney(q,r);
+      return `
+      <div class="q ${q.cls} ${live?'':'zero'}" onclick="openQueue('${q.id}')">
+        ${live?`<div class="rank">${n}</div>`:''}
+        <div class="qn">${r.length}</div>
+        <div class="qt"><b>${q.title}${n===1&&live?'<span class="here">Start here</span>':''}</b><span>${live?q.why:q.empty}</span>
+          ${m?`<span class="qm ${m.kind}">${m.say}</span>`:''}</div>
         <div class="go">›</div>
-      </div>`).join('')}
+      </div>`; }).join(''); })()}
+    <div class="note">They are in order on purpose. Money he has already handed over comes first, because that is trust. Then the people who have bought before. Then the new ones, because interest fades. ${avgSale()?`The reorder figure uses his own average medicine sale, ${fmtINR(avgSale())}.`:''}</div>
     <div class="sec">Appointments, next 7 days</div>
     <div class="panel">
       ${appts.length ? appts.map(l=>`
@@ -1068,11 +1104,11 @@ function renderPatients(){
     </div>
     <div class="pchips">
         ${chip(!P.queue&&!P.phase,'Everyone',"P.queue='';P.phase='';renderPatients()",cnt.all)}
-        ${chip(P.queue==='fresh','New',"setQ('fresh')",cnt.fresh)}
-        ${chip(P.queue==='book','To book',"setQ('book')",cnt.book)}
-        ${chip(P.queue==='due','Calls due',"setQ('due')",cnt.due)}
         ${chip(P.queue==='ship','To send',"setQ('ship')",cnt.ship)}
+        ${chip(P.queue==='book','To book',"setQ('book')",cnt.book)}
         ${chip(P.queue==='reorder','Reorders',"setQ('reorder')",cnt.reorder)}
+        ${chip(P.queue==='due','Calls due',"setQ('due')",cnt.due)}
+        ${chip(P.queue==='fresh','New',"setQ('fresh')",cnt.fresh)}
         ${[1,2,3,4].map(p=>chip(P.phase===String(p),PHASE_NAMES[p],`setPh('${p}')`,cnt['p'+p],p)).join('')}
         ${chip(P.phase==='closed','Closed',"setPh('closed')",cnt.closed)}
     </div>
@@ -1117,7 +1153,9 @@ function paintList(){
   const paid = rows.filter(l=>Number(l.total_paid)>0).length;
   const money = rows.reduce((s,l)=>s+(Number(l.total_paid)||0),0);
   const Q = P.queue ? QUEUES.find(x=>x.id===P.queue) : null;
-  $('psum').innerHTML = `<b>${rows.length}</b> people · <b>${paid}</b> have paid${ROLE==='team'?'':` · <b>${fmtINR(money)}</b> collected`}${Q?` · <span style="color:var(--text-faint)">${esc(Q.why)}</span>`:''}`;
+  const qm = Q ? queueMoney(Q, rows) : null;
+  $('psum').innerHTML = `<b>${rows.length}</b> people · <b>${paid}</b> have paid${ROLE==='team'?'':` · <b>${fmtINR(money)}</b> collected`}`
+    + (Q?`<div style="margin-top:4px">${esc(Q.why)}${qm?` <b style="color:${qm.kind==='held'?'var(--wine)':'var(--olive)'}">${qm.say}</b>`:''}</div>`:'');
   if(!rows.length){ list.innerHTML=`<div class="empty">${Q?esc(Q.empty):'Nobody here. Try another chip or clear the search.'}</div>`; return; }
   list.innerHTML = rows.slice(0,300).map(cardHTML).join('') + (rows.length>300?`<div class="loading">Showing 300 of ${rows.length}. Narrow the search.</div>`:'');
 }
