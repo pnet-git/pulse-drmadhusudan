@@ -879,7 +879,7 @@ function avgSale(){
 //   held   = already paid and not yet received. Read straight off their cards. A fact.
 //   likely = may still buy. One in three, said out loud in the sentence, never hidden.
 function queueMoney(q, rows){
-  if(!rows.length) return null;
+  if(!rows.length || ROLE==='team') return null;   // the clinic team never sees money, anywhere
   if(q.money==='held'){
     const v=rows.reduce((a,l)=>a+(Number(l.total_paid)||0),0);
     return v ? {v, kind:'held', say:`${fmtINR(v)} already paid, waiting on us`} : null;
